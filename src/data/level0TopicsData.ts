@@ -4,7 +4,6 @@ export interface LevelTopicItem {
   id: number;
   topicNumber: string;
   title: string;
-  subtitle: string;
   summary: string;
   badge: string;
   video: {
@@ -38,7 +37,6 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
     id: 1,
     topicNumber: 'Topic 01',
     title: 'Orientation & Fellowship Roadmap',
-    subtitle: 'Navigating the 6-month journey from idea discovery to executive jury defense',
     summary: 'Understand the fellowship structure, milestone progression, and how assignments and jury defenses shape your portfolio.',
     badge: 'Onboarding',
     video: {
@@ -55,7 +53,7 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
         'Graduation benchmarks: 50% Assignments, 30% Capstone Defense, 20% Quizzes.',
         'The peer pod system: how fellows collaborate across campus hubs.'
       ]
-    },
+    }, 
     quiz: {
       id: 'l0-topic-1-quiz',
       title: 'Knowledge Check 0.1: Fellowship Roadmap & Milestone Criteria',
@@ -129,7 +127,6 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
     id: 2,
     topicNumber: 'Topic 02',
     title: 'The Product Wizard Mindset: Code vs Product',
-    subtitle: 'Why technical syntax is only half the battle — anchoring in human emotional frustration',
     summary: 'Internalize the core philosophy of product craftsmanship: answering "Should we build this?" before asking "Can we build this?".',
     badge: 'Core Mindset',
     video: {
@@ -219,7 +216,6 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
     id: 3,
     topicNumber: 'Topic 03',
     title: 'Toolchain & Studio Setup (Figma, PRD Hub, Telemetry)',
-    subtitle: 'Configuring your developer-product workstation for weekly iterative sprints',
     summary: 'Set up your core toolchain: PRD document templates, Figma workspace, Notion research repository, and telemetry dashboards.',
     badge: 'Toolchain',
     video: {
@@ -311,7 +307,6 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
     id: 4,
     topicNumber: 'Topic 04',
     title: 'Team Pods & First Sprint Planning',
-    subtitle: 'Forming high-velocity student pods and establishing weekly agile rhythms',
     summary: 'Learn pod collaboration rituals, peer code/PRD review norms, and prepare your Level 0 deliverable for cohort submission.',
     badge: 'Pod Rituals',
     video: {

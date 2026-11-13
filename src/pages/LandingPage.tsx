@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { COURSE_LEVELS, FAQS, COURSE_PRICE } from '../data/mockData';
 import { 
@@ -26,12 +27,79 @@ import {
   Calendar,
   Smartphone,
   HelpCircle,
-  ShieldCheck
+  ShieldCheck,
+  Heart,
+  TrendingUp,
+  Layers,
+  MousePointer
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [selectedModulePreview, setSelectedModulePreview] = useState<number>(2); // Default to Module 1
+  const [craftStep, setCraftStep] = useState(0);
+
+  // Auto-cycle through the 3 craft steps every 3.8s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCraftStep((prev) => (prev + 1) % 3);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const CRAFT_STEPS = [
+    {
+      id: 0,
+      step: '01',
+      tabLabel: 'Problem',
+      badge: 'QUESTION 1 · REAL PROBLEM',
+      title: 'A Real Problem Students Face?',
+      subtitle: 'Talk to 10 users to uncover acute daily friction before writing any code.',
+      accentColor: '#5B9BD5', // Cerulean
+      metric: '87% quit clunky apps',
+      icon: Search,
+      cardPreview: {
+        tag: 'Student Fieldwork #07',
+        title: 'Circulars buried in 600-person chat groups',
+        quote: '"I missed the exam hall change because it was in a 14-page PDF."',
+        statValue: 'High Friction',
+      }
+    },
+    {
+      id: 1,
+      step: '02',
+      tabLabel: 'Craft',
+      badge: 'QUESTION 2 · LOVED EXPERIENCE',
+      title: 'Can We Shape an App They Love?',
+      subtitle: 'Build glanceable wireframes and prototype the core daily habit loop.',
+      accentColor: '#D1531F', // Terracotta
+      metric: '0-confusion UX flow',
+      icon: Sparkles,
+      cardPreview: {
+        tag: 'Figma Interactive Prototype',
+        title: 'Glanceable 1-Tap Daily Cards & Upvotes',
+        quote: '"Bite-sized meals and exam alerts with zero friction and instant clarity."',
+        statValue: '98% Usability',
+      }
+    },
+    {
+      id: 2,
+      step: '03',
+      tabLabel: 'Launch',
+      badge: 'QUESTION 3 · CAN’T PUT DOWN',
+      title: 'Will 100 Students Keep Using It?',
+      subtitle: 'Launch in campus pods, test retention loops, and build daily rituals.',
+      accentColor: '#10B981', // Emerald
+      metric: '92% Day-7 Habit',
+      icon: Rocket,
+      cardPreview: {
+        tag: 'Campus Pod Alpha Launch',
+        title: '120 Active Students Daily',
+        quote: '"I open this every morning before breakfast. Can’t imagine campus without it."',
+        statValue: 'Loved & Active',
+      }
+    }
+  ];
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
@@ -101,8 +169,180 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Creative EdTech Visual (IDEA · BUILD · LAUNCH - Replaces technical telemetry) */}
-           
+            {/* Right Column: Animated Product Wizardry Studio Experience */}
+            <div className="lg:col-span-5 relative w-full flex items-center justify-center pt-8 lg:pt-0">
+              
+              {/* Ambient Glowing Blobs matched to palette (#D1531F and #5B9BD5) */}
+              <motion.div
+                animate={{
+                  scale: [1, 1.18, 1],
+                  opacity: [0.18, 0.3, 0.18],
+                }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -top-10 -right-8 w-64 h-64 rounded-full bg-accent/25 blur-3xl pointer-events-none"
+              />
+              <motion.div
+                animate={{
+                  scale: [1.15, 1, 1.15],
+                  opacity: [0.16, 0.28, 0.16],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                className="absolute -bottom-10 -left-6 w-60 h-60 rounded-full bg-cerulean/25 blur-3xl pointer-events-none"
+              />
+
+              {/* Top Floating Satellite Badge (Retention Loop) */}
+              <motion.div
+                animate={{ y: [0, -7, 0] }}
+                transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -top-5 -right-2 sm:-right-4 bg-surface/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-border shadow-elevated flex items-center gap-2.5 z-20"
+              >
+                <div className="w-8 h-8 rounded-xl bg-accent-subtle text-accent flex items-center justify-center font-bold">
+                  <Heart className="w-4 h-4 fill-accent text-accent" />
+                </div>
+                <div className="text-left">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent block">Loved by Students</span>
+                  <span className="text-xs font-extrabold text-primary block leading-tight">92% Daily Habit</span>
+                </div>
+              </motion.div>
+
+              {/* Bottom Floating Satellite Badge (Story-First Craft) */}
+              <motion.div
+                animate={{ y: [0, 7, 0] }}
+                transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+                className="absolute -bottom-5 -left-2 sm:-left-4 bg-surface/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-border shadow-elevated flex items-center gap-2.5 z-20"
+              >
+                <div className="w-8 h-8 rounded-xl bg-cerulean-subtle text-cerulean flex items-center justify-center font-bold">
+                  <Sparkles className="w-4 h-4 text-cerulean" />
+                </div>
+                <div className="text-left">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cerulean-dark block">Fellow Studio</span>
+                  <span className="text-xs font-extrabold text-primary block leading-tight">Idea → Prototype → Launch</span>
+                </div>
+              </motion.div>
+
+              {/* Main Animated Product Studio Canvas */}
+              <div className="w-full max-w-md bg-[#1C1A17] text-white rounded-3xl border border-[#3D3931] shadow-2xl p-5 sm:p-6 overflow-hidden relative z-10 text-left">
+                
+                {/* Studio Header Bar */}
+                <div className="flex items-center justify-between pb-4 border-b border-[#3D3931]/80">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#D1531F]"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#5B9BD5]"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span>
+                    <span className="ml-2 font-mono text-[11px] text-slate-400">wizardry.studio / v1</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-[10px] font-bold text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>LIVE CRAFT</span>
+                  </div>
+                </div>
+
+                {/* 3 Step Interactive Switcher Tabs */}
+                <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-[#2A2723] rounded-xl my-4 border border-[#3D3931]/60">
+                  {CRAFT_STEPS.map((s, idx) => {
+                    const isActive = craftStep === idx;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setCraftStep(idx)}
+                        className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center truncate ${
+                          isActive
+                            ? 'bg-[#1C1A17] text-white shadow-subtle border border-[#3D3931]'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span style={{ color: isActive ? s.accentColor : undefined }}>
+                          {s.step} {s.tabLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Animated Step Body */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={craftStep}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4 min-h-[220px] flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span 
+                          className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                          style={{ 
+                            backgroundColor: `${CRAFT_STEPS[craftStep].accentColor}20`,
+                            color: CRAFT_STEPS[craftStep].accentColor,
+                            border: `1px solid ${CRAFT_STEPS[craftStep].accentColor}40`
+                          }}
+                        >
+                          {CRAFT_STEPS[craftStep].badge}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+                          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                          {CRAFT_STEPS[craftStep].metric}
+                        </span>
+                      </div>
+
+                      <h3 className="text-base font-bold text-white mt-2 leading-snug">
+                        {CRAFT_STEPS[craftStep].title}
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                        {CRAFT_STEPS[craftStep].subtitle}
+                      </p>
+                    </div>
+
+                    {/* Interactive Preview Canvas Inside Card */}
+                    <div className="p-3.5 rounded-2xl bg-[#2A2723] border border-[#3D3931] space-y-2">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-semibold text-slate-400 flex items-center gap-1.5">
+                          {React.createElement(CRAFT_STEPS[craftStep].icon, { 
+                            className: "w-3.5 h-3.5",
+                            style: { color: CRAFT_STEPS[craftStep].accentColor }
+                          })}
+                          <span>{CRAFT_STEPS[craftStep].cardPreview.tag}</span>
+                        </span>
+                        <span 
+                          className="font-bold text-[10px] px-2 py-0.5 rounded bg-[#1C1A17] border border-[#3D3931]"
+                          style={{ color: CRAFT_STEPS[craftStep].accentColor }}
+                        >
+                          {CRAFT_STEPS[craftStep].cardPreview.statValue}
+                        </span>
+                      </div>
+
+                      <div className="text-xs font-semibold text-white">
+                        {CRAFT_STEPS[craftStep].cardPreview.title}
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-[#1C1A17]/80 border border-[#3D3931]/60 text-[11px] text-slate-300 italic leading-relaxed">
+                        {CRAFT_STEPS[craftStep].cardPreview.quote}
+                      </div>
+                    </div>
+
+                    {/* Step Indicators */}
+                    <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
+                      <span>Question {craftStep + 1} of 3</span>
+                      <div className="flex items-center gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            className="h-1 rounded-full transition-all duration-300"
+                            style={{
+                              width: craftStep === i ? '20px' : '6px',
+                              backgroundColor: craftStep === i ? CRAFT_STEPS[craftStep].accentColor : '#3D3931'
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+              </div>
+            </div>
           </div>
         </div>
       </section>

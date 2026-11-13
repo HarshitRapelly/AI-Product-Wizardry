@@ -216,7 +216,7 @@ export const LevelTopicsContainer: React.FC<LevelTopicsContainerProps> = ({
                     )}
                   </div>
                   <h4 className="font-extrabold text-base text-primary">{topic.title}</h4>
-                  <p className="text-xs text-text-muted mt-0.5">{topic.subtitle}</p>
+                  
                 </div>
 
                 <div className="flex items-center gap-2 text-xs font-bold text-primary flex-shrink-0">

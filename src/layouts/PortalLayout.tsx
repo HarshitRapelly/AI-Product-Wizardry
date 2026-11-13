@@ -64,11 +64,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       path: `${prefix}/grades`,
       icon: Award,
     },
-    {
-      name: 'Cohort',
-      path: `${prefix}/cohort`,
-      icon: Users,
-    },
+    
     {
       name: 'Leaderboard',
       path: `${prefix}/leaderboard`,
