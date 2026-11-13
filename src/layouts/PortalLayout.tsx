@@ -15,21 +15,17 @@ import {
   Globe,
   MapPin,
   RefreshCw,
-  Bell,
   ArrowRightLeft,
-  CheckCircle2,
-  Clock,
-  BookOpen
+  CheckCircle2
 } from 'lucide-react';
 
 interface PortalLayoutProps {
   children: React.ReactNode;
   mode: 'online' | 'offline';
   title?: string;
-  subtitle?: string;
 }
 
-export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, title, subtitle }) => {
+export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, title }) => {
   const { user, logout, selectLearningMode, resetAllDemoData, courseProgressPercentage } = useAuthAndCourse();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [modeSwitchModalOpen, setModeSwitchModalOpen] = useState(false);
@@ -45,7 +41,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       icon: LayoutDashboard,
     },
     {
-      name: 'My Learning / Levels',
+      name: '12 Modules / Levels',
       path: `${prefix}/levels`,
       icon: Layers,
     },
@@ -55,7 +51,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       icon: Calendar,
     },
     {
-      name: 'Leaderboard',
+      name: 'Cohort Leaderboard',
       path: `${prefix}/leaderboard`,
       icon: Trophy,
     },
@@ -90,14 +86,14 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       <div className="md:hidden bg-surface border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-subtle">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
-            <Sparkles className="w-4 h-4 text-blue-300" />
+            <Sparkles className="w-4 h-4 text-amber-300" />
           </div>
-          <div>
-            <span className="font-bold text-sm text-primary tracking-tight">AI Product Wizardry</span>
+          <div className="text-left">
+            <span className="font-bold text-sm text-primary tracking-tight block">AI Product Wizardry</span>
             <div className="flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${mode === 'online' ? 'bg-emerald-500' : 'bg-blue-600'}`}></span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                {mode === 'online' ? 'Online Mode' : 'Offline Campus'}
+                {mode === 'online' ? 'Online Cohort' : 'Campus Batch'}
               </span>
             </div>
           </div>
@@ -106,7 +102,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
           <button
             onClick={() => setModeSwitchModalOpen(true)}
             className="p-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-primary hover:bg-slate-50"
-            title="Switch Cohort Mode"
+            title="Switch Cohort Modality"
           >
             <ArrowRightLeft className="w-4 h-4" />
           </button>
@@ -123,18 +119,18 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       {/* Sidebar for Desktop */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border flex flex-col transition-transform duration-200 ease-in-out
-        md:translate-x-0 md:static md:h-screen md:sticky md:top-0
+        md:translate-x-0 md:static md:h-screen md:sticky md:top-0 text-left
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Brand Header */}
         <div className="p-5 border-b border-border">
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-              <Sparkles className="w-4 h-4 text-blue-300" />
+              <Sparkles className="w-4 h-4 text-amber-300" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
               <span className="font-bold text-base text-primary tracking-tight">AI Product Wizardry</span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">Professional Academy</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">Powered by NxtWave</span>
             </div>
           </Link>
 
@@ -149,14 +145,14 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
               ) : (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-300 text-[11px] font-bold text-slate-800">
                   <MapPin className="w-3.5 h-3.5 text-slate-700" />
-                  <span>OFFLINE CAMPUS</span>
+                  <span>CAMPUS BATCH</span>
                 </div>
               )}
             </div>
             <button
               onClick={() => setModeSwitchModalOpen(true)}
               className="text-[11px] text-accent hover:underline font-semibold flex items-center gap-1"
-              title="Change demo cohort"
+              title="Change cohort mode"
             >
               <ArrowRightLeft className="w-3 h-3" />
               <span>Switch</span>
@@ -175,14 +171,14 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
                 to={item.path}
                 onClick={() => setMobileSidebarOpen(false)}
                 className={`
-                  flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all
+                  flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all
                   ${active 
                     ? 'bg-primary text-white shadow-subtle' 
                     : 'text-secondary hover:text-primary hover:bg-slate-100'}
                 `}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${active ? 'text-blue-300' : 'text-text-muted'}`} />
+                  <Icon className={`w-4 h-4 ${active ? 'text-amber-300' : 'text-text-muted'}`} />
                   <span>{item.name}</span>
                 </div>
                 {active && <ChevronRight className="w-4 h-4 text-slate-400" />}
@@ -192,7 +188,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
         </nav>
 
         {/* Curriculum Progress Widget in Sidebar */}
-        <div className="p-4 mx-3 mb-3 rounded-xl bg-slate-50 border border-border">
+        <div className="p-4 mx-3 mb-3 rounded-2xl bg-slate-50 border border-border">
           <div className="flex items-center justify-between text-xs font-semibold text-secondary mb-1.5">
             <span>Overall Progress</span>
             <span className="text-primary font-bold">{courseProgressPercentage}%</span>
@@ -200,12 +196,12 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
           <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
             <div 
               className="bg-accent h-full rounded-full transition-all duration-500 ease-out" 
-              style={{ width: `${Math.max(courseProgressPercentage, 4)}%` }}
+              style={{ width: `${Math.max(courseProgressPercentage, 6)}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted">
-            <span>Level 01 Active</span>
-            <span>12 Levels Total</span>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted font-medium">
+            <span>Module 1 Active</span>
+            <span>12 Modules Total</span>
           </div>
         </div>
 
@@ -218,19 +214,19 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
                 alt={user?.name || "Student"}
                 className="w-8 h-8 rounded-full border border-border object-cover"
               />
-              <div className="truncate">
+              <div className="truncate text-left">
                 <p className="text-xs font-bold text-primary truncate leading-tight">
                   {user?.name || "Student Fellow"}
                 </p>
                 <p className="text-[11px] text-text-muted truncate">
-                  {user?.email || "student@academy.edu"}
+                  {user?.email || "student@university.edu"}
                 </p>
               </div>
             </Link>
             <button
               onClick={handleLogout}
               className="p-1.5 rounded-md text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
-              title="Logout"
+              title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -250,8 +246,8 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Top Header Bar for Desktop */}
         <header className="hidden md:flex items-center justify-between h-16 px-8 bg-surface border-b border-border sticky top-0 z-20">
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-text-muted font-medium">Academy Portal</span>
+          <div className="flex items-center gap-3 text-sm text-left">
+            <span className="text-text-muted font-medium">Student Academy</span>
             <span className="text-slate-300">/</span>
             <span className="font-semibold text-primary capitalize">{mode} Cohort</span>
             {title && (
@@ -263,30 +259,15 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Cohort Switcher CTA */}
             <button
               onClick={() => setModeSwitchModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-secondary hover:text-primary hover:bg-slate-50 transition-colors"
             >
               <ArrowRightLeft className="w-3.5 h-3.5 text-accent" />
-              <span>Switch to {mode === 'online' ? 'Offline Campus' : 'Online Cohort'}</span>
+              <span>Switch to {mode === 'online' ? 'Campus Batch' : 'Online Cohort'}</span>
             </button>
 
-            {/* Prototype Reset Tooltip */}
-            <button
-              onClick={() => {
-                if (window.confirm("Reset all prototype demo data? This will clear localStorage and return to fresh demo state.")) {
-                  resetAllDemoData();
-                  navigate('/');
-                }
-              }}
-              className="p-1.5 rounded-lg text-text-muted hover:text-secondary hover:bg-slate-100 transition-colors"
-              title="Reset Prototype Data"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-
-            {/* User Profile avatar quick link */}
+            {/* Profile link */}
             <Link
               to={`${prefix}/profile`}
               className="flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity"
@@ -307,14 +288,14 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
         </main>
       </div>
 
-      {/* Demo Mode Switcher Modal */}
+      {/* Mode Switcher Modal */}
       {modeSwitchModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-surface rounded-2xl border border-border shadow-elevated max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-surface rounded-2xl border border-border shadow-elevated max-w-lg w-full p-6 text-left animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5 text-accent" />
-                <h3 className="font-bold text-lg text-primary">Switch Learning Mode (Demo)</h3>
+                <h3 className="font-bold text-lg text-primary">Switch Learning Modality</h3>
               </div>
               <button
                 onClick={() => setModeSwitchModalOpen(false)}
@@ -325,7 +306,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
             </div>
 
             <p className="text-sm text-text-muted mt-3 mb-6 leading-relaxed">
-              Experience both distinct learning journeys in this prototype. Selecting a mode updates your preference in localStorage and seamlessly switches the dashboard features.
+              Choose which learning experience fits your schedule. Your assignments, quiz points, and progress are preserved across both modalities.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -333,27 +314,27 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
               <div 
                 onClick={() => handleSwitchMode('online')}
                 className={`
-                  p-4 rounded-xl border-2 cursor-pointer transition-all text-left flex flex-col justify-between
+                  p-5 rounded-2xl border-2 cursor-pointer transition-all text-left flex flex-col justify-between
                   ${mode === 'online' 
                     ? 'border-accent bg-blue-50/50 shadow-subtle' 
                     : 'border-border hover:border-slate-300 hover:bg-slate-50'}
                 `}
               >
                 <div>
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
-                    <Globe className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
+                    <Globe className="w-5 h-5" />
                   </div>
                   <h4 className="font-bold text-sm text-primary">Online Learning</h4>
                   <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                    Includes live digital attendance tracker, video recordings, quizzes & virtual classes.
+                    Digital attendance, recorded video replays, online Zoom masterclasses & quizzes.
                   </p>
                 </div>
                 {mode === 'online' ? (
                   <span className="mt-4 text-[11px] font-bold text-accent flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Current Active
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Current Modality
                   </span>
                 ) : (
-                  <button className="mt-4 text-xs font-semibold text-secondary hover:text-accent">
+                  <button className="mt-4 text-xs font-bold text-accent hover:underline text-left">
                     Select Online →
                   </button>
                 )}
@@ -363,28 +344,28 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
               <div 
                 onClick={() => handleSwitchMode('offline')}
                 className={`
-                  p-4 rounded-xl border-2 cursor-pointer transition-all text-left flex flex-col justify-between
+                  p-5 rounded-2xl border-2 cursor-pointer transition-all text-left flex flex-col justify-between
                   ${mode === 'offline' 
                     ? 'border-primary bg-slate-100 shadow-subtle' 
                     : 'border-border hover:border-slate-300 hover:bg-slate-50'}
                 `}
               >
                 <div>
-                  <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-800 flex items-center justify-center mb-3">
-                    <MapPin className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-xl bg-slate-200 text-slate-800 flex items-center justify-center mb-3">
+                    <MapPin className="w-5 h-5" />
                   </div>
-                  <h4 className="font-bold text-sm text-primary">Offline Learning</h4>
+                  <h4 className="font-bold text-sm text-primary">Campus Batch</h4>
                   <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                    Classroom campus focus. NO attendance tracker, NO video recordings. In-person clinics.
+                    Physical campus immersion. In-person whiteboarding, hallway testing & faculty labs.
                   </p>
                 </div>
                 {mode === 'offline' ? (
                   <span className="mt-4 text-[11px] font-bold text-primary flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Current Active
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Current Modality
                   </span>
                 ) : (
-                  <button className="mt-4 text-xs font-semibold text-secondary hover:text-accent">
-                    Select Offline →
+                  <button className="mt-4 text-xs font-bold text-primary hover:underline text-left">
+                    Select Campus →
                   </button>
                 )}
               </div>
@@ -393,7 +374,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
             <div className="mt-6 pt-4 border-t border-border flex justify-end">
               <button
                 onClick={() => setModeSwitchModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-secondary"
+                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-secondary"
               >
                 Close
               </button>

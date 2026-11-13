@@ -1,156 +1,156 @@
 import { CourseLevel, ReadingMaterial, RecordedSession, QuizQuestion, ClassSession, LeaderboardStudent, AttendanceRecord } from '../types';
 
 export const COURSE_PRICE = {
-  original: 1499,
-  current: 999,
-  currency: 'USD',
-  symbol: '$',
-  tax: 0,
+  original: 11000,
+  current: 0,
+  currency: 'INR',
+  symbol: '₹',
+  formatted: 'Free for this batch (₹11,000 from Batch 2)',
   guaranteeDays: 30
 };
 
 export const COURSE_LEVELS: CourseLevel[] = [
   {
     id: 1,
-    levelNumber: 'Level 01',
-    title: 'Foundations of AI Product Management',
-    subtitle: 'Transitioning from Deterministic to Probabilistic Systems',
-    description: 'Master the fundamental shifts in product strategy, risk management, and user expectations when building systems powered by stochastic intelligence.',
+    levelNumber: 'Module 0',
+    title: 'Orientation & Program Essentials',
+    subtitle: 'Setting Expectations, Team Formation & Tools',
+    description: 'Understand the journey from idea to launch, set up design & prototyping toolchains, meet your cohort teams, and align on weekly expectations.',
     status: 'unlocked',
-    estimatedHours: 8,
-    skills: ['Probabilistic UX', 'AI Value Discovery', 'Foundation Model Taxonomy'],
+    estimatedHours: 4,
+    skills: ['Program Alignment', 'Team Collaboration', 'Toolchain Setup'],
+    topicsCount: 3,
+    iconName: 'Flag'
+  },
+  {
+    id: 2,
+    levelNumber: 'Module 1',
+    title: 'Foundations of Product Management',
+    subtitle: 'Great Code Builds the Product; Product Thinking Decides Retention',
+    description: 'Learn the half of tech most classrooms skip: choosing the right problem, shaping an idea people want, and the 3 core questions every product wizard must ask.',
+    status: 'unlocked',
+    estimatedHours: 6,
+    skills: ['Product Thinking', 'Value Proposition', 'Retention Strategy'],
     topicsCount: 4,
     iconName: 'Compass'
   },
   {
-    id: 2,
-    levelNumber: 'Level 02',
-    title: 'LLM Architectures & Token Economics',
-    subtitle: 'Context Windows, Latency & Inference Costs',
-    description: 'Understand how transformer models process information, manage token allocations, and design products within strict latency and cost constraints.',
-    status: 'locked',
-    estimatedHours: 10,
-    skills: ['Token Optimization', 'Cost Modeling', 'Latency Engineering'],
-    topicsCount: 5,
-    iconName: 'Cpu'
-  },
-  {
     id: 3,
-    levelNumber: 'Level 03',
-    title: 'Prompt Engineering & System Directives',
-    subtitle: 'Few-Shot Prompting, Chain-of-Thought & Schemas',
-    description: 'Learn to design bulletproof system prompts, enforce structured JSON output, and build prompt regression test suites.',
+    levelNumber: 'Module 2',
+    title: 'Market Discovery & Opportunity Assessment',
+    subtitle: 'Spotting Frustrations & Evaluating Market Size',
+    description: 'Discover unmet user pain points, analyze competitor landscapes, and evaluate market size and feasibility before writing a single line of code.',
     status: 'locked',
-    estimatedHours: 8,
-    skills: ['Structured Outputs', 'Prompt Evaluation', 'System Directives'],
+    estimatedHours: 6,
+    skills: ['Opportunity Mapping', 'Competitor Teardowns', 'TAM/SAM Estimation'],
     topicsCount: 4,
-    iconName: 'Terminal'
+    iconName: 'Search'
   },
   {
     id: 4,
-    levelNumber: 'Level 04',
-    title: 'Retrieval-Augmented Generation (RAG)',
-    subtitle: 'Chunking, Embeddings & Vector Databases',
-    description: 'Architect reliable contextual intelligence systems that ground enterprise knowledge without hallucination.',
+    levelNumber: 'Module 3',
+    title: 'Problem Framing: Empathize & Define',
+    subtitle: 'Start From a Person\'s Need, Not a Feature',
+    description: 'Transform ambiguous observations into sharp problem statements. Frame actionable "How Might We" challenges rooted in authentic human frustrations.',
     status: 'locked',
-    estimatedHours: 12,
-    skills: ['Vector Search', 'Hybrid Retrieval', 'Contextual Re-ranking'],
-    topicsCount: 6,
-    iconName: 'Database'
+    estimatedHours: 8,
+    skills: ['Problem Framing', 'Empathy Mapping', 'User Personas'],
+    topicsCount: 4,
+    iconName: 'Target'
   },
   {
     id: 5,
-    levelNumber: 'Level 05',
-    title: 'Model Adaptation: Fine-Tuning vs RAG',
-    subtitle: 'LoRA, PEFT, and Domain Specialization',
-    description: 'Evaluate build-versus-buy trade-offs, dataset curation for fine-tuning, and when to fine-tune versus ground with retrieval.',
+    levelNumber: 'Module 4',
+    title: 'User Research: Methods & Synthesis',
+    subtitle: 'Listen, Test, and Let Users Surprise You',
+    description: 'Conduct non-leading user interviews, extract latent insights, map customer empathy journeys, and validate assumptions with real target audiences.',
     status: 'locked',
-    estimatedHours: 9,
-    skills: ['Fine-Tuning Strategy', 'Dataset Curation', 'Domain Adaptation'],
-    topicsCount: 5,
-    iconName: 'Layers'
+    estimatedHours: 8,
+    skills: ['User Interviews', 'Qualitative Synthesis', 'Journey Mapping'],
+    topicsCount: 4,
+    iconName: 'Users'
   },
   {
     id: 6,
-    levelNumber: 'Level 06',
-    title: 'AI UX Design & Human-in-the-Loop',
-    subtitle: 'Steerability, Graceful Degradation & Feedback Loops',
-    description: 'Design intuitive interfaces that set appropriate expectations, handle edge cases gracefully, and capture continuous RLHF telemetry.',
+    levelNumber: 'Module 5',
+    title: 'Ideation & Concept Validation',
+    subtitle: 'Turning a Spark of Curiosity Into a Clear Plan',
+    description: 'Generate high-velocity product concepts, apply prioritization matrices (RICE/MoSCoW), and pressure-test initial value propositions against user feedback.',
     status: 'locked',
-    estimatedHours: 8,
-    skills: ['Conversational UX', 'Feedback Flywheels', 'Graceful Fallbacks'],
+    estimatedHours: 6,
+    skills: ['Concept Ideation', 'Value Testing', 'RICE Prioritization'],
     topicsCount: 4,
-    iconName: 'Sparkles'
+    iconName: 'Lightbulb'
   },
   {
     id: 7,
-    levelNumber: 'Level 07',
-    title: 'AI Evaluation & Benchmark Frameworks',
-    subtitle: 'LLM-as-a-Judge, G-Eval & Ground Truth Testing',
-    description: 'Establish quantitative rigor for qualitative AI products with automated regression pipelines and synthetic evaluation benchmarks.',
+    levelNumber: 'Module 6',
+    title: 'Product Definition: From MVP to Roadmap',
+    subtitle: 'Structuring PRDs, User Stories & Feature Scopes',
+    description: 'Author rigorous Product Requirement Documents (PRDs), write precise acceptance criteria, and sequence an iterative minimum viable product roadmap.',
     status: 'locked',
-    estimatedHours: 11,
-    skills: ['LLM-as-a-Judge', 'Evaluation Datasets', 'Drift Monitoring'],
+    estimatedHours: 8,
+    skills: ['PRD Authoring', 'MVP Scoping', 'Roadmap Architecture'],
     topicsCount: 5,
-    iconName: 'CheckCircle2'
+    iconName: 'FileText'
   },
   {
     id: 8,
-    levelNumber: 'Level 08',
-    title: 'Safety, Guardrails & Red-Teaming',
-    subtitle: 'Jailbreak Mitigation, PII Redaction & Compliance',
-    description: 'Protect brand reputation and enterprise safety with defense-in-depth moderation, NeMo guardrails, and adversarial red-teaming.',
+    levelNumber: 'Module 7',
+    title: 'Prototyping & Usability Testing',
+    subtitle: 'Make a First Working Version to Learn Fast',
+    description: 'Build interactive wireframes and clickable prototypes. Run live usability test sessions, observe friction points, and iterate UX before development.',
     status: 'locked',
     estimatedHours: 8,
-    skills: ['Red-Teaming', 'NeMo Guardrails', 'PII Safeguarding'],
+    skills: ['Interactive Prototyping', 'Usability Audits', 'Friction Analysis'],
     topicsCount: 4,
-    iconName: 'ShieldCheck'
+    iconName: 'Smartphone'
   },
   {
     id: 9,
-    levelNumber: 'Level 09',
-    title: 'Autonomous Agents & Tool Orchestration',
-    subtitle: 'ReAct, Multi-Agent Swarms & Function Calling',
-    description: 'Architect systems where autonomous models reason, select tools, invoke external APIs, and collaborate to execute multi-step workflows.',
+    levelNumber: 'Module 8',
+    title: 'Execution: Agile Delivery with Engineering',
+    subtitle: 'Sprint Planning, Backlogs & Engineering Hand-off',
+    description: 'Collaborate with engineering teams, manage agile sprint rituals, resolve scope trade-offs, and maintain product quality across fast release cycles.',
     status: 'locked',
-    estimatedHours: 14,
-    skills: ['ReAct Pattern', 'Tool Calling', 'Agent Orchestration'],
-    topicsCount: 6,
-    iconName: 'Bot'
+    estimatedHours: 8,
+    skills: ['Agile Sprints', 'Engineering Alignment', 'Quality Assurance'],
+    topicsCount: 4,
+    iconName: 'GitBranch'
   },
   {
     id: 10,
-    levelNumber: 'Level 10',
-    title: 'AI Economics, Unit Margins & Scaling',
-    subtitle: 'Inference Costs, Caching & Revenue Models',
-    description: 'Build sustainable business models around generative systems, optimizing cache hits, semantic routers, and value-based pricing.',
+    levelNumber: 'Module 9',
+    title: 'Metrics, Analytics & Experimentation',
+    subtitle: 'North Star Metrics, Funnels & A/B Testing',
+    description: 'Define input vs output metrics, instrument telemetry funnels, analyze activation and churn curves, and run statistically valid experimentation.',
     status: 'locked',
-    estimatedHours: 7,
-    skills: ['Unit Economics', 'Semantic Caching', 'Value Pricing'],
+    estimatedHours: 6,
+    skills: ['North Star Metrics', 'Cohort Retention', 'A/B Experimentation'],
     topicsCount: 4,
     iconName: 'TrendingUp'
   },
   {
     id: 11,
-    levelNumber: 'Level 11',
-    title: 'Enterprise Deployment & Governance',
-    subtitle: 'SOC2, EU AI Act, SLA Management & Private VPCs',
-    description: 'Navigate regulatory requirements, enterprise risk assessments, data residency protocols, and high-availability enterprise SLAs.',
+    levelNumber: 'Module 10',
+    title: 'Go-to-Market & Product Lifecycle',
+    subtitle: 'Earning a Permanent Place on the Home Screen',
+    description: 'Craft product positioning, launch campaigns, distribution loops, and onboarding flows that drive viral growth and sustainable user retention.',
     status: 'locked',
-    estimatedHours: 8,
-    skills: ['EU AI Act Compliance', 'Data Residency', 'Enterprise SLAs'],
+    estimatedHours: 6,
+    skills: ['GTM Strategy', 'Distribution Loops', 'Onboarding Design'],
     topicsCount: 4,
-    iconName: 'Building2'
+    iconName: 'Rocket'
   },
   {
     id: 12,
-    levelNumber: 'Level 12',
-    title: 'Executive Capstone: 0-to-1 AI Product Launch',
-    subtitle: 'Comprehensive PRD, Prototype, Eval Suite & Pitch',
-    description: 'Synthesize all 11 disciplines into an end-to-end AI Product portfolio piece, presented to industry venture partners and VP-level judges.',
+    levelNumber: 'Module 11',
+    title: 'Product Sense, Case Studies & Capstone',
+    subtitle: 'Defend Your Thinking Live Before a Jury of Leaders',
+    description: 'Synthesize all 11 disciplines into an end-to-end product portfolio. Present your pitch and defend product decisions live before industry juries.',
     status: 'locked',
-    estimatedHours: 16,
-    skills: ['Executive AI PRD', 'Live MVP Defense', 'Capstone Portfolio'],
+    estimatedHours: 12,
+    skills: ['Executive Defense', 'Product Portfolio', 'Jury Presentation'],
     topicsCount: 5,
     iconName: 'Award'
   }
@@ -158,72 +158,70 @@ export const COURSE_LEVELS: CourseLevel[] = [
 
 export const LEVEL_1_READING: ReadingMaterial = {
   levelId: 1,
-  title: 'Foundations of AI Product Management',
-  subtitle: 'The Architectural & Mental Paradigm Shift for Modern Product Leaders',
-  estimatedMinutes: 18,
-  author: 'Dr. Sarah Sterling & Elena Vance, Senior Fellows at AI Product Wizardry',
+  title: 'Foundations of Product Management',
+  subtitle: 'Great code builds the product. Product thinking decides if anyone keeps it.',
+  estimatedMinutes: 15,
+  author: 'AI Product Wizardry Faculty & Industry Mentors',
   sections: [
     {
       id: 'section-1',
-      title: '1. The Paradigm Shift: Deterministic Code vs. Probabilistic Intelligence',
+      title: '1. Great Code Builds the Product. Product Thinking Decides Retention.',
       content: [
-        'For four decades, software engineering has rested on deterministic logic: if condition X is satisfied, output Y reliably occurs. Traditional product specifications could dictate exact pixel states, deterministic validation rules, and predictable test suites with 100% code coverage.',
-        'Modern AI-native systems fundamentally dismantle this premise. Large Language Models (LLMs) and diffusion transformers do not compute answers through predefined algorithmic branches; they predict probability distributions across high-dimensional latent space.',
-        'As an AI Product Manager, your core responsibility changes from dictating binary functionality to shaping probability distributions, bounding failure domains, and architecting resilient user experiences around uncertainty.'
+        'Across universities and bootcamps, students spend years learning syntax, databases, and frameworks. But when they launch their projects, nobody uses them. Why?',
+        'Because writing code answers "Can we build this?", but product thinking answers the far more critical question: "Should we build this, and will anyone actually care?"',
+        'AI Product Wizardry teaches the half of technology that most classrooms skip: choosing the right problem, shaping an idea people want, and carrying it from a paper sketch to a launch people love.'
       ],
       keyTakeaways: [
-        'Deterministic systems produce repeatable outputs; probabilistic systems produce statistical distributions.',
-        'Testing shifts from binary unit assertions to statistical benchmark evaluation over hundreds of representative scenarios.',
-        'Product requirements must define tolerance intervals and fallback trajectories rather than rigid singular outputs.'
+        'Technical competence creates functional software; product thinking creates user adoption.',
+        'Features do not equal value. Solve an urgent pain point before optimizing code.',
+        'The best products are built around human behaviors and emotional relief, not technical complexity.'
       ],
-      proTip: 'Never specify an AI feature as "The model will always summarize the document accurately." Instead write: "The model will achieve a factual consistency score >= 0.94 on the benchmark validation set, with graceful human escalation if confidence falls below 0.80."'
+      proTip: 'Whenever you have an idea, never start by opening your code editor. Start by opening a notebook and writing down the exact moment of human frustration you are resolving.'
     },
     {
       id: 'section-2',
-      title: '2. The Four Pillars of the Modern AI Product Stack',
+      title: '2. The Three Questions Every Product Wizard Learns to Ask',
       content: [
-        'To lead technical conversations with principal AI scientists and platform engineers, you must master the four vertical layers of the modern generative stack:',
-        '1. Foundation Models: Massive general-purpose models (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro) trained on trillions of tokens. They provide broad reasoning capabilities but carry high latency and token costs.',
-        '2. Context Augmentation (RAG): Supplying targeted enterprise data at query time via vector embeddings, structured databases, or web search. This grounds models in proprietary facts without retraining.',
-        '3. Fine-Tuning & Distillation: Adapting weights for specialized domains, enforcing strict output style, or distilling knowledge into lightweight 7B/8B models for 10x cost reduction.',
-        '4. Application Orchestration & Guardrails: The middleware layer managing conversation memory, semantic caches, rate limiting, PII filtering, and human-in-the-loop validation.'
+        'Every iconic digital product—from WhatsApp to Swiggy, Spotify to Notion—answers three fundamental questions with relentless clarity:',
+        '1. A real problem? Start from a person\'s need, not a speculative feature. If the user isn\'t currently hacking together an ugly workaround or feeling genuine annoyance, the problem isn\'t acute enough.',
+        '2. Will people want it? Listen, test, and let users surprise you. Your initial assumptions are almost always 50% wrong. Great product thinkers embrace being corrected early by real behavior.',
+        '3. Will they return? Earn a permanent place on the home screen. A spike in sign-ups means good marketing; steady retention 30 days later means a product people truly love.'
       ],
       keyTakeaways: [
-        'Always start with prompt engineering and in-context retrieval before considering fine-tuning.',
-        'Fine-tuning is for teaching form, tone, and syntax—retrieval is for grounding knowledge and facts.',
-        'The defensibility of your product rarely resides in the base model; it resides in your proprietary evaluation loop and domain workflows.'
+        'Question 1: Validate acute human need before committing development hours.',
+        'Question 2: Watch what users do, not just what they say in surveys.',
+        'Question 3: Retention is the only genuine proof of product-market fit.'
       ]
     },
     {
       id: 'section-3',
-      title: '3. Formulating the AI Opportunity Matrix',
+      title: '3. Stories First, Concepts Second, Building Always',
       content: [
-        'Not every problem warrants artificial intelligence. In fact, applying generative models to deterministic tasks produces brittle, expensive, and frustrating experiences.',
-        'Use the AI Feasibility Matrix to evaluate use cases along two orthogonal axes: Value of Success vs. Cost of Error.',
-        'High Value / Low Cost of Error: The sweet spot for autonomous AI (e.g., creative brainstorming, code completions, first-draft email copy). If the system errs, user correction is instantaneous and harmless.',
-        'High Value / High Cost of Error: Requires Human-in-the-Loop workflows (e.g., medical diagnostics, financial compliance auditing). The AI acts as a high-speed copilot; the expert retains final sign-off.'
+        'We believe textbooks filled with corporate jargon do not produce intuitive product leaders. Every lesson in this academy begins with a true product war story.',
+        'You will study how early founders tested prototypes with paper cutouts, how tiny changes in onboarding copy doubled activation, and how listening to user frustration led to breakthrough innovations.',
+        'In this program, you will work in teams to find a problem, shape the idea, build a working version, and test it with real users from end to end.'
       ],
       keyTakeaways: [
-        'Map every product initiative on the Cost of Failure vs. Value of Acceleration grid.',
-        'Implement steerable controls (temperature, sliders, regenerating variants) whenever users need authorial agency.',
-        'Instrument telemetry to measure where users reject or edit AI suggestions—this is your goldmine for RLHF data.'
+        'Story-led learning grounds abstract frameworks in tangible human decisions.',
+        'Build in public and gather real feedback from Day 1.',
+        'Every module concludes with a written document and a live jury defense.'
       ],
-      proTip: 'When cost of error is high, present the AI output as a draft suggestion with clear visual diffs rather than directly committing changes into production state.'
+      proTip: 'Treat user feedback as data, not personal criticism. If a user gets confused in your app, it is never their fault—it is always an opportunity to clarify the product.'
     },
     {
       id: 'section-4',
-      title: '4. Defining North Star Metrics for Generative Products',
+      title: '4. How You Earn the Certificate & Portfolio',
       content: [
-        'Traditional SaaS engagement metrics (DAU/MAU, page views, click-through rates) fail to capture the utility of AI systems. A user might spend 10 minutes struggling with a hallucinating chatbot, generating high "engagement" while feeling complete dissatisfaction.',
-        'Adopt the Three Tiers of AI Product Metrics:',
-        '• Quality & Correctness: Faithfulness score, hallucination rate, semantic similarity against ground truth.',
-        '• Operational Efficiency: Time-to-First-Token (TTFT), median generation latency, total cost per successful user outcome.',
-        '• Value Realization: Task completion velocity, user acceptance rate of generated artifacts, edit distance after generation.'
+        'At AI Product Wizardry, certification is proof of real accomplishment, not passive attendance. The evaluation framework reflects industry standards:',
+        '• 50% Assignments: Every module ends with a written document where you articulate decisions clearly.',
+        '• 30% Capstone Defense: Defend your working product live before a jury of engineering and product leaders.',
+        '• 20% Content & MCQs: Demonstrate command of foundational principles and weekly quiz assessments.',
+        'Offline batch fellows also maintain an 80% attendance rate and 80% MCQ completion to qualify for alumni recommendations.'
       ],
       keyTakeaways: [
-        'Measure "Task Completion Rate" and "Acceptance Velocity", not mere dwell time.',
-        'Track token spend per completed workflow to monitor your economic sustainability.',
-        'Establish automated regression suites before launching any prompt or model update.'
+        'Assignments (50%), Capstone Defense (30%), Content (20%).',
+        'Passing benchmark is 70% overall across assignments and capstone.',
+        'You graduate with a live, defensible product portfolio to showcase to employers.'
       ]
     }
   ]
@@ -233,210 +231,210 @@ export const LEVEL_1_RECORDINGS: RecordedSession[] = [
   {
     id: 'rec-101',
     levelId: 1,
-    title: 'Masterclass 1.1: The AI PM Mindset & Probabilistic Thinking',
-    instructor: 'Dr. Sarah Sterling',
-    instructorRole: 'Former Head of AI Product at Anthropic Research Lab',
-    duration: '42 min',
-    description: 'A deep-dive lecture exploring how elite product leaders dismantle deterministic assumptions, craft resilient PRDs for non-deterministic systems, and construct empirical evaluation loops.',
+    title: 'Module 1 Masterclass: The Product Mindset & The 3 Wizard Questions',
+    instructor: 'Priya Sharma',
+    instructorRole: 'Product Director & Former Early PM at Swiggy',
+    duration: '38 min',
+    description: 'Learn how to differentiate features from problems, identify authentic user frustrations, and apply the 3 core questions every product builder must master.',
     videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80',
-    tags: ['Mindset', 'PRD Frameworks', 'Probabilistic UX'],
-    transcriptSnippet: "When you transition from deterministic products to AI products, your definition of 'done' fundamentally transforms. You are no longer writing test assertions that return true or false. You are managing a confidence distribution across real-world edge cases..."
+    tags: ['Product Mindset', 'Problem Framing', 'Core Questions'],
+    transcriptSnippet: "Great code builds the product. Product thinking decides if anyone keeps it. If you build something nobody wants, the cleanest code in the world won't save it..."
   },
   {
     id: 'rec-102',
     levelId: 1,
-    title: 'Masterclass 1.2: Deconstructing Enterprise Foundation Models',
-    instructor: 'Marcus Chen',
-    instructorRole: 'Principal Systems Architect at DeepScale AI',
-    duration: '54 min',
-    description: 'Technical teardown of frontier LLMs, context window physics, memory attention mechanisms, and how to evaluate latency vs. intelligence trade-offs for commercial SaaS.',
+    title: 'Teardown: From a Person\'s Need to a Launch People Love',
+    instructor: 'Arjun Mehta',
+    instructorRole: 'Founder & Angel Investor, Ex-NxtWave Fellow',
+    duration: '45 min',
+    description: 'A behind-the-scenes teardown of how modern consumer and AI apps found their first 10,000 passionate users by focusing on acute user empathy.',
     videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-    tags: ['Architecture', 'Latency Optimization', 'Model Selection'],
-    transcriptSnippet: "Notice the inverse exponential curve between parameter scale and inference latency. For real-time conversational agents, a distilled 8-billion parameter model fine-tuned for your exact domain consistently outperforms a generic 400B model..."
+    tags: ['Case Study', 'User Empathy', 'First 10K Users'],
+    transcriptSnippet: "Notice that great products rarely invent entirely new desires; they make an existing frustration 10 times easier and more joyful to resolve..."
   },
   {
     id: 'rec-103',
     levelId: 1,
-    title: 'Case Study: How Notion & Stripe Productized LLMs at Scale',
-    instructor: 'Elena Vance',
-    instructorRole: 'VP of Product at AI Wizardry Guild',
-    duration: '38 min',
-    description: 'An executive behind-the-scenes teardown of how top technology companies designed frictionless generative features, tackled hallucination risks, and established scalable pricing models.',
+    title: 'Guest Lecture: Hear From Makers Who Ship Every Week',
+    instructor: 'Ananya Roy',
+    instructorRole: 'Staff Product Engineer at Razorpay',
+    duration: '32 min',
+    description: 'Insights on bridging engineering with product strategy, managing agile trade-offs, and setting up rapid feedback loops with early adopters.',
     videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
-    tags: ['Case Study', 'Product Launch', 'Pricing Strategy'],
-    transcriptSnippet: "Stripe's key insight with their documentation assistant wasn't the brilliance of their prompt; it was their hybrid retrieval architecture that prioritized exact API schema definitions above generalized natural language..."
+    tags: ['Guest Lecture', 'Makers', 'Weekend Workshop'],
+    transcriptSnippet: "When you talk to users, listen for where their voice changes pitch or where they sigh in frustration. That emotional sigh is where your product opportunity lives..."
   }
 ];
 
 export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 1,
-    question: 'How does product requirement specification fundamentally differ between deterministic software and probabilistic AI systems?',
-    scenario: 'You are authoring a Product Requirements Document (PRD) for an enterprise customer service intelligence feature powered by a foundation model.',
+    question: 'According to the core philosophy of AI Product Wizardry, what is the fundamental difference between code and product thinking?',
+    scenario: 'You are designing an app with your team and deciding how to allocate your initial 3-week sprint.',
     options: [
-      'Deterministic software specifies exact boolean outcomes; AI products specify acceptable statistical distributions and confidence thresholds.',
-      'AI products require 100% deterministic unit test passes before deployment, whereas traditional software permits probabilistic testing.',
-      'Deterministic software relies on natural language prompts, while AI products are coded strictly with hardcoded if-else statements.',
-      'There is no functional difference in requirement authoring between deterministic and probabilistic systems.'
+      'Great code builds the product; product thinking decides if anyone keeps it.',
+      'Code determines whether people return, while product thinking only writes marketing copy.',
+      'Product thinking writes technical tests, while code decides the business model.',
+      'There is no meaningful difference; coding automatically solves user retention.'
     ],
     correctAnswer: 0,
-    explanation: 'Because AI models operate probabilistically, specifications must define acceptable statistical error margins, hallucination boundaries, and fallback actions rather than singular deterministic outputs.'
+    explanation: 'Technical skill builds functional software, but understanding human needs, friction, and retention is what decides whether anyone actually uses and keeps the product.'
   },
   {
     id: 2,
-    question: 'When designing an enterprise AI copilot for medical billing where erroneous recommendations carry severe regulatory penalties, which workflow strategy is optimal?',
-    scenario: 'Medical coders process thousands of inpatient charts daily. The team wants to use an LLM to recommend insurance diagnosis codes.',
+    question: 'What is the first question every product wizard learns to ask before building?',
+    scenario: 'A teammate proposes building an AI summarizing tool with 20 features for college students.',
     options: [
-      'Full autonomous submission directly to insurance clearinghouses without human review to maximize throughput.',
-      'A Human-in-the-Loop (HITL) interface presenting confidence-scored suggestions with highlighted source evidence for human sign-off.',
-      'Disable the model from showing any suggestions and only use it for weekly summary reports.',
-      'Run the prompt 10 times and submit whatever code appears most frequently without auditing.'
+      'A real problem? Start from a person\'s need, not a feature.',
+      'Which database technology is trendiest on Twitter this month?',
+      'How much venture capital can we raise in the first 2 weeks?',
+      'Can we file a patent before talking to a single user?'
     ],
-    correctAnswer: 1,
-    explanation: 'In high-value, high-cost-of-error domains, AI should serve as a high-speed copilot with explicit citations and confidence scores, keeping certified professionals responsible for final decisions.'
+    correctAnswer: 0,
+    explanation: 'The first core question is always: "A real problem? Start from a person\'s need, not a feature." Building features without acute user needs produces empty products.'
   },
   {
     id: 3,
-    question: 'What is the primary architectural difference between contextual retrieval (RAG) and model fine-tuning?',
-    scenario: 'Your CEO asks whether the engineering team should fine-tune a custom 70B open-source model or build a RAG pipeline for internal documentation search.',
+    question: 'What does "Will they return?" measure in product evaluation?',
+    scenario: 'Your mobile app received 5,000 downloads in week 1 from a viral TikTok post, but daily active users plummeted by week 4.',
     options: [
-      'Fine-tuning is used exclusively to adjust color schemes in the UI, whereas RAG generates synthetic images.',
-      'RAG dynamically injects factual context into the prompt at query time, while fine-tuning updates model weights for style, tone, or domain terminology.',
-      'Fine-tuning is zero-cost and real-time, while RAG requires millions of dollars in GPU cluster training.',
-      'RAG permanently alters the base model weights, eliminating the need for vector databases.'
+      'It measures sustainable user retention and earning a permanent place on the user\'s home screen.',
+      'It measures how much money was spent on paid Instagram advertisements.',
+      'It measures how many lines of JavaScript are in the frontend bundle.',
+      'It measures the number of 5-star ratings left by friends and family.'
     ],
-    correctAnswer: 1,
-    explanation: 'RAG supplies current, verifiable enterprise knowledge at query time without altering model weights. Fine-tuning specializes model behavior, style, and domain structure by updating underlying model weights.'
+    correctAnswer: 0,
+    explanation: 'Anyone can get initial downloads through curiosity. Earning a permanent place on the home screen means users experience ongoing value and habitually return.'
   },
   {
     id: 4,
-    question: 'Which of the following metrics is the most trustworthy indicator of genuine product value for an AI writing assistant?',
-    scenario: 'Your analytics dashboard shows that users spend an average of 25 minutes per session in the editor, but churn rates remain elevated.',
+    question: 'In the program grading framework, how is the certification score calculated?',
+    scenario: 'You are planning your weekly coursework and milestone deliverables across the 6-month journey.',
     options: [
-      'Total token consumption per session regardless of outcome.',
-      'User acceptance rate and low post-generation edit distance of the AI-drafted content.',
-      'The number of times the user clicks the "Regenerate" button in frustration.',
-      'Total characters generated per minute by the GPU inference server.'
+      '50% Assignments, 30% Capstone Jury Defense, 20% Content/MCQs.',
+      '100% on the final multiple choice quiz with no practical projects.',
+      '70% Attendance only with zero project submissions.',
+      'Purely random grading based on peer voting.'
     ],
-    correctAnswer: 1,
-    explanation: 'High session time can signify user frustration. User acceptance rate (the proportion of suggestions accepted) and low edit distance directly reflect high generation quality and workflow completion.'
+    correctAnswer: 0,
+    explanation: 'The academic structure rewards consistent work: 50% written assignments, 30% live capstone defense before a jury, and 20% content mastery and MCQs.'
   },
   {
     id: 5,
-    question: 'What is the most effective approach to mitigate conversational hallucinations in customer-facing knowledge assistants?',
-    scenario: 'A banking client reports that their chatbot gave incorrect interest rate numbers that were hallucinated rather than fetched from their policy table.',
+    question: 'Which of the following describes the learning methodology of AI Product Wizardry?',
+    scenario: 'You are introducing the program syllabus to a prospective peer in your university department.',
     options: [
-      'Instruct the model in the prompt: "Never hallucinate under penalty of termination."',
-      'Constrain generation strictly to retrieved vector chunks, employ a groundedness evaluation check, and instruct the model to say "I do not have access to that information" when confidence is low.',
-      'Increase temperature to 1.0 so the model has maximum creative latitude.',
-      'Switch from GPT-4 to a 1-billion parameter lightweight model.'
+      'Stories first, concepts second, building always.',
+      'Memorizing heavy theoretical textbooks without touching real software.',
+      'Writing code in complete isolation without ever speaking to real users.',
+      'Solely watching recorded video lectures with no teamwork or assignments.'
     ],
-    correctAnswer: 1,
-    explanation: 'Prompting alone cannot guarantee truthfulness. Robust mitigation requires strict grounded context retrieval, low temperature, post-generation groundedness evaluation, and explicit refusal directives.'
+    correctAnswer: 0,
+    explanation: 'AI Product Wizardry is story-led and hands-on: real product stories open every topic, concepts follow, and teams build and test with real users from end to end.'
   }
 ];
 
 export const UPCOMING_CLASSES: ClassSession[] = [
   {
     id: 'cls-101',
-    title: 'Architecting Enterprise RAG Pipelines & Vector Embeddings',
-    subtitle: 'Deep-dive into hybrid search, chunking strategies & contextual re-rankers',
-    instructor: 'Dr. Sarah Sterling',
-    instructorRole: 'Former Head of AI Product at Anthropic Research Lab',
+    title: 'Interactive Workshop: Finding Real Problems & User Empathy',
+    subtitle: 'Hands-on exercise: dissecting student habits and framing "How Might We" problems',
+    instructor: 'Priya Sharma',
+    instructorRole: 'Product Director & Lead Mentor',
     instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
     date: 'Wednesday, Nov 18, 2026',
-    time: '06:00 PM - 07:30 PM EST',
+    time: '06:00 PM - 07:30 PM IST',
     duration: '90 mins',
     type: 'online',
-    locationOrPlatform: 'Live Zoom Interactive Theater',
+    locationOrPlatform: 'Live Interactive Zoom Theater',
     roomOrUrl: 'https://zoom.us/j/ai-wizardry-room-101',
-    description: 'Explore state-of-the-art retrieval architectures. We will live-code chunking benchmarks and evaluate hybrid vector-plus-sparse search in real enterprise datasets.',
-    prerequisites: 'Level 01 Reading completed',
+    description: 'Learn how to conduct user discovery conversations without biasing the interviewee. We will dissect 3 live student apps, find hidden friction points, and craft actionable problem statements.',
+    prerequisites: 'Module 0 orientation completed',
     capacity: 120,
     enrolledCount: 94
   },
   {
     id: 'cls-102',
-    title: 'Hands-on AI Evaluation: Building Automated Evals with LLM-as-a-Judge',
-    subtitle: 'Move beyond vibes: establishing repeatable unit test suites for prompts',
-    instructor: 'Marcus Chen',
-    instructorRole: 'Principal Systems Architect at DeepScale AI',
+    title: 'Guest Lecture: Hear From Makers Who Ship Products Weekly',
+    subtitle: 'Weekend deep dive with founders and senior product managers',
+    instructor: 'Arjun Mehta',
+    instructorRole: 'Founder & Angel Investor, Ex-NxtWave Fellow',
     instructorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     date: 'Saturday, Nov 21, 2026',
-    time: '11:00 AM - 01:00 PM EST',
-    duration: '120 mins',
+    time: '11:00 AM - 12:30 PM IST',
+    duration: '90 mins',
     type: 'online',
-    locationOrPlatform: 'Live Interactive Studio & Discord Stage',
-    roomOrUrl: 'https://meet.google.com/aiw-eval-lab',
-    description: 'Learn how to write programmatic evaluation prompts, calculate G-Eval metrics, and run CI/CD regression checks before pushing prompt updates to production.',
-    prerequisites: 'Level 01 Quiz passed',
-    capacity: 100,
-    enrolledCount: 78
+    locationOrPlatform: 'Weekend Stage & Community Stream',
+    roomOrUrl: 'https://meet.google.com/aiw-weekend-makers',
+    description: 'Hear raw, unfiltered stories from founders on how they pivoted their early apps, survived launch failures, and scaled to their first 10,000 paying users.',
+    prerequisites: 'Module 1 Reading completed',
+    capacity: 150,
+    enrolledCount: 118
   },
   {
     id: 'cls-103',
-    title: 'Executive Capstone Workshop: AI PRD Defense & Pitch Architecture',
-    subtitle: 'Structuring executive business cases and pricing models for enterprise buyers',
-    instructor: 'Elena Vance',
-    instructorRole: 'VP of Product at AI Wizardry Guild',
+    title: 'Jury Preparation Clinic: Pitching & Defending Your PRD Live',
+    subtitle: 'How to present your product rationale with poise before industry leaders',
+    instructor: 'Ananya Roy',
+    instructorRole: 'Staff Product Engineer at Razorpay',
     instructorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
     date: 'Tuesday, Nov 24, 2026',
-    time: '07:00 PM - 08:30 PM EST',
+    time: '07:00 PM - 08:30 PM IST',
     duration: '90 mins',
     type: 'online',
-    locationOrPlatform: 'Executive Virtual Boardroom',
-    roomOrUrl: 'https://zoom.us/j/aiw-capstone-suite',
-    description: 'Pitching AI investments requires unique financial modeling around inference margins and API drift risk. Master the executive presentation framework.',
+    locationOrPlatform: 'Executive Virtual Studio',
+    roomOrUrl: 'https://zoom.us/j/aiw-jury-clinic',
+    description: 'Master the art of defending your product decisions live. Learn how to address skeptic questions from engineering, design, and business jury members.',
     prerequisites: 'Open to all enrolled students',
-    capacity: 80,
-    enrolledCount: 65
+    capacity: 100,
+    enrolledCount: 75
   },
   // Offline Classroom Sessions
   {
     id: 'cls-201',
-    title: 'Physical Masterclass: Prompt Engineering & System Design in Action',
-    subtitle: 'In-person collaborative architecture lab with real-time model telemetry',
-    instructor: 'Dr. Sarah Sterling',
-    instructorRole: 'Lead In-Person Instructor',
+    title: 'Classroom Lab: Story-Led Product Teardown & Whiteboarding',
+    subtitle: 'In-person physical workshop: dissecting iconic consumer mobile apps',
+    instructor: 'Priya Sharma',
+    instructorRole: 'Classroom Lead Faculty',
     instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
     date: 'Thursday, Nov 19, 2026',
     time: '02:00 PM - 05:00 PM Local Time',
     duration: '3 hours',
     type: 'offline',
-    locationOrPlatform: 'Innovation Campus, Executive Lecture Hall 4B',
-    roomOrUrl: '4th Floor, Tech Hub Tower, Innovation District',
-    description: 'Experience hands-on collaborative problem solving in our state-of-the-art classroom. Whiteboard system architectures, test jailbreak resilience, and work directly with faculty.',
-    prerequisites: 'Bring laptop with development environment ready',
-    capacity: 35,
-    enrolledCount: 28
+    locationOrPlatform: 'Campus Lecture Hall 4B',
+    roomOrUrl: 'Room 4B, Innovation Center Tower',
+    description: 'Work in pairs on physical whiteboards to deconstruct user journeys. Map every tap, emotional friction point, and retention trigger for popular products.',
+    prerequisites: 'Bring laptop and notepad for whiteboard synthesis',
+    capacity: 40,
+    enrolledCount: 32
   },
   {
     id: 'cls-202',
-    title: 'In-Person Workshop: Enterprise Red-Teaming & AI Safety Simulation',
-    subtitle: 'Live adversarial jailbreak simulation and compliance audit',
-    instructor: 'Marcus Chen',
-    instructorRole: 'Classroom Lab Director',
+    title: 'In-Person Team Sprint: Paper Prototyping & Usability Testing',
+    subtitle: 'Build paper prototypes and run live hallway usability tests with real students',
+    instructor: 'Arjun Mehta',
+    instructorRole: 'Campus Workshop Mentor',
     instructorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     date: 'Monday, Nov 23, 2026',
     time: '01:30 PM - 04:30 PM Local Time',
     duration: '3 hours',
     type: 'offline',
-    locationOrPlatform: 'Downtown Innovation Campus, Lab 204',
-    roomOrUrl: 'Room 204, Silicon Boulevard Academy Campus',
-    description: 'Work in pairs to break safety guardrails of custom models. Learn defense-in-depth techniques, PII filtering pipelines, and regulatory compliance preparation.',
-    prerequisites: 'Level 01 Reading completed',
-    capacity: 30,
-    enrolledCount: 22
+    locationOrPlatform: 'Design Studio Lab 204',
+    roomOrUrl: 'Lab 204, Creative Arts & Tech Wing',
+    description: 'Create low-fidelity clickable or paper prototypes in under 60 minutes. Step out into the campus commons to conduct rapid 5-minute usability tests with real peers.',
+    prerequisites: 'Module 1 Reading completed',
+    capacity: 35,
+    enrolledCount: 29
   },
   {
     id: 'cls-203',
-    title: 'Classroom Capstone Clinic: 1-on-1 Faculty Critique & Portfolio Review',
-    subtitle: 'Direct feedback on your AI product roadmap and architectural diagrams',
-    instructor: 'Elena Vance',
-    instructorRole: 'Executive Program Director',
+    title: 'Faculty 1-on-1 Critique: Defending Your First Assignment',
+    subtitle: 'Direct faculty review of your written problem definition and user insights',
+    instructor: 'Ananya Roy',
+    instructorRole: 'Program Academic Director',
     instructorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
     date: 'Friday, Nov 27, 2026',
     time: '10:00 AM - 01:00 PM Local Time',
@@ -444,10 +442,10 @@ export const UPCOMING_CLASSES: ClassSession[] = [
     type: 'offline',
     locationOrPlatform: 'Executive Seminar Suite A',
     roomOrUrl: 'Executive Center, Level 6',
-    description: 'Receive dedicated personalized feedback on your AI PRD, system architecture diagrams, and market readiness from industry leaders.',
-    prerequisites: 'Draft PRD submitted in advance',
-    capacity: 25,
-    enrolledCount: 19
+    description: 'Sit down with faculty mentors for detailed feedback on your written product document before submitting it for official grading.',
+    prerequisites: 'Draft document uploaded to student portal',
+    capacity: 30,
+    enrolledCount: 22
   }
 ];
 
@@ -461,7 +459,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 100,
-    badge: 'LLM Architect'
+    badge: 'Product Wizard'
   },
   {
     rank: 2,
@@ -472,7 +470,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 95,
-    badge: 'Prompt Artisan'
+    badge: 'Storyteller'
   },
   {
     rank: 3,
@@ -483,7 +481,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 92,
-    badge: 'Evaluation Master'
+    badge: 'Problem Spotter'
   },
   {
     rank: 4,
@@ -494,7 +492,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 88,
-    badge: 'RAG Specialist'
+    badge: 'Prototyper'
   },
   {
     rank: 5,
@@ -505,7 +503,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 85,
-    badge: 'Safety Pioneer'
+    badge: 'Empathy Champion'
   },
   {
     rank: 6,
@@ -516,7 +514,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 84,
-    badge: 'Token Strategist'
+    badge: 'User Researcher'
   },
   {
     rank: 7,
@@ -527,7 +525,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
     levelsCompleted: 1,
     quizzesPassed: 1,
     attendanceRate: 80,
-    badge: 'Agent Orchestrator'
+    badge: 'Maker'
   }
 ];
 
@@ -535,63 +533,63 @@ export const INITIAL_ATTENDANCE_RECORDS: AttendanceRecord[] = [
   {
     id: 'att-1',
     date: 'Nov 02, 2026',
-    sessionTitle: 'Cohort Onboarding & AI Academy Welcome Session',
+    sessionTitle: 'Orientation & Team Formation Workshop',
     status: 'present',
-    time: '06:00 PM - 07:30 PM EST',
+    time: '06:00 PM - 07:30 PM IST',
     verificationCode: 'AIW-ONB-782'
   },
   {
     id: 'att-2',
     date: 'Nov 05, 2026',
-    sessionTitle: 'Masterclass 1.1: The AI PM Mindset & Probabilistic Thinking',
+    sessionTitle: 'Module 1 Masterclass: The Product Mindset',
     status: 'present',
-    time: '06:00 PM - 07:15 PM EST',
+    time: '06:00 PM - 07:15 PM IST',
     verificationCode: 'AIW-M11-904'
   },
   {
     id: 'att-3',
     date: 'Nov 09, 2026',
-    sessionTitle: 'Masterclass 1.2: Deconstructing Enterprise Foundation Models',
+    sessionTitle: 'Teardown: From a Person\'s Need to a Launch',
     status: 'present',
-    time: '06:00 PM - 07:30 PM EST',
+    time: '06:00 PM - 07:30 PM IST',
     verificationCode: 'AIW-M12-311'
   },
   {
     id: 'att-4',
     date: 'Nov 12, 2026',
-    sessionTitle: 'Office Hours & Live Architecture Teardown with Dr. Sterling',
+    sessionTitle: 'Office Hours & Problem Statement Review with Priya Sharma',
     status: 'present',
-    time: '05:00 PM - 06:00 PM EST',
+    time: '05:00 PM - 06:00 PM IST',
     verificationCode: 'AIW-OH1-445'
   },
   {
     id: 'att-5',
     date: 'Nov 16, 2026',
-    sessionTitle: 'Level 01 Review & Interactive Q&A Clinic',
+    sessionTitle: 'Module 1 Q&A Clinic & Written Document Guidance',
     status: 'upcoming',
-    time: '06:00 PM - 07:00 PM EST'
+    time: '06:00 PM - 07:00 PM IST'
   }
 ];
 
 export const FAQS = [
   {
-    question: 'How is AI Product Wizardry different from generic AI courses?',
-    answer: 'Unlike high-level overviews or pure coding bootcamps, AI Product Wizardry is engineered specifically for product leaders, technical PMs, and senior designers. We focus on the product layer: latency vs. cost trade-offs, probabilistic UX patterns, evaluation metrics (LLM-as-a-Judge), guardrails, and enterprise deployment economics.'
+    question: 'Who is AI Product Wizardry designed for?',
+    answer: 'It is built specifically for undergraduate students and aspiring makers who love to build things. It teaches the half of tech that most classrooms skip: choosing the right problem, shaping an idea people want, and carrying it from a sketch to a launch.'
   },
   {
-    question: 'What is the key difference between the Online and Offline learning modes?',
-    answer: 'Both modes follow our rigorous 12-level curriculum and structured reading materials. The Online mode includes live virtual sessions, on-demand recorded masterclasses, and digital attendance tracking. The Offline mode is an immersive, classroom-based cohort experience held in modern physical lecture halls with hands-on faculty clinics, in-person whiteboarding, and direct face-to-face peer collaboration.'
+    question: 'How is the program structured across the 6 months?',
+    answer: 'The program spans 6 months across 12 modules (2 modules a month). Module 0 sets expectations. Every module after it ends with a written assignment, followed by a live jury presentation where you defend your thinking.'
   },
   {
-    question: 'Do I need a computer science degree or deep coding experience to succeed?',
-    answer: 'No coding background is strictly required, though familiarity with basic software development life cycles and API concepts will help. We provide conceptual architectures, intuitive visual simulations, and step-by-step frameworks that empower you to lead technical AI teams with deep confidence.'
+    question: 'What is the difference between the Online and Offline learning modes?',
+    answer: 'Both modes cover the identical 12 modules and assignments. Online students join interactive live webinars, review on-demand video masterclasses, and track attendance digitally. Offline students attend in-person classroom labs, physical whiteboarding sessions, and hallway usability testing at the Innovation Campus.'
   },
   {
-    question: 'How does the progressive level-unlocking system work?',
-    answer: 'The program is designed as a mastery-based progression across 12 levels. In this prototype, Level 01 is unlocked for comprehensive exploration, while Levels 02 through 12 demonstrate the progressive unlocking pathway as students complete prerequisite readings, quizzes, and live workshops.'
+    question: 'What are the certificate requirements?',
+    answer: 'You earn your certificate by scoring above 70% across assignments (50%) and the live capstone jury defense (30%), alongside content and quiz checks (20%). Offline batches also require 80% attendance and 80% MCQ completion.'
   },
   {
-    question: 'What happens after I complete my simulated enrollment?',
-    answer: 'Upon completing your simulated payment on the checkout page, you will be directed to select your preferred learning mode (Online or Offline). You will immediately gain access to your personalized learning dashboard with your profile, Level 01 curriculum, upcoming class registration, and leaderboard.'
+    question: 'What is the tuition fee?',
+    answer: 'The program fee is ₹11,000 from Batch 2 onwards. It is 100% free for this batch under the Fellowship initiative.'
   }
 ];

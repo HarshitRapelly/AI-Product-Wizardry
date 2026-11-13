@@ -7,41 +7,41 @@ import {
   ArrowRight, 
   Download, 
   CheckCircle2, 
-  ShieldCheck, 
-  Layers, 
   BookOpen, 
-  Video, 
   Award, 
   Globe, 
   MapPin, 
   ChevronDown, 
   ChevronUp, 
   Lock, 
-  Compass, 
-  Cpu, 
-  Terminal, 
-  Database, 
-  TrendingUp, 
-  Building2, 
   Users, 
   Zap,
   Clock,
-  Briefcase
+  Briefcase,
+  Rocket,
+  Lightbulb,
+  Search,
+  Check,
+  FileText,
+  Calendar,
+  Smartphone,
+  HelpCircle,
+  ShieldCheck
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
-  const [selectedLevelPreview, setSelectedLevelPreview] = useState<number>(1);
+  const [selectedModulePreview, setSelectedModulePreview] = useState<number>(2); // Default to Module 1
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
   };
 
-  const activeLevel = COURSE_LEVELS.find(l => l.id === selectedLevelPreview) || COURSE_LEVELS[0];
+  const activeModule = COURSE_LEVELS.find(l => l.id === selectedModulePreview) || COURSE_LEVELS[1];
 
   return (
     <PublicLayout>
-      {/* 1. HERO SECTION */}
+      {/* 1. HERO SECTION (Undergraduates / Where ideas become products people love) */}
       <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28 bg-gradient-to-b from-surface via-background to-background border-b border-border">
         {/* Subtle background grid pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f01a_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f01a_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
@@ -51,146 +51,122 @@ export const LandingPage: React.FC = () => {
             
             {/* Left Column: Hero Copy */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-secondary">
-                <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-                <span>The Executive EdTech Academy for AI Product Leaders</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-secondary">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-primary uppercase tracking-wider">FOR UNDERGRADUATES • POWERED BY NXTWAVE</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-primary tracking-tight leading-[1.12]">
-                Architect, Evaluate & Scale <br />
-                <span className="text-accent">AI-Native Products</span>
+                Where ideas become <br />
+                <span className="text-accent">products people love.</span>
               </h1>
 
               <p className="text-base sm:text-lg text-text-muted leading-relaxed max-w-2xl font-normal">
-                Transition from deterministic software to probabilistic intelligence. A rigorous, 12-level executive curriculum covering LLM architectures, hybrid RAG systems, token economics, and empirical LLM-as-a-Judge evaluation frameworks.
+                Six months of stories, building and teamwork to learn the magic behind every app you can't put down. Made for students who like to make things.
               </p>
 
-              {/* CTAs */}
+              {/* CTAs: Register is the primary action! */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
                 <Link
                   to="/register"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-semibold shadow-premium transition-all transform hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-bold shadow-premium transition-all transform hover:-translate-y-0.5"
                 >
-                  <span>Enroll Now</span>
+                  <span>Register for Batch 1 (Free)</span>
                   <ArrowRight className="w-5 h-5" />
                 </Link>
 
                 <a
-                  href="/assets/ai-product-wizardry-brochure.pdf"
-                  download="ai-product-wizardry-brochure.pdf"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-surface hover:bg-slate-50 text-secondary border border-border text-base font-semibold transition-all shadow-subtle hover:border-slate-300"
+                  href="#overview"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-surface hover:bg-slate-50 text-secondary border border-border text-base font-semibold transition-all shadow-subtle hover:border-slate-300"
                 >
-                  <Download className="w-5 h-5 text-accent" />
-                  <span>Download Brochure</span>
+                  <span>Explore Program</span>
                 </a>
               </div>
 
-              {/* Trust Indicators */}
-              <div className="pt-6 border-t border-border/80 flex flex-wrap items-center gap-y-3 gap-x-8 text-xs font-medium text-text-muted">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>12-Level Mastery Pathway</span>
+              {/* 3 Metric Badges from Page 1 of PDF */}
+              <div className="pt-6 border-t border-border/80 grid grid-cols-3 gap-3 max-w-xl">
+                <div className="p-3 rounded-xl bg-surface border border-border text-left shadow-subtle">
+                  <span className="text-xl sm:text-2xl font-extrabold text-primary block">6</span>
+                  <span className="text-[11px] font-semibold text-text-muted block leading-tight">months of building</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Online & Offline Campus Cohorts</span>
+                <div className="p-3 rounded-xl bg-surface border border-border text-left shadow-subtle">
+                  <span className="text-xl sm:text-2xl font-extrabold text-accent block">12</span>
+                  <span className="text-[11px] font-semibold text-text-muted block leading-tight">modules, idea to launch</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Empirical Evaluation Sandbox</span>
+                <div className="p-3 rounded-xl bg-surface border border-border text-left shadow-subtle">
+                  <span className="text-xl sm:text-2xl font-extrabold text-emerald-600 block">3–4</span>
+                  <span className="text-[11px] font-semibold text-text-muted block leading-tight">hours a week, steady</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Premium AI Architectural Visual */}
+            {/* Right Column: Creative EdTech Visual (IDEA · BUILD · LAUNCH - Replaces technical telemetry) */}
             <div className="lg:col-span-5">
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 {/* Glow backdrop */}
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-accent/20 to-blue-300/20 blur-xl opacity-60"></div>
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-accent/20 to-emerald-400/20 blur-xl opacity-60"></div>
                 
-                {/* Elevated Corporate Card */}
-                <div className="relative bg-surface rounded-2xl border border-border shadow-elevated p-6 space-y-5">
+                {/* Elevated EdTech Product Visual Card */}
+                <div className="relative bg-surface rounded-3xl border border-border shadow-elevated p-6 sm:p-8 space-y-6 text-left">
+                  
+                  {/* Top Bar with Badge */}
                   <div className="flex items-center justify-between pb-4 border-b border-border">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-3 h-3 rounded-full bg-rose-500/80"></div>
-                      <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
-                      <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-                      <span className="text-xs font-semibold text-text-muted ml-2">Telemetry Monitor • Level 01</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-sm">
+                        🧙‍♂️
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-primary block">Product Wizardry Pathway</span>
+                        <span className="text-[10px] text-text-muted">Idea · Build · Launch</span>
+                      </div>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
-                      LIVE BENCHMARK
+                      FREE BATCH 1
                     </span>
                   </div>
 
-                  {/* Telemetry Metric Cards */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-xl bg-slate-50 border border-border">
-                      <span className="text-[11px] font-semibold text-text-muted uppercase">Groundedness Score</span>
-                      <div className="mt-1 flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-primary">0.962</span>
-                        <span className="text-xs text-emerald-600 font-semibold">+4.8%</span>
+                  {/* 3 Step Interactive Visual Cards */}
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-4 transition-transform hover:scale-[1.01]">
+                      <div className="w-12 h-12 rounded-xl bg-amber-400 text-slate-900 flex items-center justify-center font-extrabold flex-shrink-0 shadow-subtle">
+                        <Lightbulb className="w-6 h-6" />
                       </div>
-                      <span className="text-[10px] text-text-muted">Target threshold &gt; 0.90</span>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Step 1 • Idea</span>
+                        <h4 className="font-bold text-sm text-slate-900">Spot a Real Problem</h4>
+                        <p className="text-xs text-amber-900/80 mt-0.5">Start from a person's need, not an imaginary feature.</p>
+                      </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-slate-50 border border-border">
-                      <span className="text-[11px] font-semibold text-text-muted uppercase">Latency (TTFT)</span>
-                      <div className="mt-1 flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-primary">240<span className="text-sm font-normal text-text-muted">ms</span></span>
-                        <span className="text-xs text-blue-600 font-semibold">-40ms</span>
+                    <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center gap-4 transition-transform hover:scale-[1.01]">
+                      <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-extrabold flex-shrink-0 shadow-subtle">
+                        <Rocket className="w-6 h-6" />
                       </div>
-                      <span className="text-[10px] text-text-muted">Cached semantic route</span>
-                    </div>
-                  </div>
-
-                  {/* Probability Distribution Visualizer */}
-                  <div className="p-4 rounded-xl bg-slate-900 text-white space-y-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-medium">Model Output Distribution</span>
-                      <span className="text-accent text-[11px] font-mono">temp=0.2 • top_p=0.9</span>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">Step 2 • Build</span>
+                        <h4 className="font-bold text-sm text-slate-900">Make the First Version</h4>
+                        <p className="text-xs text-blue-900/80 mt-0.5">Prototype fast, test with real users, and iterate the UX.</p>
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                          <span>Verified Citation (RAG)</span>
-                          <span className="text-emerald-400">92.4%</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div className="bg-emerald-500 h-full rounded-full" style={{ width: '92.4%' }}></div>
-                        </div>
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center gap-4 transition-transform hover:scale-[1.01]">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-extrabold flex-shrink-0 shadow-subtle">
+                        <CheckCircle2 className="w-6 h-6" />
                       </div>
-
                       <div>
-                        <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                          <span>Refusal Trajectory</span>
-                          <span className="text-blue-400">7.1%</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div className="bg-accent h-full rounded-full" style={{ width: '7.1%' }}></div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
-                          <span>Hallucination Margin</span>
-                          <span className="text-slate-500">&lt; 0.5%</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div className="bg-rose-500 h-full rounded-full" style={{ width: '0.5%' }}></div>
-                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Step 3 • Launch</span>
+                        <h4 className="font-bold text-sm text-slate-900">Defend Live & Launch</h4>
+                        <p className="text-xs text-emerald-900/80 mt-0.5">Pitch to an industry jury and earn your portfolio credential.</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Level 01 Status Footer */}
+                  {/* Card Bottom CTA */}
                   <div className="pt-2 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                      <span className="font-semibold text-secondary">Level 01 Active in Sandbox</span>
-                    </div>
-                    <Link to="/register" className="text-accent font-semibold hover:underline">
-                      Test Live Module →
+                    <span className="text-text-muted">Batch 1 admissions open</span>
+                    <Link to="/register" className="font-bold text-accent hover:underline flex items-center gap-1">
+                      <span>Begin Onboarding</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -201,124 +177,252 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. PROGRAM OVERVIEW SECTION */}
+      {/* 2. PROGRAM OVERVIEW (From Page 1 of PDF) */}
       <section id="overview" className="py-20 bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-3 py-1 rounded-full">
-              Executive Curriculum
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+          
+          {/* Main Statement from PDF */}
+          <div className="max-w-3xl mb-16">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+              The Philosophy
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
-              What is AI Product Wizardry?
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight leading-tight">
+              Great code builds the product. <br />
+              <span className="text-accent">Product thinking decides if anyone keeps it.</span>
             </h2>
-            <p className="text-base text-text-muted mt-4 leading-relaxed">
-              AI Product Wizardry is an advanced EdTech program developed to close the chasm between raw artificial intelligence research and commercially viable, resilient software products.
+            <p className="text-base sm:text-lg text-text-muted mt-4 leading-relaxed font-normal">
+              AI Product Wizardry teaches the half of tech that most classrooms skip: choosing the right problem, shaping an idea people want, and carrying it from a sketch to a launch. Story-led, hands-on, and made for students who like to make things.
             </p>
           </div>
 
-          {/* 3 Core Value Props */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-2xl bg-background border border-border shadow-card hover:border-slate-300 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-6">
-                <Compass className="w-6 h-6" />
+          {/* Three Questions Every Product Wizard Learns to Ask (PDF Page 1) */}
+          <div className="mb-14">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-secondary mb-6">
+              Three Questions Every Product Wizard Learns to Ask
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Question 1 */}
+              <div className="p-6 rounded-2xl bg-background border border-border shadow-card hover:border-accent transition-all">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 text-accent flex items-center justify-center mb-5 font-extrabold text-lg">
+                  <Search className="w-6 h-6" />
+                </div>
+                <h4 className="text-lg font-bold text-primary mb-2">A real problem?</h4>
+                <p className="text-sm text-text-muted leading-relaxed">
+                  Start from a person's need, not a feature. Discover where real users experience friction before writing code.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-primary mb-3">Probabilistic Mindset</h3>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Learn how to author PRDs for stochastic systems where outputs cannot be guaranteed. Define statistical boundaries, fail-safes, and continuous human-in-the-loop controls.
+
+              {/* Question 2 */}
+              <div className="p-6 rounded-2xl bg-background border border-border shadow-card hover:border-accent transition-all">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-5 font-extrabold text-lg">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h4 className="text-lg font-bold text-primary mb-2">Will people want it?</h4>
+                <p className="text-sm text-text-muted leading-relaxed">
+                  Listen, test, and let users surprise you. Validate assumptions early through quick prototypes and genuine feedback.
+                </p>
+              </div>
+
+              {/* Question 3 */}
+              <div className="p-6 rounded-2xl bg-background border border-border shadow-card hover:border-accent transition-all">
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-5 font-extrabold text-lg">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <h4 className="text-lg font-bold text-primary mb-2">Will they return?</h4>
+                <p className="text-sm text-text-muted leading-relaxed">
+                  Earn a permanent place on the home screen. Build retention loops that keep people coming back week after week.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Three Pedagogical Pillars from PDF Page 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-border">
+            <div className="p-6 rounded-2xl bg-slate-50 border border-border">
+              <span className="text-xs font-bold text-accent uppercase tracking-wider block mb-1">Pillar 1</span>
+              <h4 className="font-bold text-base text-primary mb-2">Stories First</h4>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Every topic opens with a real product story in plain words. Concepts come second, building always.
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl bg-background border border-border shadow-card hover:border-slate-300 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mb-6">
-                <Database className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-primary mb-3">Architectural Mastery</h3>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Dissect context windows, token economics, hybrid vector search (RAG), and fine-tuning trade-offs. Confidently lead architecture reviews with Principal AI Researchers.
+            <div className="p-6 rounded-2xl bg-slate-50 border border-border">
+              <span className="text-xs font-bold text-accent uppercase tracking-wider block mb-1">Pillar 2</span>
+              <h4 className="font-bold text-base text-primary mb-2">Learn by Building</h4>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Work in a team to find a problem, shape the idea, build it and test it with real users, end to end.
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl bg-background border border-border shadow-card hover:border-slate-300 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-6">
-                <Award className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-primary mb-3">Empirical Evaluation</h3>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Replace subjective "prompt vibes" with automated LLM-as-a-Judge benchmark suites, G-Eval metrics, and CI regression pipelines before launching updates to customers.
+            <div className="p-6 rounded-2xl bg-slate-50 border border-border">
+              <span className="text-xs font-bold text-accent uppercase tracking-wider block mb-1">Pillar 3</span>
+              <h4 className="font-bold text-base text-primary mb-2">Hear from Makers</h4>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Guest lectures from people who ship products, held now and then, mostly on weekends.
               </p>
             </div>
           </div>
 
-          {/* Target Audience Bar */}
-          <div className="mt-16 p-8 rounded-2xl bg-slate-900 text-white shadow-premium">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center md:text-left divide-y md:divide-y-0 md:divide-x divide-slate-800">
-              <div className="pt-4 md:pt-0 md:pr-4">
-                <div className="flex items-center justify-center md:justify-start gap-2 text-accent mb-1">
-                  <Briefcase className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Target Role</span>
-                </div>
-                <h4 className="font-bold text-base text-white">Product Managers</h4>
-                <p className="text-xs text-slate-400 mt-1">SaaS & Enterprise PMs moving to AI-native products.</p>
-              </div>
-
-              <div className="pt-4 md:pt-0 md:px-4">
-                <div className="flex items-center justify-center md:justify-start gap-2 text-emerald-400 mb-1">
-                  <Cpu className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Target Role</span>
-                </div>
-                <h4 className="font-bold text-base text-white">Tech Leads & Architects</h4>
-                <p className="text-xs text-slate-400 mt-1">Engineers architecting enterprise AI applications.</p>
-              </div>
-
-              <div className="pt-4 md:pt-0 md:px-4">
-                <div className="flex items-center justify-center md:justify-start gap-2 text-blue-400 mb-1">
-                  <Zap className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Target Role</span>
-                </div>
-                <h4 className="font-bold text-base text-white">Startup Founders</h4>
-                <p className="text-xs text-slate-400 mt-1">Entrepreneurs building 0-to-1 generative AI businesses.</p>
-              </div>
-
-              <div className="pt-4 md:pt-0 md:pl-4">
-                <div className="flex items-center justify-center md:justify-start gap-2 text-amber-400 mb-1">
-                  <Building2 className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Target Role</span>
-                </div>
-                <h4 className="font-bold text-base text-white">Executive Leaders</h4>
-                <p className="text-xs text-slate-400 mt-1">VPs & C-suite overseeing AI governance & budgets.</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* 3. COURSE HIGHLIGHTS & 12 LEVELS OVERVIEW */}
-      <section id="curriculum" className="py-20 bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-3 py-1 rounded-full">
-              Syllabus Architecture
+      {/* 3. YOUR JOURNEY: From a spark of curiosity to something you built yourself (PDF Page 2) */}
+      <section id="journey" className="py-20 bg-background border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+          
+          <div className="max-w-3xl mb-14">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+              Your Journey
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
-              The 12-Level Mastery Pathway
+              From a spark of curiosity to something you built yourself.
             </h2>
-            <p className="text-base text-text-muted mt-4 leading-relaxed">
-              Explore the progressive learning progression. In this prototype, <span className="font-bold text-text">Level 01</span> is fully unlocked for hands-on reading, quizzes, and live workshops. Levels 02 through 12 demonstrate progressive locking.
+            <p className="text-base text-text-muted mt-3 leading-relaxed">
+              Twelve modules over six months. Module 0 sets expectations; every module after it ends with an assignment: a written document first, then a jury presentation where you defend your thinking.
             </p>
           </div>
 
-          {/* 12 Level Grid */}
+          {/* 6 Journey Milestones */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="p-6 rounded-2xl bg-surface border border-border shadow-card space-y-2">
+              <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</div>
+              <h4 className="font-bold text-base text-primary">Spot a problem</h4>
+              <p className="text-xs text-text-muted leading-relaxed">Notice what frustrates real people in their everyday routines.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-surface border border-border shadow-card space-y-2">
+              <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</div>
+              <h4 className="font-bold text-base text-primary">Shape the idea</h4>
+              <p className="text-xs text-text-muted leading-relaxed">Turn a hunch into a clear plan and validated value proposition.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-surface border border-border shadow-card space-y-2">
+              <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">3</div>
+              <h4 className="font-bold text-base text-primary">Build it</h4>
+              <p className="text-xs text-text-muted leading-relaxed">Make a first working version with your team.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-surface border border-border shadow-card space-y-2">
+              <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">4</div>
+              <h4 className="font-bold text-base text-primary">Test with users</h4>
+              <p className="text-xs text-text-muted leading-relaxed">Learn from real feedback and iterate your product experience.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-surface border border-border shadow-card space-y-2">
+              <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">5</div>
+              <h4 className="font-bold text-base text-primary">Pitch to the jury</h4>
+              <p className="text-xs text-text-muted leading-relaxed">Defend your thinking live before practicing product leaders.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-surface border border-accent shadow-premium space-y-2 ring-1 ring-accent/30">
+              <div className="w-8 h-8 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center">6</div>
+              <h4 className="font-bold text-base text-primary">Earn your certificate</h4>
+              <p className="text-xs text-text-muted leading-relaxed">Graduate with a defensible, real-world portfolio to show for it.</p>
+            </div>
+          </div>
+
+          {/* Doors a Product Mindset Can Open & Evaluation Framework */}
+          <div className="mt-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* Career Doors (7 Cols) */}
+            <div className="lg:col-span-7 bg-surface p-6 sm:p-8 rounded-2xl border border-border shadow-card space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-secondary">
+                Doors a Product Mindset Can Open
+              </span>
+              <h3 className="text-xl font-bold text-primary">Career Trajectories for Product Wizards</h3>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Whether you aspire to build your own startup or lead technical teams at high-growth companies:
+              </p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                <div className="p-3 rounded-xl bg-slate-50 border border-border text-center">
+                  <span className="font-bold text-xs text-primary block">Product Manager</span>
+                  <span className="text-[10px] text-text-muted">Strategy & Roadmap</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-border text-center">
+                  <span className="font-bold text-xs text-primary block">Product Engineer</span>
+                  <span className="text-[10px] text-text-muted">Code + User Empathy</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-border text-center">
+                  <span className="font-bold text-xs text-primary block">Founder</span>
+                  <span className="text-[10px] text-text-muted">0-to-1 Startups</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-border text-center">
+                  <span className="font-bold text-xs text-primary block">Product Analyst</span>
+                  <span className="text-[10px] text-text-muted">Metrics & Retention</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-border text-center sm:col-span-2">
+                  <span className="font-bold text-xs text-primary block">Forward-Deployed Engineer</span>
+                  <span className="text-[10px] text-text-muted">Customer Implementation</span>
+                </div>
+              </div>
+            </div>
+
+            {/* How You Earn the Certificate (5 Cols) */}
+            <div className="lg:col-span-5 bg-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-premium space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-accent">
+                Certification Standards
+              </span>
+              <h3 className="text-lg font-bold text-white">How You Earn the Certificate</h3>
+              
+              <div className="grid grid-cols-3 gap-2 text-center pt-2">
+                <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700">
+                  <span className="text-xl font-extrabold text-accent block">50%</span>
+                  <span className="text-[10px] text-slate-300 font-medium">Assignments</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700">
+                  <span className="text-xl font-extrabold text-emerald-400 block">30%</span>
+                  <span className="text-[10px] text-slate-300 font-medium">Capstone</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700">
+                  <span className="text-xl font-extrabold text-amber-400 block">20%</span>
+                  <span className="text-[10px] text-slate-300 font-medium">Content</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed pt-2">
+                Score above 70% in assignments and the capstone. Offline batches also need 80% attendance and 80% of the MCQs.
+              </p>
+
+              <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                <span>The certificate improves your profile; it does not guarantee a job.</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* 4. THE 12 MODULES CURRICULUM (Page 3 of PDF) */}
+      <section id="curriculum" className="py-20 bg-surface border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+          
+          <div className="max-w-3xl mb-14">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+              The Curriculum
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
+              Twelve modules. One idea, taken from first spark to launch.
+            </h2>
+            <p className="text-base text-text-muted mt-3 leading-relaxed">
+              Two modules a month for six months. Module 0 sets expectations; every module after it ends with an assignment: a written document, then a jury presentation.
+            </p>
+          </div>
+
+          {/* 12 Modules Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {COURSE_LEVELS.map((level) => {
               const isUnlocked = level.status === 'unlocked';
-              const isSelected = selectedLevelPreview === level.id;
+              const isSelected = selectedModulePreview === level.id;
 
               return (
                 <div
                   key={level.id}
-                  onClick={() => setSelectedLevelPreview(level.id)}
+                  onClick={() => setSelectedModulePreview(level.id)}
                   className={`
-                    p-5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between
+                    p-5 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between
                     ${isUnlocked 
                       ? (isSelected 
                           ? 'bg-surface border-accent shadow-premium ring-2 ring-accent/20' 
@@ -329,7 +433,6 @@ export const LandingPage: React.FC = () => {
                   `}
                 >
                   <div>
-                    {/* Level Number & Status Badge */}
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-bold text-secondary uppercase tracking-wider">
                         {level.levelNumber}
@@ -337,7 +440,7 @@ export const LandingPage: React.FC = () => {
                       {isUnlocked ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3" />
-                          <span>UNLOCKED</span>
+                          <span>ACTIVE</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[11px] font-semibold">
@@ -347,7 +450,7 @@ export const LandingPage: React.FC = () => {
                       )}
                     </div>
 
-                    <h4 className="font-bold text-base text-primary mb-1 line-clamp-1">
+                    <h4 className="font-bold text-base text-primary mb-1 line-clamp-2">
                       {level.title}
                     </h4>
                     <p className="text-xs text-text-muted line-clamp-2 leading-relaxed">
@@ -359,8 +462,8 @@ export const LandingPage: React.FC = () => {
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {level.estimatedHours} hrs
                     </span>
-                    <span className="font-medium text-secondary">
-                      {isUnlocked ? 'Explore Level 01 →' : 'Unlocks in Progression'}
+                    <span className="font-semibold text-secondary">
+                      {isUnlocked ? 'Preview Module →' : 'Unlocks in Progression'}
                     </span>
                   </div>
                 </div>
@@ -368,213 +471,165 @@ export const LandingPage: React.FC = () => {
             })}
           </div>
 
-          {/* Selected Level Deep-Dive Preview */}
-          <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-surface border border-border shadow-card">
+          {/* Selected Module Spotlight Card */}
+          <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-background border border-border shadow-card">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-border">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-accent uppercase tracking-wider">{activeLevel.levelNumber} Spotlight</span>
-                  {activeLevel.status === 'unlocked' ? (
+                  <span className="text-xs font-bold text-accent uppercase tracking-wider">{activeModule.levelNumber} Spotlight</span>
+                  {activeModule.status === 'unlocked' ? (
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                      Accessible in Prototype
+                      Accessible in Portal
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
-                      Scheduled Cohort Progression
+                      Cohort Progression
                     </span>
                   )}
                 </div>
-                <h3 className="text-2xl font-bold text-primary">{activeLevel.title}</h3>
-                <p className="text-sm text-text-muted mt-1">{activeLevel.subtitle}</p>
+                <h3 className="text-2xl font-bold text-primary">{activeModule.title}</h3>
+                <p className="text-sm text-text-muted mt-1">{activeModule.subtitle}</p>
               </div>
 
-              {activeLevel.status === 'unlocked' ? (
-                <Link
-                  to="/register"
-                  className="px-6 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold transition-colors flex items-center gap-2"
-                >
-                  <span>Start Level 01 Now</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              ) : (
-                <div className="px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-secondary flex items-center gap-2">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Prerequisite: Complete Prior Levels</span>
-                </div>
-              )}
+              <Link
+                to="/register"
+                className="px-6 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-colors flex items-center gap-2"
+              >
+                <span>Register to Access Modules</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-secondary uppercase tracking-wider">Level Description</span>
-                <p className="text-sm text-text-muted leading-relaxed">{activeLevel.description}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 text-xs">
+              <div className="space-y-1.5">
+                <span className="font-bold uppercase tracking-wider text-secondary">Overview</span>
+                <p className="text-text-muted leading-relaxed">{activeModule.description}</p>
               </div>
 
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-secondary uppercase tracking-wider">Competencies Acquired</span>
+              <div className="space-y-1.5">
+                <span className="font-bold uppercase tracking-wider text-secondary">Core Skills Acquired</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {activeLevel.skills.map((skill, i) => (
-                    <span key={i} className="px-2.5 py-1 rounded-md bg-slate-100 text-secondary text-xs font-medium border border-slate-200">
+                  {activeModule.skills.map((skill, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded bg-surface text-secondary font-medium border border-border">
                       {skill}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-secondary uppercase tracking-wider">Included Learning Modules</span>
-                <ul className="text-sm text-text-muted space-y-1.5">
-                  <li className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-accent" />
-                    <span>Comprehensive Reading Handbook</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Video className="w-4 h-4 text-blue-500" />
-                    <span>Recorded Video Masterclasses (Online)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-emerald-500" />
-                    <span>Interactive Practice Quiz & Scoring</span>
-                  </li>
+              <div className="space-y-1.5">
+                <span className="font-bold uppercase tracking-wider text-secondary">Deliverables</span>
+                <ul className="text-text-muted space-y-1">
+                  <li>• Written assignment document</li>
+                  <li>• Live jury presentation defense</li>
+                  <li>• MCQ content assessment</li>
                 </ul>
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
-      {/* 4. WHY CHOOSE AI PRODUCT WIZARDRY & LEARNING JOURNEY */}
-      <section id="why-us" className="py-20 bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-3 py-1 rounded-full">
-              Why We Are Different
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
-              Built for Real-World Product Impact
-            </h2>
-            <p className="text-base text-text-muted mt-4 leading-relaxed">
-              Designed by practitioners who have launched models to tens of millions of enterprise users.
-            </p>
-          </div>
+      {/* 5. NICELY INTEGRATED BROCHURE DOWNLOAD SECTION (Requirement 1) */}
+      <section id="brochure" className="py-20 bg-background border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+          
+          <div className="p-8 sm:p-12 rounded-3xl bg-surface border border-border shadow-elevated relative overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              
+              {/* Left Column: Text & Download Action */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-accent text-xs font-bold border border-blue-200">
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Official Syllabus & Guide</span>
+                </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-2xl bg-background border border-border">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-accent flex items-center justify-center mb-4">
-                <Globe className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-lg text-primary mb-2">Dual Modality Flexibility</h4>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Choose between live virtual cohorts with recording replays or immersive physical campus workshops.
-              </p>
-            </div>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                  Download the Full Program Brochure
+                </h3>
 
-            <div className="p-6 rounded-2xl bg-background border border-border">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-lg text-primary mb-2">Empirical Rigor</h4>
-              <p className="text-sm text-text-muted leading-relaxed">
-                No superficial prompt tricks. Master quantitative benchmark evals, test suites, and regression tracking.
-              </p>
-            </div>
+                <p className="text-sm text-text-muted leading-relaxed">
+                  Get a complete copy of the 12-module syllabus, course policies, jury presentation schedule, certificate criteria, and faculty biographies in a high-resolution PDF document.
+                </p>
 
-            <div className="p-6 rounded-2xl bg-background border border-border">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mb-4">
-                <Users className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-lg text-primary mb-2">Elite Peer Cohort</h4>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Collaborate with senior PMs, staff architects, and venture-backed founders across top tech hubs.
-              </p>
-            </div>
+                <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <a
+                    href="/assets/ai-product-wizardry-brochure.pdf"
+                    download="ai-product-wizardry-brochure.pdf"
+                    className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm shadow-premium transition-all transform hover:-translate-y-0.5"
+                  >
+                    <Download className="w-4 h-4 text-white" />
+                    <span>Download Brochure (PDF)</span>
+                  </a>
 
-            <div className="p-6 rounded-2xl bg-background border border-border">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-4">
-                <Award className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-lg text-primary mb-2">Portfolio Capstone</h4>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Conclude with an executive-ready AI PRD, system architecture, and eval benchmark suite defended to industry leaders.
-              </p>
-            </div>
-          </div>
-
-          {/* 4-Step Journey */}
-          <div className="mt-16 p-8 sm:p-12 rounded-2xl bg-slate-50 border border-border">
-            <h3 className="text-xl font-bold text-primary mb-8 text-center">Your Structured Learning Journey</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-              <div className="space-y-2">
-                <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</div>
-                <h5 className="font-bold text-base text-primary">Foundations & Probabilistic UX</h5>
-                <p className="text-xs text-text-muted leading-relaxed">Dismantle deterministic assumptions; establish failure domain boundaries.</p>
+                  <span className="text-xs text-text-muted flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Official Document · Free Instant Download</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</div>
-                <h5 className="font-bold text-base text-primary">Architecture & Token Economics</h5>
-                <p className="text-xs text-text-muted leading-relaxed">Master hybrid RAG, context chunking, fine-tuning, and inference latency.</p>
+              {/* Right Column: Visual Document Badge Card */}
+              <div className="lg:col-span-4 bg-slate-50 p-6 rounded-2xl border border-border text-center space-y-3">
+                <div className="w-14 h-14 rounded-2xl bg-blue-100 text-accent flex items-center justify-center mx-auto shadow-subtle">
+                  <FileText className="w-7 h-7" />
+                </div>
+                <div>
+                  <span className="font-bold text-sm text-primary block">Curriculum Handbook</span>
+                  <span className="text-[11px] text-text-muted block">Format: PDF Document</span>
+                </div>
+                <div className="pt-2 border-t border-border text-[11px] text-secondary font-medium">
+                  <span>Batch 1 Free Fellowship Included</span>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">3</div>
-                <h5 className="font-bold text-base text-primary">Quantitative Evaluation</h5>
-                <p className="text-xs text-text-muted leading-relaxed">Deploy LLM-as-a-Judge benchmark suites and CI guardrail regression pipelines.</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="w-8 h-8 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center">4</div>
-                <h5 className="font-bold text-base text-primary">Executive Defense & Capstone</h5>
-                <p className="text-xs text-text-muted leading-relaxed">Present your comprehensive 0-to-1 AI product portfolio to venture leaders.</p>
-              </div>
             </div>
           </div>
+
         </div>
       </section>
 
-      {/* 5. DOWNLOAD BROCHURE BANNER */}
-      <section className="py-16 bg-primary text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 sm:p-10 rounded-2xl bg-slate-800/80 border border-slate-700">
-            <div className="space-y-2 max-w-2xl text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold">
-                <Download className="w-3.5 h-3.5" />
-                <span>Complete Official Syllabus PDF</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Download the Full Program Brochure
-              </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Review the comprehensive 12-level curriculum, faculty credentials, learning mode differences, capstone expectations, and corporate tuition details.
-              </p>
-            </div>
+      {/* 6. TUITION FEE & COMMITMENT (Page 2 of PDF) */}
+      <section className="py-16 bg-surface border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
+            <span>THE FEE & COMMITMENT</span>
+          </div>
+          
+          <h2 className="text-3xl font-extrabold text-primary tracking-tight">
+            ₹11,000 from Batch 2 onwards. <br />
+            <span className="text-emerald-600">100% Free for Batch 1.</span>
+          </h2>
+          
+          <p className="text-sm text-text-muted max-w-xl mx-auto leading-relaxed">
+            What we ask of you: <span className="font-bold text-primary">Show up. Light up. Keep going.</span> Commitment · Enthusiasm · Consistency across the 6-month journey.
+          </p>
 
-            <div className="flex-shrink-0">
-              <a
-                href="/assets/ai-product-wizardry-brochure.pdf"
-                download="ai-product-wizardry-brochure.pdf"
-                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-primary font-bold text-sm shadow-premium transition-all transform hover:-translate-y-0.5"
-              >
-                <Download className="w-4 h-4 text-accent" />
-                <span>Download Brochure (PDF)</span>
-              </a>
-            </div>
+          <div className="pt-2">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-bold shadow-premium transition-all transform hover:-translate-y-0.5"
+            >
+              <span>Register Now for Free Batch 1</span>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* 6. FAQS SECTION */}
-      <section id="faqs" className="py-20 bg-surface">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 7. FAQS SECTION */}
+      <section id="faqs" className="py-20 bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
           <div className="text-center mb-14">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent/10 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
               Common Inquiries
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
               Frequently Asked Questions
             </h2>
             <p className="text-base text-text-muted mt-3">
-              Everything you need to know about enrollment, curriculum structure, and modalities.
+              Everything you need to know about enrollment, assignments, and certificate requirements.
             </p>
           </div>
 
@@ -584,13 +639,13 @@ export const LandingPage: React.FC = () => {
               return (
                 <div
                   key={index}
-                  className="rounded-xl border border-border bg-background overflow-hidden transition-all"
+                  className="rounded-2xl border border-border bg-surface overflow-hidden transition-all shadow-subtle"
                 >
                   <button
                     onClick={() => toggleFaq(index)}
                     className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
                   >
-                    <span className="font-semibold text-base text-primary">
+                    <span className="font-bold text-base text-primary">
                       {faq.question}
                     </span>
                     {isOpen ? (
@@ -610,17 +665,17 @@ export const LandingPage: React.FC = () => {
             })}
           </div>
 
-          {/* Final Enroll CTA */}
+          {/* Final Register CTA */}
           <div className="mt-16 text-center">
             <Link
               to="/register"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-bold shadow-premium transition-all transform hover:-translate-y-0.5"
             >
-              <span>Enroll in AI Product Wizardry</span>
+              <span>Register for AI Product Wizardry</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
             <p className="text-xs text-text-muted mt-3">
-              Prototype enrollment • 30-day simulated satisfaction guarantee
+              Batch 1 Enrollment • 100% Free Fellowship
             </p>
           </div>
         </div>

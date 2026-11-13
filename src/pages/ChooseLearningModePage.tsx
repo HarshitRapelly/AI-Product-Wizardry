@@ -6,19 +6,12 @@ import {
   MapPin, 
   CheckCircle2, 
   ArrowRight, 
-  Sparkles, 
-  Video, 
-  BookOpen, 
-  Calendar, 
-  Users, 
-  Clock, 
-  Award 
+  Sparkles
 } from 'lucide-react';
 
 export const ChooseLearningModePage: React.FC = () => {
-  const { selectLearningMode, learningMode } = useAuthAndCourse();
+  const { selectLearningMode } = useAuthAndCourse();
   const navigate = useNavigate();
-  const [hoveredMode, setHoveredMode] = useState<'online' | 'offline' | null>(null);
 
   const handleSelectMode = (mode: 'online' | 'offline') => {
     selectLearningMode(mode);
@@ -37,32 +30,27 @@ export const ChooseLearningModePage: React.FC = () => {
         <div className="text-center mb-12">
           <Link to="/" className="inline-flex items-center gap-2 group mb-4">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-              <Sparkles className="w-5 h-5 text-blue-300" />
+              <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
             <span className="font-bold text-xl text-primary tracking-tight">AI Product Wizardry</span>
           </Link>
           <span className="block text-xs font-bold uppercase tracking-wider text-accent mb-2">
-            Step 2 of Onboarding
+            Step 2: Delivery Preference
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight">
             Select Your Learning Modality
           </h1>
           <p className="text-sm sm:text-base text-text-muted mt-3 max-w-xl mx-auto leading-relaxed">
-            Choose how you wish to experience the 12-level curriculum. You can switch between modalities anytime in your profile during this prototype demonstration.
+            Choose how you wish to experience the 12-module curriculum. You can switch between modalities in your student profile at any time.
           </p>
         </div>
 
         {/* Two Selectable Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
           
           {/* Card 1: ONLINE LEARNING */}
-          <div 
-            onMouseEnter={() => setHoveredMode('online')}
-            onMouseLeave={() => setHoveredMode(null)}
-            className="bg-surface rounded-2xl border-2 border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between text-left group"
-          >
+          <div className="bg-surface rounded-3xl border-2 border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
             <div>
-              {/* Badge & Icon */}
               <div className="flex items-center justify-between mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
                   <Globe className="w-7 h-7 text-accent" />
@@ -76,7 +64,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 Online Learning
               </h2>
               <p className="text-sm text-text-muted mb-6 leading-relaxed">
-                A flexible, digital-first learning experience engineered for working professionals. Attend live online masterclasses, review on-demand recorded sessions, study interactive reading materials, and track your attendance digitally.
+                A flexible, digital-first learning experience engineered for college students and remote learners. Attend live online masterclasses, review on-demand recorded sessions, study interactive reading handbooks, and track attendance digitally.
               </p>
 
               {/* Benefits Checklist */}
@@ -87,7 +75,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 <ul className="space-y-2.5 text-xs text-secondary font-medium">
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Attend live interactive online sessions</span>
+                    <span>Attend live interactive online Zoom masterclasses</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -95,11 +83,11 @@ export const ChooseLearningModePage: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Study structured reading handbooks</span>
+                    <span>Study story-led reading handbooks</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Attempt interactive level practice quizzes</span>
+                    <span>Attempt interactive module practice quizzes</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -123,19 +111,14 @@ export const ChooseLearningModePage: React.FC = () => {
           </div>
 
           {/* Card 2: OFFLINE LEARNING */}
-          <div 
-            onMouseEnter={() => setHoveredMode('offline')}
-            onMouseLeave={() => setHoveredMode(null)}
-            className="bg-surface rounded-2xl border-2 border-border hover:border-primary shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between text-left group"
-          >
+          <div className="bg-surface rounded-3xl border-2 border-border hover:border-primary shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
             <div>
-              {/* Badge & Icon */}
               <div className="flex items-center justify-between mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <MapPin className="w-7 h-7 text-primary" />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-300">
-                  CAMPUS COHORT
+                  CAMPUS BATCH
                 </span>
               </div>
 
@@ -143,7 +126,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 Offline Learning
               </h2>
               <p className="text-sm text-text-muted mb-6 leading-relaxed">
-                An immersive, in-person campus experience focused on face-to-face peer whiteboarding, physical faculty architecture teardowns, hands-on collaborative clinics, and interactive quizzes.
+                An immersive, in-person campus experience focused on face-to-face peer whiteboarding, physical design teardowns, hands-on collaborative clinics, and interactive classroom quizzes.
               </p>
 
               {/* Benefits Checklist */}
@@ -154,23 +137,23 @@ export const ChooseLearningModePage: React.FC = () => {
                 <ul className="space-y-2.5 text-xs text-secondary font-medium">
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Attend in-person classroom campus sessions</span>
+                    <span>Attend in-person campus seminars & labs</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Participate in live classroom clinics & whiteboarding</span>
+                    <span>Participate in live whiteboarding & design clinics</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Study structured reading handbooks</span>
+                    <span>Study story-led reading handbooks</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Attempt interactive level practice quizzes</span>
+                    <span>Attempt interactive module practice quizzes</span>
                   </li>
                   <li className="flex items-center gap-2.5 text-text-muted">
                     <span className="w-4 h-4 flex items-center justify-center text-xs font-bold">•</span>
-                    <span>Classroom-based; no recorded video replays</span>
+                    <span>Classroom-based; no video recording replays</span>
                   </li>
                 </ul>
               </div>
@@ -190,14 +173,6 @@ export const ChooseLearningModePage: React.FC = () => {
           </div>
 
         </div>
-
-        {/* Prototype Guidance Note */}
-        <div className="mt-8 text-center text-xs text-text-muted">
-          <span>Tip: You can seamlessly switch between these two modes at any time using the </span>
-          <span className="font-semibold text-primary">"Switch Cohort"</span>
-          <span> button in your dashboard header or profile page.</span>
-        </div>
-
       </div>
     </div>
   );

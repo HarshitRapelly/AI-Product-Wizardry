@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { LEVEL_1_READING, LEVEL_1_RECORDINGS, LEVEL_1_QUIZ_QUESTIONS } from '../../data/mockData';
+import { LEVEL_1_READING, LEVEL_1_QUIZ_QUESTIONS } from '../../data/mockData';
 import {
   Compass,
   BookOpen,
@@ -13,17 +13,15 @@ import {
   ArrowRight,
   ArrowLeft,
   ChevronRight,
-  Sparkles,
-  HelpCircle,
-  FileText
+  Sparkles
 } from 'lucide-react';
 
 export const OnlineLevel1: React.FC = () => {
-  const { readingCompleted, quizAttempt, watchedSessionIds } = useAuthAndCourse();
+  const { readingCompleted, quizAttempt } = useAuthAndCourse();
 
   return (
-    <PortalLayout mode="online" title="Level 01 Hub">
-      <div className="space-y-8 font-sans text-left">
+    <PortalLayout mode="online" title="Module 1 Hub">
+      <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
         
         {/* Navigation Breadcrumb */}
         <div>
@@ -32,37 +30,37 @@ export const OnlineLevel1: React.FC = () => {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to All Levels</span>
+            <span>Back to All 12 Modules</span>
           </Link>
         </div>
 
-        {/* Level 01 Header Banner */}
-        <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-subtle relative overflow-hidden">
+        {/* Module 1 Header Banner */}
+        <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-accent border border-blue-200 uppercase">
-                  Level 01 Curriculum Hub
+                  Module 1 Curriculum Hub
                 </span>
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Unlocked & Active
+                  Active
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                Foundations of AI Product Management
+                Foundations of Product Management
               </h1>
               <p className="text-sm text-text-muted leading-relaxed">
-                Transitioning from deterministic to probabilistic systems. Master the fundamental shifts in product strategy, failure domain bounding, and user expectations when building systems powered by foundation models.
+                Great code builds the product. Product thinking decides if anyone keeps it. Master the half of tech that classrooms skip: problem discovery, human need vs features, and the 3 core questions every product wizard must ask.
               </p>
             </div>
 
             {/* Completion Status Card */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-border flex items-center gap-4 flex-shrink-0">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-border flex items-center gap-4 flex-shrink-0">
               <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-lg">
                 01
               </div>
               <div className="text-xs">
-                <span className="text-text-muted block">Level 01 Status:</span>
+                <span className="text-text-muted block">Module 1 Status:</span>
                 <span className="font-bold text-sm text-primary block">
                   {readingCompleted && quizAttempt?.passed ? 'Mastery Achieved' : 'In Progress'}
                 </span>
@@ -78,7 +76,7 @@ export const OnlineLevel1: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Module 1: Reading Material */}
-          <div className="bg-surface rounded-2xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
+          <div className="bg-surface rounded-3xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-blue-50 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -103,7 +101,7 @@ export const OnlineLevel1: React.FC = () => {
                 Reading Material
               </h2>
               <p className="text-xs text-text-muted leading-relaxed mb-4">
-                Four comprehensive sections exploring deterministic vs. probabilistic logic, the 4-layer AI stack, opportunity matrices, and North Star metrics.
+                Four comprehensive sections exploring code vs. product thinking, the 3 questions every product wizard asks, and story-led learning.
               </p>
 
               <div className="space-y-1.5 text-xs text-secondary font-medium">
@@ -117,7 +115,7 @@ export const OnlineLevel1: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-                  <span>Interactive Mark as Completed</span>
+                  <span>Interactive Completion Toggle</span>
                 </div>
               </div>
             </div>
@@ -134,7 +132,7 @@ export const OnlineLevel1: React.FC = () => {
           </div>
 
           {/* Module 2: Recorded Sessions (ONLINE ONLY) */}
-          <div className="bg-surface rounded-2xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
+          <div className="bg-surface rounded-3xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -152,21 +150,21 @@ export const OnlineLevel1: React.FC = () => {
                 Recorded Sessions
               </h2>
               <p className="text-xs text-text-muted leading-relaxed mb-4">
-                In-depth video lectures from former Anthropic Research Fellows and DeepScale AI architects covering PRD teardowns and model physics.
+                Video masterclasses from Swiggy, Razorpay and venture-backed founders covering problem framing and maker stories.
               </p>
 
               <div className="space-y-1.5 text-xs text-secondary font-medium">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                  <span>Masterclass 1.1: Probabilistic Thinking</span>
+                  <span>The Product Mindset & 3 Questions</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                  <span>Masterclass 1.2: Foundation Models</span>
+                  <span>Teardown: From Need to Love</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                  <span>Case Study: Notion & Stripe LLM Rollouts</span>
+                  <span>Hear from Makers Who Ship Weekly</span>
                 </div>
               </div>
             </div>
@@ -183,7 +181,7 @@ export const OnlineLevel1: React.FC = () => {
           </div>
 
           {/* Module 3: Practice Quiz */}
-          <div className="bg-surface rounded-2xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
+          <div className="bg-surface rounded-3xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -212,7 +210,7 @@ export const OnlineLevel1: React.FC = () => {
                 Practice Quiz
               </h2>
               <p className="text-xs text-text-muted leading-relaxed mb-4">
-                Scenario-based multiple choice assessment testing PRD authoring, RAG vs. fine-tuning, latency trade-offs, and groundedness evals.
+                Scenario-based assessment testing your grasp of user friction, the 3 questions, and certification criteria.
               </p>
 
               <div className="space-y-1.5 text-xs text-secondary font-medium">
@@ -236,7 +234,7 @@ export const OnlineLevel1: React.FC = () => {
                 to="/online/level/1/quiz"
                 className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-colors shadow-subtle"
               >
-                <span>{quizAttempt ? 'Review Quiz Results' : 'Attempt Level 01 Quiz'}</span>
+                <span>{quizAttempt ? 'Review Quiz Results' : 'Attempt Module 1 Quiz'}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -244,27 +242,27 @@ export const OnlineLevel1: React.FC = () => {
 
         </div>
 
-        {/* Level 01 Learning Outcomes Card */}
-        <div className="bg-slate-50 rounded-2xl border border-border p-6 text-xs text-secondary space-y-3">
+        {/* Module 1 Learning Outcomes */}
+        <div className="bg-slate-50 rounded-3xl border border-border p-6 text-xs text-secondary space-y-3">
           <h3 className="font-bold text-sm text-primary uppercase tracking-wider">
-            Verified Level 01 Competencies
+            Verified Module 1 Competencies
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 leading-relaxed">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span>Differentiate between deterministic and probabilistic product requirements documents.</span>
+              <span>Differentiate between technical code capabilities and product adoption decisions.</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span>Evaluate cost-of-failure vs. value-of-acceleration on the AI Opportunity Matrix.</span>
+              <span>Ask the 3 core questions: A real problem? Will people want it? Will they return?</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span>Architect contextual retrieval (RAG) grounding systems to eliminate hallucinations.</span>
+              <span>Frame user frustration as the foundational anchor of product value.</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <span>Establish quantitative evaluation metrics (Faithfulness, TTFT, Acceptance Velocity).</span>
+              <span>Deliver Module 1 written assignment and prepare for the live jury defense.</span>
             </div>
           </div>
         </div>

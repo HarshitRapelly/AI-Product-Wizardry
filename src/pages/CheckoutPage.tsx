@@ -10,8 +10,6 @@ import {
   Lock, 
   Building2, 
   ArrowRight, 
-  HelpCircle,
-  FileText,
   BadgeCheck
 } from 'lucide-react';
 
@@ -19,58 +17,50 @@ export const CheckoutPage: React.FC = () => {
   const { user, processPayment } = useAuthAndCourse();
   const navigate = useNavigate();
 
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'corporate' | 'digital'>('card');
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
-  const [expiry, setExpiry] = useState('12/28');
-  const [cvc, setCvc] = useState('888');
-  const [companyName, setCompanyName] = useState('Enterprise Innovations Inc.');
-  const [poNumber, setPoNumber] = useState('PO-2026-AI-883');
-  const [billingCountry, setBillingCountry] = useState('United States');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'corporate' | 'digital'>('digital');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const studentName = user?.name || 'Alex Mercer';
-  const studentEmail = user?.email || 'alex.mercer@enterprise.ai';
+  const studentName = user?.name || 'Fellow';
+  const studentEmail = user?.email || 'student@university.edu';
 
-  const handlePayNow = (e: React.FormEvent) => {
+  const handleConfirmEnrollment = (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    const methodLabel = paymentMethod === 'card' 
-      ? 'Credit Card (Simulated)' 
-      : (paymentMethod === 'corporate' ? 'Corporate Invoicing (Simulated)' : 'Digital Wallet (Simulated)');
+    const methodLabel = 'Batch 1 Fellowship Grant (100% Waived)';
 
     setTimeout(() => {
       processPayment(methodLabel);
       setIsProcessing(false);
       navigate('/payment-success');
-    }, 700);
+    }, 500);
   };
 
   return (
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8 font-sans selection:bg-accent/15 selection:text-accent">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto text-left">
         
         {/* Header Breadcrumb & Brand */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-8 mb-8 border-b border-border gap-4">
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-              <Sparkles className="w-5 h-5 text-blue-300" />
+              <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
             <div>
               <span className="font-bold text-lg text-primary tracking-tight block">AI Product Wizardry</span>
-              <span className="text-[11px] font-medium uppercase tracking-wider text-text-muted block">Executive Enrollment Checkout</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-accent block">Batch 1 Enrollment Confirmation</span>
             </div>
           </Link>
 
           <div className="flex items-center gap-2 text-xs text-text-muted bg-surface px-3 py-1.5 rounded-lg border border-border">
             <Lock className="w-3.5 h-3.5 text-emerald-600" />
-            <span>256-Bit SSL Encrypted Simulated Checkout</span>
+            <span>Official Academic Admissions Portal</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Payment Form (7 Cols) */}
+          {/* Left Column: Enrollment Form (7 Cols) */}
           <div className="lg:col-span-7 space-y-6">
             
             {/* Student Verification Details Card */}
@@ -91,181 +81,43 @@ export const CheckoutPage: React.FC = () => {
                   <p className="font-bold text-sm text-primary mt-0.5">{studentName}</p>
                 </div>
                 <div>
-                  <span className="text-text-muted">Academic Email</span>
+                  <span className="text-text-muted">Registered Email</span>
                   <p className="font-bold text-sm text-primary mt-0.5">{studentEmail}</p>
                 </div>
               </div>
             </div>
 
-            {/* Payment Method Selection */}
-            <div className="bg-surface rounded-2xl border border-border p-6 shadow-subtle">
-              <div className="pb-4 border-b border-border mb-6">
-                <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                  2. Select Payment Method
+            {/* Fellowship Grant Details */}
+            <div className="bg-surface rounded-2xl border border-border p-6 shadow-subtle space-y-4">
+              <div className="pb-4 border-b border-border">
+                <span className="text-xs font-bold uppercase tracking-wider text-secondary block">
+                  2. Batch 1 Fellowship Grant
                 </span>
                 <p className="text-xs text-text-muted mt-1">
-                  Prototype demonstration: No actual financial charge will occur.
+                  Tuition of ₹11,000 is 100% sponsored for admitted Batch 1 undergraduate fellows.
                 </p>
               </div>
 
-              {/* Method Tabs */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3.5 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${
-                    paymentMethod === 'card'
-                      ? 'border-accent bg-blue-50/50 shadow-subtle text-primary'
-                      : 'border-border hover:bg-slate-50 text-text-muted'
-                  }`}
-                >
-                  <CreditCard className={`w-5 h-5 ${paymentMethod === 'card' ? 'text-accent' : 'text-text-muted'}`} />
-                  <span className="text-xs font-semibold">Credit Card</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('corporate')}
-                  className={`p-3.5 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${
-                    paymentMethod === 'corporate'
-                      ? 'border-accent bg-blue-50/50 shadow-subtle text-primary'
-                      : 'border-border hover:bg-slate-50 text-text-muted'
-                  }`}
-                >
-                  <Building2 className={`w-5 h-5 ${paymentMethod === 'corporate' ? 'text-accent' : 'text-text-muted'}`} />
-                  <span className="text-xs font-semibold">Corporate PO</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('digital')}
-                  className={`p-3.5 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${
-                    paymentMethod === 'digital'
-                      ? 'border-accent bg-blue-50/50 shadow-subtle text-primary'
-                      : 'border-border hover:bg-slate-50 text-text-muted'
-                  }`}
-                >
-                  <Sparkles className={`w-5 h-5 ${paymentMethod === 'digital' ? 'text-accent' : 'text-text-muted'}`} />
-                  <span className="text-xs font-semibold">Apple / GPay</span>
-                </button>
+              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-900">Fellowship Scholarship</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 text-[10px] font-extrabold">100% WAIVED</span>
+                </div>
+                <p className="text-xs text-emerald-800 leading-relaxed">
+                  Your seat in AI Product Wizardry has been approved under the NIAT × NxtWave Undergraduate Fellowship. No payment card or banking details are required.
+                </p>
               </div>
 
-              {/* Method Specific Form Fields */}
-              <form onSubmit={handlePayNow} className="space-y-4">
-                {paymentMethod === 'card' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">
-                        Card Number (Simulated)
-                      </label>
-                      <input
-                        type="text"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        className="block w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-secondary mb-1">
-                          Expiration Date
-                        </label>
-                        <input
-                          type="text"
-                          value={expiry}
-                          onChange={(e) => setExpiry(e.target.value)}
-                          className="block w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-secondary mb-1">
-                          Security Code (CVC)
-                        </label>
-                        <input
-                          type="text"
-                          value={cvc}
-                          onChange={(e) => setCvc(e.target.value)}
-                          className="block w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === 'corporate' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">
-                        Company / Enterprise Entity
-                      </label>
-                      <input
-                        type="text"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        className="block w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">
-                        Purchase Order (PO) Reference
-                      </label>
-                      <input
-                        type="text"
-                        value={poNumber}
-                        onChange={(e) => setPoNumber(e.target.value)}
-                        className="block w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === 'digital' && (
-                  <div className="p-4 rounded-xl bg-slate-50 border border-border text-center space-y-2">
-                    <p className="text-xs text-text-muted">
-                      Simulated 1-click tokenized payment configured for test environment.
-                    </p>
-                    <span className="inline-block text-xs font-bold text-accent">
-                      Ready for 1-Click Simulated Authorization
-                    </span>
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  <label className="block text-xs font-semibold text-secondary mb-1">
-                    Country / Billing Jurisdiction
-                  </label>
-                  <select
-                    value={billingCountry}
-                    onChange={(e) => setBillingCountry(e.target.value)}
-                    className="block w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                  >
-                    <option>United States</option>
-                    <option>United Kingdom</option>
-                    <option>Canada</option>
-                    <option>Germany</option>
-                    <option>Singapore</option>
-                    <option>India</option>
-                    <option>Australia</option>
-                  </select>
-                </div>
-
-                {/* Trust Seal */}
-                <div className="pt-2 flex items-center gap-2 text-[11px] text-text-muted">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>Simulated transaction. Full mock access unlocked immediately upon confirmation.</span>
-                </div>
-
-                {/* Submit Pay Now Button */}
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl shadow-premium bg-accent hover:bg-accent-hover text-white text-base font-bold transition-all disabled:opacity-75"
-                  >
-                    <span>{isProcessing ? 'Authorizing Simulated Payment...' : `Confirm & Pay $${COURSE_PRICE.current} USD`}</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </div>
+              {/* Confirm Enrollment Button */}
+              <form onSubmit={handleConfirmEnrollment} className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl shadow-premium bg-accent hover:bg-accent-hover text-white text-base font-bold transition-all disabled:opacity-75"
+                >
+                  <span>{isProcessing ? 'Confirming Enrollment...' : 'Accept Fellowship & Select Learning Mode'}</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
               </form>
             </div>
 
@@ -275,7 +127,7 @@ export const CheckoutPage: React.FC = () => {
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-surface rounded-2xl border border-border p-6 shadow-subtle">
               <h3 className="text-sm font-bold uppercase tracking-wider text-secondary pb-4 border-b border-border">
-                Order Summary
+                Fellowship Summary
               </h3>
 
               {/* Product Info */}
@@ -283,39 +135,39 @@ export const CheckoutPage: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h4 className="font-bold text-base text-primary">AI Product Wizardry</h4>
-                    <span className="text-xs text-text-muted block mt-0.5">Professional Executive Academy Fellowship</span>
-                    <span className="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                      12-Level Comprehensive Access
+                    <span className="text-xs text-text-muted block mt-0.5">6 Months · 12 Modules · Undergraduate Fellowship</span>
+                    <span className="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-accent border border-blue-200">
+                      Idea · Build · Launch
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs text-text-muted line-through block">${COURSE_PRICE.original}</span>
-                    <span className="font-bold text-lg text-primary">${COURSE_PRICE.current}</span>
+                    <span className="text-xs text-text-muted line-through block">₹{COURSE_PRICE.original.toLocaleString()}</span>
+                    <span className="font-bold text-lg text-emerald-600">FREE</span>
                   </div>
                 </div>
 
                 <p className="text-xs text-text-muted leading-relaxed pt-2 border-t border-border/60">
-                  Full unrestricted access to Level 01, interactive reading handbooks, quizzes, upcoming live/classroom cohort sessions, and downloadable curriculum brochure.
+                  Full unrestricted access to all 12 modules, weekly assignments, jury presentation defenses, and alumni portfolio certification.
                 </p>
               </div>
 
               {/* Price Breakdown */}
               <div className="py-4 border-t border-border space-y-2 text-xs">
                 <div className="flex justify-between text-text-muted">
-                  <span>Tuition Base Price</span>
-                  <span className="line-through">${COURSE_PRICE.original}.00</span>
+                  <span>Standard Tuition Fee</span>
+                  <span className="line-through">₹{COURSE_PRICE.original.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-emerald-600 font-semibold">
-                  <span>Executive Fellowship Discount</span>
-                  <span>-${COURSE_PRICE.original - COURSE_PRICE.current}.00</span>
+                  <span>Batch 1 Fellowship Sponsorship</span>
+                  <span>-₹{COURSE_PRICE.original.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-text-muted">
-                  <span>Estimated Taxes / Platform Fees</span>
-                  <span>$0.00</span>
+                  <span>Student Fee Due Today</span>
+                  <span className="font-bold text-primary">₹0</span>
                 </div>
                 <div className="pt-3 border-t border-border flex justify-between text-sm font-bold text-primary">
-                  <span>Total Amount Due</span>
-                  <span className="text-lg text-accent">${COURSE_PRICE.current}.00 USD</span>
+                  <span>Total Payable</span>
+                  <span className="text-lg text-emerald-600">₹0 (100% Free)</span>
                 </div>
               </div>
 
@@ -323,33 +175,19 @@ export const CheckoutPage: React.FC = () => {
               <div className="mt-4 pt-4 border-t border-border space-y-2.5">
                 <div className="flex items-center gap-2 text-xs text-text-muted">
                   <BadgeCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>30-Day Simulated Satisfaction Guarantee</span>
+                  <span>Portfolio-backed credential upon graduation</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-text-muted">
                   <BadgeCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>Choose Online or Offline Mode immediately after</span>
+                  <span>Choose Online Cohort or Campus Batch next</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-text-muted">
                   <BadgeCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>Immediate access to Level 01 Sandbox</span>
+                  <span>Immediate access to Module 0 & Module 1</span>
                 </div>
               </div>
             </div>
 
-            {/* Need Assistance card */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-border flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-text-muted">
-                <HelpCircle className="w-4 h-4" />
-                <span>Questions about corporate reimbursement?</span>
-              </div>
-              <a
-                href="/assets/ai-product-wizardry-brochure.pdf"
-                download="ai-product-wizardry-brochure.pdf"
-                className="text-accent hover:underline font-semibold"
-              >
-                Brochure
-              </a>
-            </div>
           </div>
 
         </div>

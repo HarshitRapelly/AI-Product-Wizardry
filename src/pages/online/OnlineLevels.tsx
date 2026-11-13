@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { COURSE_LEVELS } from '../../data/mockData';
+import { COURSE_LEVELS, LEVEL_1_READING, LEVEL_1_RECORDINGS, LEVEL_1_QUIZ_QUESTIONS } from '../../data/mockData';
 import {
   Lock,
   CheckCircle2,
@@ -11,185 +11,251 @@ import {
   BookOpen,
   Video,
   Award,
-  AlertCircle,
-  X
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Layers,
+  Check,
+  Play
 } from 'lucide-react';
 
 export const OnlineLevels: React.FC = () => {
-  const { readingCompleted, quizAttempt } = useAuthAndCourse();
-  const [lockedModalLevel, setLockedModalLevel] = useState<number | null>(null);
+  const { readingCompleted, quizAttempt, watchedSessionIds } = useAuthAndCourse();
+  // Open Module 1 (id: 2) and Module 0 (id: 1) by default
+  const [expandedLevels, setExpandedLevels] = useState<number[]>([2]);
 
-  const lockedLevelData = COURSE_LEVELS.find(l => l.id === lockedModalLevel);
+  const toggleLevel = (levelId: number) => {
+    setExpandedLevels(prev => 
+      prev.includes(levelId) ? prev.filter(id => id !== levelId) : [...prev, levelId]
+    );
+  };
 
   return (
-    <PortalLayout mode="online" title="Curriculum Levels">
-      <div className="space-y-8 font-sans text-left">
+    <PortalLayout mode="online" title="12 Curriculum Modules">
+      <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
         
         {/* Header */}
-        <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-subtle">
+        <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle">
           <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
               Curriculum Roadmap
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mt-3">
-              The 12-Level Mastery Pathway
+              The 12-Module Progressive Pathway
             </h1>
             <p className="text-sm text-text-muted mt-2 leading-relaxed">
-              Progress through our structured sequence of 12 progressive levels. In this prototype, <span className="font-semibold text-primary">Level 01</span> is fully accessible. Subsequent levels unlock sequentially as cohort milestones are achieved.
+              Explore your complete six-month journey from idea to launch. Click any module row below to expand its reading materials, video sessions, and evaluation quizzes.
             </p>
           </div>
         </div>
 
-        {/* 12 Level Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Stacked Levels / Modules with Dropdown Accordion */}
+        <div className="space-y-4">
           {COURSE_LEVELS.map((level) => {
             const isUnlocked = level.status === 'unlocked';
+            const isExpanded = expandedLevels.includes(level.id);
 
             return (
               <div
                 key={level.id}
                 className={`
-                  rounded-2xl border transition-all flex flex-col justify-between overflow-hidden
-                  ${isUnlocked
-                    ? 'bg-surface border-blue-300 shadow-card hover:border-accent hover:shadow-premium'
-                    : 'bg-slate-50/70 border-border opacity-90'}
+                  rounded-3xl border transition-all overflow-hidden
+                  ${isUnlocked 
+                    ? (isExpanded 
+                        ? 'bg-surface border-accent/70 shadow-premium ring-1 ring-accent/20' 
+                        : 'bg-surface border-border hover:border-slate-300 shadow-subtle') 
+                    : 'bg-slate-50/80 border-border opacity-90'}
                 `}
               >
-                <div className="p-6">
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                      {level.levelNumber}
+                {/* Level Main Header Row (Clickable Dropdown Toggle) */}
+                <div
+                  onClick={() => toggleLevel(level.id)}
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-slate-50/60 gap-4"
+                >
+                  <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                    {/* Module Number Box */}
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-sm flex-shrink-0 shadow-subtle ${
+                      isUnlocked ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {level.levelNumber.replace('Module ', 'M')}
+                    </div>
+
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold uppercase tracking-wider text-secondary">
+                          {level.levelNumber}
+                        </span>
+                        {isUnlocked ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>UNLOCKED</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[11px] font-semibold">
+                            <Lock className="w-3 h-3" />
+                            <span>LOCKED</span>
+                          </span>
+                        )}
+                        <span className="text-[11px] text-text-muted flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {level.estimatedHours} hrs
+                        </span>
+                      </div>
+
+                      <h3 className="font-bold text-base sm:text-lg text-primary truncate">
+                        {level.title}
+                      </h3>
+                      <p className="text-xs text-text-muted truncate hidden sm:block">
+                        {level.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Dropdown Chevron Indicator */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-xs font-semibold text-accent hidden md:inline">
+                      {isExpanded ? 'Collapse Materials' : 'View Materials'}
                     </span>
-                    {isUnlocked ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>UNLOCKED</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-xs font-semibold">
-                        <Lock className="w-3 h-3" />
-                        <span>LOCKED</span>
-                      </span>
-                    )}
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-secondary">
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
                   </div>
+                </div>
 
-                  <h3 className="font-bold text-lg text-primary mb-1">
-                    {level.title}
-                  </h3>
-                  <p className="text-xs font-medium text-accent mb-3">
-                    {level.subtitle}
-                  </p>
-                  <p className="text-xs text-text-muted leading-relaxed mb-4">
-                    {level.description}
-                  </p>
-
-                  {/* Skills tags */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {level.skills.map((skill, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded bg-background border border-border text-[10px] text-secondary font-medium">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Module Indicators */}
-                  {isUnlocked && (
-                    <div className="pt-4 border-t border-border grid grid-cols-3 gap-2 text-center text-[11px] text-secondary font-medium">
-                      <div className="p-2 rounded-lg bg-blue-50/60 border border-blue-100 flex flex-col items-center gap-1">
-                        <BookOpen className="w-3.5 h-3.5 text-accent" />
-                        <span>Reading {readingCompleted ? '✓' : ''}</span>
-                      </div>
-                      <div className="p-2 rounded-lg bg-indigo-50/60 border border-indigo-100 flex flex-col items-center gap-1">
-                        <Video className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>Sessions</span>
-                      </div>
-                      <div className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-100 flex flex-col items-center gap-1">
-                        <Award className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Quiz {quizAttempt?.passed ? '✓' : ''}</span>
+                {/* Dropdown Expandable Content */}
+                {isExpanded && (
+                  <div className="px-5 pb-6 sm:px-6 pt-2 border-t border-border/70 bg-slate-50/50 space-y-5">
+                    
+                    <div className="space-y-1 pt-2">
+                      <p className="text-xs text-text-muted leading-relaxed">
+                        {level.description}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {level.skills.map((skill, i) => (
+                          <span key={i} className="px-2.5 py-0.5 rounded bg-surface border border-border text-[10px] text-secondary font-medium">
+                            {skill}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Card Action Footer */}
-                <div className="px-6 py-4 bg-background border-t border-border flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 text-text-muted font-medium">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{level.estimatedHours} Hours</span>
-                  </span>
+                    {isUnlocked ? (
+                      /* 3 Stacked Module Action Cards inside dropdown */
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                        
+                        {/* 1. Reading Material Card */}
+                        <div className="p-4 rounded-2xl bg-surface border border-border hover:border-accent transition-all shadow-subtle flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="w-8 h-8 rounded-xl bg-blue-100 text-accent flex items-center justify-center">
+                                <BookOpen className="w-4 h-4" />
+                              </div>
+                              {readingCompleted ? (
+                                <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                                  <Check className="w-3 h-3" /> Completed
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-text-muted">15 min study</span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-sm text-primary">Reading Handbook</h4>
+                            <p className="text-xs text-text-muted leading-relaxed">
+                              Four core sections on product thinking, human frustrations, and retention.
+                            </p>
+                          </div>
 
-                  {isUnlocked ? (
-                    <Link
-                      to="/online/level/1"
-                      className="inline-flex items-center gap-1.5 font-bold text-accent hover:text-accent-hover"
-                    >
-                      <span>Enter Level 01</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setLockedModalLevel(level.id)}
-                      className="inline-flex items-center gap-1.5 text-text-muted hover:text-secondary font-medium"
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Unlock Info</span>
-                    </button>
-                  )}
-                </div>
+                          <div className="pt-4">
+                            <Link
+                              to="/online/level/1/reading"
+                              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold transition-colors"
+                            >
+                              <span>{readingCompleted ? 'Review Handbook' : 'Read Handbook'}</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* 2. Recorded Video Sessions Card */}
+                        <div className="p-4 rounded-2xl bg-surface border border-border hover:border-accent transition-all shadow-subtle flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                <Video className="w-4 h-4" />
+                              </div>
+                              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                                3 Lectures
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-sm text-primary">Recorded Sessions</h4>
+                            <p className="text-xs text-text-muted leading-relaxed">
+                              Swiggy & Razorpay masterclass teardowns and weekend maker clinics.
+                            </p>
+                          </div>
+
+                          <div className="pt-4">
+                            <Link
+                              to="/online/level/1/recordings"
+                              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold transition-colors"
+                            >
+                              <span>Watch Sessions</span>
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* 3. Practice Quiz Card */}
+                        <div className="p-4 rounded-2xl bg-surface border border-border hover:border-accent transition-all shadow-subtle flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                <Award className="w-4 h-4" />
+                              </div>
+                              {quizAttempt ? (
+                                <span className={`text-[10px] font-bold ${quizAttempt.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                  Score: {quizAttempt.percentage}%
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-text-muted">5 Questions</span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-sm text-primary">Practice Quiz</h4>
+                            <p className="text-xs text-text-muted leading-relaxed">
+                              Scenario-based check of problem discovery and customer adoption.
+                            </p>
+                          </div>
+
+                          <div className="pt-4">
+                            <Link
+                              to="/online/level/1/quiz"
+                              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-colors"
+                            >
+                              <span>{quizAttempt ? 'Review Score / Retake' : 'Attempt Quiz'}</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        </div>
+
+                      </div>
+                    ) : (
+                      /* Locked Guidance */
+                      <div className="p-4 rounded-2xl bg-surface border border-border flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 text-xs text-text-muted">
+                          <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <span>
+                            This module unlocks sequentially as you submit written assignments and attend cohort sessions.
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-bold text-secondary flex-shrink-0">
+                          Prerequisite: Module 1
+                        </span>
+                      </div>
+                    )}
+
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
-
-        {/* Locked Modal Dialog */}
-        {lockedModalLevel && lockedLevelData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-surface rounded-2xl border border-border shadow-elevated max-w-md w-full p-6 text-left animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-text-muted" />
-                  <h3 className="font-bold text-base text-primary">
-                    {lockedLevelData.levelNumber}: Locked
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setLockedModalLevel(null)}
-                  className="p-1 text-text-muted hover:text-primary rounded-lg"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="py-4 space-y-3">
-                <h4 className="font-bold text-sm text-primary">{lockedLevelData.title}</h4>
-                <p className="text-xs text-text-muted leading-relaxed">
-                  {lockedLevelData.description}
-                </p>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-border space-y-2 text-xs">
-                  <div className="flex items-center gap-2 font-semibold text-secondary">
-                    <AlertCircle className="w-4 h-4 text-accent" />
-                    <span>Progression Requirement:</span>
-                  </div>
-                  <p className="text-text-muted text-[11px] leading-relaxed">
-                    This advanced module unlocks automatically in Week {(lockedLevelData.id || 2)} of the 2026 cohort, upon successful completion and verification of Level 01 reading and quiz evaluations.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  onClick={() => setLockedModalLevel(null)}
-                  className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold"
-                >
-                  Return to Roadmap
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
     </PortalLayout>

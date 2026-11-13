@@ -7,14 +7,9 @@ import {
   Clock,
   MapPin,
   Globe,
-  User,
-  CheckCircle2,
   CheckCheck,
-  Search,
-  Filter,
-  Users,
-  Video,
-  ExternalLink
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface ClassesPageProps {
@@ -24,8 +19,15 @@ interface ClassesPageProps {
 export const ClassesPage: React.FC<ClassesPageProps> = ({ mode }) => {
   const { registeredClassIds, registerClass, unregisterClass } = useAuthAndCourse();
   const [filterType, setFilterType] = useState<'all' | 'registered'>('all');
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
 
-  // Filter classes according to learning mode
+  const toggleReadMore = (id: string) => {
+    setExpandedDescriptions(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   const modeClasses = UPCOMING_CLASSES.filter(c => c.type === mode);
 
   const displayedClasses = modeClasses.filter(c => {
@@ -36,11 +38,11 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({ mode }) => {
   });
 
   return (
-    <PortalLayout mode={mode} title={mode === 'online' ? 'Live Classes Schedule' : 'Classroom Sessions Schedule'}>
+    <PortalLayout mode={mode} title={mode === 'online' ? 'Live Classes Schedule' : 'Campus Sessions Schedule'}>
       <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
         
         {/* Header Banner */}
-        <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-subtle">
+        <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
@@ -49,17 +51,17 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({ mode }) => {
                     ? 'bg-blue-50 text-accent border-blue-200' 
                     : 'bg-slate-100 text-slate-800 border-slate-300'
                 }`}>
-                  {mode === 'online' ? 'Virtual Lecture Theater' : 'Innovation Campus Schedule'}
+                  {mode === 'online' ? 'Virtual Studio Schedule' : 'Campus Lab Schedule'}
                 </span>
-                <span className="text-xs text-text-muted">Winter/Spring 2026 Cohort</span>
+                <span className="text-xs text-text-muted">Batch 1 · Winter/Spring 2026</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                {mode === 'online' ? 'Upcoming Live Virtual Masterclasses' : 'Upcoming In-Person Classroom Seminars'}
+                {mode === 'online' ? 'Upcoming Live Virtual Masterclasses' : 'Upcoming Campus Workshops & Labs'}
               </h1>
               <p className="text-sm text-text-muted leading-relaxed">
                 {mode === 'online' 
-                  ? 'Interactive live masterclasses with faculty, real-time code teardowns, and architecture evaluations conducted via Zoom Theater.'
-                  : 'Physical campus seminars, hands-on whiteboarding clinics, and 1-on-1 PRD reviews held at the Executive Innovation Tower.'}
+                  ? 'Interactive live masterclasses, teardown clinics, and weekend maker lectures conducted on Zoom.'
+                  : 'Physical campus seminars, hands-on whiteboarding clinics, and 1-on-1 critique sessions in Lecture Hall 4B.'}
               </p>
             </div>
 
@@ -83,133 +85,159 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({ mode }) => {
                     : 'text-text-muted hover:text-primary'
                 }`}
               >
-                My Registered ({modeClasses.filter(c => registeredClassIds.includes(c.id)).length})
+                My Reserved ({modeClasses.filter(c => registeredClassIds.includes(c.id)).length})
               </button>
             </div>
           </div>
         </div>
 
-        {/* Classes List */}
-        <div className="space-y-6">
-          {displayedClasses.length === 0 ? (
-            <div className="p-12 text-center bg-surface rounded-2xl border border-border text-text-muted space-y-3">
-              <Calendar className="w-10 h-10 mx-auto text-slate-400" />
-              <h3 className="font-bold text-base text-primary">No Registered Sessions Yet</h3>
-              <p className="text-xs max-w-sm mx-auto">
-                You haven't registered for any {mode} sessions yet. Switch the filter to "All Sessions" to reserve your seat.
-              </p>
-              <button
-                onClick={() => setFilterType('all')}
-                className="mt-2 px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold"
-              >
-                View All Sessions
-              </button>
-            </div>
-          ) : (
-            displayedClasses.map((cls) => {
+        {/* 2 in a Row Grid (Requirement 7) */}
+        {displayedClasses.length === 0 ? (
+          <div className="p-12 text-center bg-surface rounded-3xl border border-border text-text-muted space-y-3">
+            <Calendar className="w-10 h-10 mx-auto text-slate-400" />
+            <h3 className="font-bold text-base text-primary">No Registered Sessions</h3>
+            <p className="text-xs max-w-sm mx-auto">
+              You haven't reserved a seat for any upcoming {mode} sessions.
+            </p>
+            <button
+              onClick={() => setFilterType('all')}
+              className="mt-2 px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold"
+            >
+              View All Sessions
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {displayedClasses.map((cls) => {
               const isRegistered = registeredClassIds.includes(cls.id);
+              const isExpanded = !!expandedDescriptions[cls.id];
 
               return (
                 <div
                   key={cls.id}
-                  className={`bg-surface rounded-2xl border transition-all p-6 sm:p-8 shadow-card hover:shadow-premium ${
+                  className={`bg-surface rounded-3xl border p-6 transition-all shadow-subtle hover:shadow-card flex flex-col justify-between ${
                     isRegistered ? 'border-accent/60 ring-1 ring-accent/20' : 'border-border'
                   }`}
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-border">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-primary text-xs font-bold">
-                          <Calendar className="w-3.5 h-3.5 text-accent" />
-                          <span>{cls.date}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-100 text-secondary text-xs font-medium">
-                          <Clock className="w-3.5 h-3.5 text-text-muted" />
-                          <span>{cls.time} ({cls.duration})</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-100 text-secondary text-xs font-medium">
-                          {mode === 'online' ? <Globe className="w-3.5 h-3.5 text-blue-600" /> : <MapPin className="w-3.5 h-3.5 text-emerald-600" />}
-                          <span>{cls.locationOrPlatform}</span>
-                        </span>
-                      </div>
+                  <div className="space-y-4">
+                    {/* Top Date & Venue Pills */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-primary text-xs font-bold">
+                        <Calendar className="w-3.5 h-3.5 text-accent" />
+                        <span>{cls.date}</span>
+                      </span>
 
-                      <h3 className="text-xl font-bold text-primary mt-1">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-secondary text-xs font-medium">
+                        <Clock className="w-3.5 h-3.5 text-text-muted" />
+                        <span>{cls.time}</span>
+                      </span>
+                    </div>
+
+                    {/* Title & Subtitle */}
+                    <div>
+                      <h3 className="text-base font-bold text-primary leading-snug">
                         {cls.title}
                       </h3>
-                      <p className="text-xs font-medium text-accent">
+                      <p className="text-xs text-accent font-semibold mt-1">
                         {cls.subtitle}
                       </p>
                     </div>
 
-                    {/* Registration Status Button */}
-                    <div className="flex-shrink-0 flex items-center gap-3">
-                      {isRegistered ? (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                            <CheckCheck className="w-4 h-4" />
-                            <span>Confirmed Reservation</span>
-                          </span>
-                          <button
-                            onClick={() => unregisterClass(cls.id)}
-                            className="px-3 py-2 text-xs font-semibold text-text-muted hover:text-rose-600 transition-colors"
-                          >
-                            Cancel Seat
-                          </button>
-                        </div>
+                    {/* Venue / Platform Badge */}
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                      {mode === 'online' ? (
+                        <>
+                          <Globe className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                          <span className="truncate">{cls.locationOrPlatform}</span>
+                        </>
                       ) : (
-                        <button
-                          onClick={() => registerClass(cls.id)}
-                          className="px-6 py-3 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold shadow-subtle transition-all transform hover:-translate-y-0.5"
-                        >
-                          {mode === 'online' ? 'Register for Live Zoom' : 'Reserve Campus Seat'}
-                        </button>
+                        <>
+                          <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                          <span className="truncate">{cls.roomOrUrl}</span>
+                        </>
                       )}
                     </div>
-                  </div>
 
-                  {/* Body Content */}
-                  <div className="pt-6 grid grid-cols-1 md:grid-cols-12 gap-6">
-                    <div className="md:col-span-8 space-y-3">
-                      <p className="text-xs text-secondary leading-relaxed">
+                    {/* Description with Read More / Read Less Toggle */}
+                    <div className="pt-2 border-t border-border/70 text-xs text-text-muted space-y-2">
+                      <p className={`leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
                         {cls.description}
                       </p>
                       
-                      <div className="flex items-center gap-2 text-xs text-text-muted pt-1">
-                        <span className="font-semibold text-primary">Prerequisites:</span>
-                        <span>{cls.prerequisites}</span>
-                      </div>
-
-                      {mode === 'offline' && (
-                        <div className="flex items-center gap-2 text-xs text-text-muted">
-                          <span className="font-semibold text-primary">Venue Coordinates:</span>
-                          <span>{cls.roomOrUrl}</span>
+                      {isExpanded && (
+                        <div className="pt-2 space-y-1.5 bg-slate-50 p-3 rounded-xl border border-border">
+                          <div className="text-[11px] text-secondary">
+                            <span className="font-bold text-primary">Prerequisites: </span>
+                            {cls.prerequisites}
+                          </div>
+                          {mode === 'offline' && (
+                            <div className="text-[11px] text-secondary">
+                              <span className="font-bold text-primary">Building: </span>
+                              {cls.locationOrPlatform}
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
 
-                    {/* Instructor Info */}
-                    <div className="md:col-span-4 bg-slate-50 p-4 rounded-xl border border-border flex items-center gap-3 self-start">
+                      <button
+                        type="button"
+                        onClick={() => toggleReadMore(cls.id)}
+                        className="text-xs font-bold text-accent hover:underline flex items-center gap-1 pt-1"
+                      >
+                        <span>{isExpanded ? 'Read Less' : 'Read More Info'}</span>
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Instructor & Action Footer */}
+                  <div className="pt-5 mt-5 border-t border-border flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 truncate">
                       <img
                         src={cls.instructorAvatar}
                         alt={cls.instructor}
-                        className="w-10 h-10 rounded-full border border-border object-cover"
+                        className="w-8 h-8 rounded-full border border-border object-cover flex-shrink-0"
                       />
                       <div className="truncate">
                         <span className="font-bold text-xs text-primary block truncate">
                           {cls.instructor}
                         </span>
-                        <span className="text-[11px] text-text-muted block truncate">
+                        <span className="text-[10px] text-text-muted block truncate">
                           {cls.instructorRole}
                         </span>
                       </div>
+                    </div>
+
+                    <div className="flex-shrink-0">
+                      {isRegistered ? (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            <span>Reserved</span>
+                          </span>
+                          <button
+                            onClick={() => unregisterClass(cls.id)}
+                            className="text-[11px] text-text-muted hover:text-rose-600 underline"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => registerClass(cls.id)}
+                          className="px-4 py-2 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold shadow-subtle transition-colors"
+                        >
+                          Reserve Seat
+                        </button>
+                      )}
                     </div>
                   </div>
 
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
 
       </div>
     </PortalLayout>

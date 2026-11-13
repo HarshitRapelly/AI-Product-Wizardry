@@ -11,16 +11,15 @@ import {
   Clock,
   ArrowRight,
   ArrowLeft,
-  MapPin,
-  Building2
+  MapPin
 } from 'lucide-react';
 
 export const OfflineLevel1: React.FC = () => {
   const { readingCompleted, quizAttempt } = useAuthAndCourse();
 
   return (
-    <PortalLayout mode="offline" title="Campus Level 01 Hub">
-      <div className="space-y-8 font-sans text-left">
+    <PortalLayout mode="offline" title="Campus Module 1 Hub">
+      <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
         
         {/* Navigation Breadcrumb */}
         <div>
@@ -29,12 +28,12 @@ export const OfflineLevel1: React.FC = () => {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to All Levels</span>
+            <span>Back to All 12 Modules</span>
           </Link>
         </div>
 
-        {/* Level 01 Header Banner */}
-        <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-subtle relative overflow-hidden">
+        {/* Module 1 Header Banner */}
+        <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
@@ -42,19 +41,19 @@ export const OfflineLevel1: React.FC = () => {
                   Classroom Syllabus Hub
                 </span>
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Level 01 Active
+                  Module 1 Active
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                Foundations of AI Product Management
+                Foundations of Product Management
               </h1>
               <p className="text-sm text-text-muted leading-relaxed">
-                Campus-based exploration of stochastic software design. Study your handbook materials prior to attending physical whiteboarding seminars and peer architecture clinics.
+                Campus-based exploration of product thinking. Study your handbook materials prior to attending physical whiteboarding seminars and peer design clinics.
               </p>
             </div>
 
             {/* Status Badge */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-border flex items-center gap-4 flex-shrink-0">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-border flex items-center gap-4 flex-shrink-0">
               <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-lg">
                 01
               </div>
@@ -75,7 +74,7 @@ export const OfflineLevel1: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
           {/* Module 1: Reading Material */}
-          <div className="bg-surface rounded-2xl border border-border hover:border-primary shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
+          <div className="bg-surface rounded-3xl border border-border hover:border-primary shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -100,7 +99,7 @@ export const OfflineLevel1: React.FC = () => {
                 Reading Material & Case Frameworks
               </h2>
               <p className="text-sm text-text-muted leading-relaxed mb-6">
-                Four comprehensive curriculum sections covering deterministic vs. probabilistic software, foundation model stacks, error cost matrices, and evaluation KPIs.
+                Four comprehensive curriculum sections covering code vs product thinking, the 3 wizard questions, and team building methodology.
               </p>
 
               <div className="space-y-2 text-xs text-secondary font-medium">
@@ -131,7 +130,7 @@ export const OfflineLevel1: React.FC = () => {
           </div>
 
           {/* Module 2: Practice Quiz */}
-          <div className="bg-surface rounded-2xl border border-border hover:border-primary shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
+          <div className="bg-surface rounded-3xl border border-border hover:border-primary shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -160,7 +159,7 @@ export const OfflineLevel1: React.FC = () => {
                 Practice Quiz & Scenario Review
               </h2>
               <p className="text-sm text-text-muted leading-relaxed mb-6">
-                Evaluate your strategic judgment across enterprise scenario problems: human-in-the-loop controls, RAG architecture, hallucination mitigation, and eval telemetry.
+                Evaluate your strategic judgment across real product scenarios: validating real human needs, observing user surprises, and earning retention.
               </p>
 
               <div className="space-y-2 text-xs text-secondary font-medium">
@@ -174,7 +173,7 @@ export const OfflineLevel1: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                  <span>Retake anytime to improve leaderboard points</span>
+                  <span>Retake anytime to improve leaderboard standing</span>
                 </div>
               </div>
             </div>
@@ -184,7 +183,7 @@ export const OfflineLevel1: React.FC = () => {
                 to="/offline/level/1/quiz"
                 className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-primary hover:bg-slate-800 text-white text-sm font-bold transition-colors shadow-subtle"
               >
-                <span>{quizAttempt ? 'Review Quiz Results' : 'Attempt Level 01 Quiz'}</span>
+                <span>{quizAttempt ? 'Review Quiz Results' : 'Attempt Module 1 Quiz'}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -193,7 +192,7 @@ export const OfflineLevel1: React.FC = () => {
         </div>
 
         {/* Campus Classroom Notice */}
-        <div className="p-6 rounded-2xl bg-slate-50 border border-border text-xs text-secondary flex items-start gap-4">
+        <div className="p-6 rounded-3xl bg-slate-50 border border-border text-xs text-secondary flex items-start gap-4">
           <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
           <div className="space-y-1">
             <h4 className="font-bold text-sm text-primary">Classroom Cohort Format Reminder</h4>

@@ -8,12 +8,11 @@ import {
   ArrowRight, 
   Download, 
   ShieldCheck, 
-  GraduationCap, 
   Globe, 
   MapPin, 
-  CheckCircle2, 
   BookOpen, 
-  Users 
+  Users,
+  CheckCircle2
 } from 'lucide-react';
 
 interface PublicLayoutProps {
@@ -21,13 +20,13 @@ interface PublicLayoutProps {
 }
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isPaid, learningMode, user, logout } = useAuthAndCourse();
+  const { isAuthenticated, isPaid, learningMode, logout } = useAuthAndCourse();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const getDashboardLink = () => {
-    if (!isAuthenticated) return '/login';
+    if (!isAuthenticated) return '/register';
     if (!isPaid) return '/checkout';
     if (!learningMode) return '/choose-learning-mode';
     return learningMode === 'online' ? '/online/dashboard' : '/offline/dashboard';
@@ -49,25 +48,19 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-text selection:bg-accent/15 selection:text-accent font-sans">
-      {/* Top Notification Bar for Corporate Prototype */}
+      {/* Top Notification Bar without brochure download link */}
       <div className="bg-primary text-white text-xs py-2 px-4 border-b border-secondary/50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-medium text-slate-300">Executive Academy 2026 Admissions Open</span>
-            <span className="hidden md:inline text-slate-400">• Limited to 40 Fellows per cohort</span>
+            <span className="font-semibold text-emerald-300">FOR UNDERGRADUATES</span>
+            <span className="hidden sm:inline text-slate-400">•</span>
+            <span className="font-medium text-slate-300">Batch 1 Applications Now Open (Free for this batch)</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-300">
-            <a 
-              href="/assets/ai-product-wizardry-brochure.pdf" 
-              download="ai-product-wizardry-brochure.pdf"
-              className="hover:text-white transition-colors flex items-center gap-1.5 underline decoration-slate-500 hover:decoration-white"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Brochure (PDF)</span>
-            </a>
-            <span className="hidden sm:inline text-slate-600">|</span>
-            <span className="hidden sm:inline text-slate-400">Prototype 01 — Professional Edition</span>
+          <div className="hidden md:flex items-center gap-4 text-slate-300">
+            <span>Powered by NIAT × NxtWave</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400">6 Months · 12 Modules · 3–4 hrs/week</span>
           </div>
         </div>
       </div>
@@ -79,14 +72,14 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             {/* Brand Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-                <Sparkles className="w-5 h-5 text-blue-300 group-hover:text-white transition-colors" />
+                <Sparkles className="w-5 h-5 text-amber-300 group-hover:text-white transition-colors" />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span className="font-bold text-lg text-primary tracking-tight leading-tight">
                   AI Product Wizardry
                 </span>
-                <span className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
-                  Professional Academy
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
+                  Powered by NxtWave
                 </span>
               </div>
             </Link>
@@ -106,13 +99,19 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                 onClick={() => scrollToSection('curriculum')} 
                 className="hover:text-accent transition-colors text-left"
               >
-                What You'll Learn
+                12 Modules
               </button>
               <button 
-                onClick={() => scrollToSection('why-us')} 
+                onClick={() => scrollToSection('journey')} 
                 className="hover:text-accent transition-colors text-left"
               >
-                Why Choose Us
+                Your Journey
+              </button>
+              <button 
+                onClick={() => scrollToSection('brochure')} 
+                className="hover:text-accent transition-colors text-left font-semibold text-accent"
+              >
+                Brochure
               </button>
               <button 
                 onClick={() => scrollToSection('faqs')} 
@@ -122,37 +121,37 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               </button>
             </nav>
 
-            {/* Right Action Buttons */}
+            {/* Right Action: Prompt user to Register directly */}
             <div className="hidden md:flex items-center gap-4">
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   <Link
                     to={getDashboardLink()}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-slate-800 transition-all shadow-subtle"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-slate-800 transition-all shadow-subtle"
                   >
-                    <span>Dashboard</span>
+                    <span>My Learning Hub</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <button
                     onClick={logout}
                     className="text-xs text-text-muted hover:text-red-600 font-medium px-2 py-1"
                   >
-                    Logout
+                    Sign Out
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <Link
                     to="/login"
-                    className="px-4 py-2.5 text-sm font-semibold text-secondary hover:text-primary transition-colors"
+                    className="text-xs text-text-muted hover:text-primary font-medium"
                   >
-                    Log In
+                    Already registered? <span className="font-semibold text-secondary hover:underline">Log In</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-all shadow-subtle shadow-accent/20"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-bold hover:bg-accent-hover transition-all shadow-subtle shadow-accent/20"
                   >
-                    <span>Get Started</span>
+                    <span>Register Now</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -193,13 +192,19 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               onClick={() => scrollToSection('curriculum')}
               className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
             >
-              What You'll Learn
+              12 Modules
             </button>
             <button
-              onClick={() => scrollToSection('why-us')}
+              onClick={() => scrollToSection('journey')}
               className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
             >
-              Why Choose Us
+              Your Journey
+            </button>
+            <button
+              onClick={() => scrollToSection('brochure')}
+              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-slate-50"
+            >
+              Download Brochure
             </button>
             <button
               onClick={() => scrollToSection('faqs')}
@@ -208,14 +213,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               FAQs
             </button>
             <div className="pt-4 border-t border-border flex flex-col gap-2">
-              <a
-                href="/assets/ai-product-wizardry-brochure.pdf"
-                download="ai-product-wizardry-brochure.pdf"
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-semibold text-secondary hover:bg-slate-50"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download Brochure (PDF)</span>
-              </a>
               {isAuthenticated ? (
                 <Link
                   to={getDashboardLink()}
@@ -228,19 +225,19 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               ) : (
                 <>
                   <Link
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center px-4 py-2.5 rounded-lg border border-border text-sm font-semibold text-secondary hover:bg-slate-50"
-                  >
-                    Log In
-                  </Link>
-                  <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-semibold"
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent text-white text-sm font-bold"
                   >
-                    <span>Get Started CTA</span>
+                    <span>Register Now (Free for Batch 1)</span>
                     <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-center text-xs text-text-muted hover:text-primary py-1"
+                  >
+                    Already have an account? Log In
                   </Link>
                 </>
               )}
@@ -257,29 +254,29 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
       {/* Corporate Footer */}
       <footer className="bg-primary text-slate-300 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 text-left">
             {/* Brand Column */}
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white">
-                  <Sparkles className="w-5 h-5 text-white" />
+                  <Sparkles className="w-5 h-5 text-amber-300" />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg text-white tracking-tight">AI Product Wizardry</h3>
-                  <p className="text-xs text-slate-400">Professional EdTech Academy</p>
+                  <p className="text-xs text-slate-400">Powered by NIAT × NxtWave</p>
                 </div>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
-                The premier executive academy training modern product leaders, senior engineers, and founders in the rigorous science of probabilistic AI systems.
+                Six months of stories, building and teamwork to learn the magic behind every app you can't put down. Made for undergraduates who like to make things.
               </p>
-              <div className="flex items-center gap-3 pt-2">
+              <div className="pt-2">
                 <a
                   href="/assets/ai-product-wizardry-brochure.pdf"
                   download="ai-product-wizardry-brochure.pdf"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition-colors border border-slate-700"
                 >
-                  <Download className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Download Official Brochure</span>
+                  <Download className="w-3.5 h-3.5 text-accent" />
+                  <span>Download Curriculum PDF</span>
                 </a>
               </div>
             </div>
@@ -288,17 +285,17 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Curriculum</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">12 Learning Levels</Link></li>
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">Level 01 Foundations</Link></li>
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">RAG & Vector Search</Link></li>
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">LLM Evaluation Suites</Link></li>
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">Executive Capstone</Link></li>
+                <li><Link to="/#curriculum" className="hover:text-white transition-colors">12 Progressive Modules</Link></li>
+                <li><Link to="/#overview" className="hover:text-white transition-colors">Orientation (Module 0)</Link></li>
+                <li><Link to="/#curriculum" className="hover:text-white transition-colors">Foundations (Module 1)</Link></li>
+                <li><Link to="/#journey" className="hover:text-white transition-colors">Idea · Build · Launch</Link></li>
+                <li><Link to="/#journey" className="hover:text-white transition-colors">Capstone Jury Defense</Link></li>
               </ul>
             </div>
 
             {/* Modalities */}
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Learning Modes</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Delivery Modes</h4>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li className="flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5 text-blue-400" />
@@ -306,30 +303,30 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                 </li>
                 <li className="flex items-center gap-2">
                   <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Offline Campus Labs</span>
+                  <span>Offline Campus Batches</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Interactive Reading</span>
+                  <span>Story-Led Handbooks</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Users className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Executive Mentorship</span>
+                  <span>Hear from Makers</span>
                 </li>
               </ul>
             </div>
 
-            {/* Legal / Contact Placeholder */}
+            {/* Admissions */}
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Admissions</h4>
               <div className="space-y-2 text-sm text-slate-400">
-                <p>admissions@aiproductwizardry.edu</p>
-                <p>Innovation Tower, Suite 400</p>
-                <p>Tech Center District</p>
+                <p className="font-semibold text-white">Batch 1: Free Fellowship</p>
+                <p className="text-xs">₹11,000 from Batch 2 onwards.</p>
+                <p className="text-xs">admissions@aiproductwizardry.edu</p>
                 <div className="pt-2">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 text-xs text-slate-300 border border-slate-700">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Accredited Executive Syllabus</span>
+                    <span>Portfolio-Backed Certificate</span>
                   </span>
                 </div>
               </div>
@@ -337,11 +334,10 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
           </div>
 
           <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-            <p>© 2026 AI Product Wizardry Academy Inc. All rights reserved.</p>
+            <p>© 2026 AI Product Wizardry • Powered by NIAT × NxtWave. The certificate improves your profile; it does not guarantee a job.</p>
             <div className="flex items-center gap-6">
-              <span className="hover:text-slate-200 cursor-pointer">Privacy Framework</span>
-              <span className="hover:text-slate-200 cursor-pointer">Enterprise Terms</span>
-              <span className="hover:text-slate-200 cursor-pointer">Security Certifications</span>
+              <Link to="/register" className="text-accent hover:underline font-semibold">Register for Batch 1</Link>
+              <Link to="/login" className="hover:text-slate-200">Log In</Link>
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ interface AuthAndCourseContextType {
   
   // Actions
   login: (email: string, name?: string) => boolean;
-  loginWithGoogleDemo: () => void;
+  loginWithGoogleAccount: (email: string, name: string, avatar?: string) => void;
   register: (name: string, email: string) => boolean;
   logout: () => void;
   processPayment: (method: string) => PaymentDetails;
@@ -28,7 +28,7 @@ interface AuthAndCourseContextType {
   retakeQuiz: () => void;
   registerClass: (classId: string) => void;
   unregisterClass: (classId: string) => void;
-  markAttendanceDemo: (sessionTitle?: string) => void;
+  markAttendance: (sessionTitle?: string) => void;
   markSessionWatched: (sessionId: string) => void;
   resetAllDemoData: () => void;
   
@@ -112,7 +112,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
 
-  // 7. Attendance records (Online only)
+  // 7. Attendance records
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ATTENDANCE);
@@ -183,7 +183,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Actions
   const login = (email: string, name?: string): boolean => {
-    const studentName = name || (email.split('@')[0] ? email.split('@')[0].replace(/[._]/g, ' ') : 'Alex Mercer');
+    const studentName = name || (email.split('@')[0] ? email.split('@')[0].replace(/[._]/g, ' ') : 'Student Fellow');
     const capitalizedName = studentName.charAt(0).toUpperCase() + studentName.slice(1);
     
     const newUser: User = {
@@ -198,16 +198,16 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     return true;
   };
 
-  const loginWithGoogleDemo = () => {
-    const demoGoogleUser: User = {
-      id: 'usr-google-demo',
-      name: 'Jordan Hayes (Google Demo)',
-      email: 'jordan.hayes@enterprise.ai',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+  const loginWithGoogleAccount = (email: string, name: string, avatar?: string) => {
+    const newUser: User = {
+      id: 'usr-google-' + Date.now().toString(36),
+      name: name.trim() || 'Google Student',
+      email: email.toLowerCase().trim(),
+      avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
       role: 'student',
       registeredAt: new Date().toISOString()
     };
-    setUser(demoGoogleUser);
+    setUser(newUser);
   };
 
   const register = (name: string, email: string): boolean => {
@@ -228,7 +228,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const processPayment = (method: string): PaymentDetails => {
-    const txId = 'TXN-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-' + Date.now().toString().slice(-4);
+    const txId = 'AIW-ADM-' + Math.random().toString(36).substring(2, 9).toUpperCase();
     const details: PaymentDetails = {
       transactionId: txId,
       amount: COURSE_PRICE.current,
@@ -236,8 +236,8 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       method: method,
       status: 'completed',
-      programName: 'AI Product Wizardry — Professional Academy',
-      cohort: 'Winter/Spring 2026 Cohort'
+      programName: 'AI Product Wizardry — Undergraduate Fellowship',
+      cohort: 'Batch 1 (Winter/Spring 2026)'
     };
     setPaymentDetails(details);
     return details;
@@ -280,14 +280,14 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     setRegisteredClassIds(prev => prev.filter(id => id !== classId));
   };
 
-  const markAttendanceDemo = (sessionTitle: string = 'Today\'s Interactive Executive Masterclass') => {
+  const markAttendance = (sessionTitle: string = 'Interactive Workshop & Teardown') => {
     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const newRecord: AttendanceRecord = {
       id: 'att-live-' + Date.now(),
       date: today,
       sessionTitle,
       status: 'present',
-      time: 'Live Demo Verified',
+      time: 'Session Verified',
       verificationCode: 'VERIFIED-' + Math.floor(1000 + Math.random() * 9000)
     };
     setAttendanceRecords(prev => [newRecord, ...prev]);
@@ -310,13 +310,10 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Computations
-  // Calculate attendance %
   const attendedCount = attendanceRecords.filter(r => r.status === 'present').length;
   const totalAttendanceConsidered = attendanceRecords.filter(r => r.status !== 'upcoming').length || 1;
   const attendancePercentage = Math.round((attendedCount / totalAttendanceConsidered) * 100);
 
-  // Overall course progress: Level 1 has 3 components in online (Reading, Quiz, Recordings) or 2 components in offline (Reading, Quiz).
-  // 12 total levels.
   let level1SubProgress = 0;
   if (learningMode === 'offline') {
     if (readingCompleted) level1SubProgress += 50;
@@ -328,21 +325,18 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     if (watchedSessionIds.length >= 1) level1SubProgress += 20;
   }
 
-  // Level 1 accounts for ~8.33% (1/12th) of full 12-level curriculum
   const courseProgressPercentage = Math.round((level1SubProgress / 100) * 8.33);
 
-  // Points computation
-  let points = 250; // Welcome enrollment base
+  let points = 250;
   if (readingCompleted) points += 300;
   if (quizAttempt) {
     points += (quizAttempt.score * 100);
-    if (quizAttempt.passed) points += 200; // Bonus for passing
+    if (quizAttempt.passed) points += 200;
   }
   if (learningMode === 'online') {
     points += (watchedSessionIds.length * 75);
     points += (attendedCount * 50);
   } else {
-    // In-person lab workshop points
     points += (registeredClassIds.length * 80);
   }
 
@@ -350,19 +344,18 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getEnrichedLeaderboard = (): LeaderboardStudent[] => {
     const currentStudent: LeaderboardStudent = {
-      rank: 4, // Default placeholder rank
+      rank: 4,
       id: user?.id || 'current-user',
-      name: user ? `${user.name} (You)` : 'You (Current Student)',
+      name: user ? `${user.name} (You)` : 'You (Current Fellow)',
       avatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
       points: totalPoints,
       levelsCompleted: quizAttempt?.passed && readingCompleted ? 1 : 0,
       quizzesPassed: quizAttempt?.passed ? 1 : 0,
       attendanceRate: learningMode === 'online' ? attendancePercentage : undefined,
-      badge: quizAttempt?.passed ? 'AI PM Fellow' : 'Rising Wizard',
+      badge: quizAttempt?.passed ? 'Product Wizard' : 'Apprentice',
       isCurrentUser: true
     };
 
-    // Combine with initial students, sort descending by points, and assign ranks
     const all = [...INITIAL_LEADERBOARD, currentStudent];
     all.sort((a, b) => b.points - a.points);
     return all.map((s, idx) => ({ ...s, rank: idx + 1 }));
@@ -382,7 +375,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         attendanceRecords,
         watchedSessionIds,
         login,
-        loginWithGoogleDemo,
+        loginWithGoogleAccount,
         register,
         logout,
         processPayment,
@@ -392,7 +385,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         retakeQuiz,
         registerClass,
         unregisterClass,
-        markAttendanceDemo,
+        markAttendance,
         markSessionWatched,
         resetAllDemoData,
         courseProgressPercentage,
