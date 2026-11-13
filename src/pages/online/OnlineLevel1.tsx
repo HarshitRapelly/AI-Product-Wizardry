@@ -39,7 +39,7 @@ export const OnlineLevel1: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-accent border border-blue-200 uppercase">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent border border-accent-light/60 uppercase">
                   Module 1 Curriculum Hub
                 </span>
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -79,7 +79,7 @@ export const OnlineLevel1: React.FC = () => {
           <div className="bg-surface rounded-3xl border border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-6 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-accent-subtle text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
                   <BookOpen className="w-6 h-6" />
                 </div>
                 {readingCompleted ? (

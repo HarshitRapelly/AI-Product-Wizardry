@@ -138,8 +138,8 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               {mode === 'online' ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 border border-blue-200 text-[11px] font-bold text-blue-800">
-                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cerulean-subtle border border-cerulean-light text-[11px] font-bold text-cerulean-dark">
+                  <Globe className="w-3.5 h-3.5 text-cerulean" />
                   <span>ONLINE COHORT</span>
                 </div>
               ) : (

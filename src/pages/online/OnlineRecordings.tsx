@@ -167,7 +167,7 @@ export const OnlineRecordings: React.FC = () => {
               {/* Modal Topbar */}
               <div className="p-4 bg-primary text-white flex items-center justify-between">
                 <div className="truncate pr-4">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 block">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cerulean-light block">
                     Streaming Masterclass • {activeVideoModal.duration}
                   </span>
                   <h4 className="font-bold text-sm truncate">{activeVideoModal.title}</h4>

@@ -73,13 +73,13 @@ export const OnlineDashboard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-text-muted">{currentDate}</span>
                 <span className="text-slate-300">•</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-accent border border-blue-200">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent border border-accent-light/60">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
                   Online Cohort · Batch 1
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                {getGreeting()}, {studentName}
+                {getGreeting()}, <span className="text-cerulean">{studentName}</span>
               </h1>
               {/* <p className="text-sm text-text-muted max-w-2xl leading-relaxed">
                 Welcome back to your learning space. Today's focus: master the 3 core questions every product wizard must ask and formulate your Module 1 problem statement.
@@ -184,7 +184,7 @@ export const OnlineDashboard: React.FC = () => {
                             <span>Verified</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-[11px] font-medium border border-blue-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-cerulean-subtle text-cerulean-dark text-[11px] font-medium border border-cerulean-light">
                             <Clock className="w-3.5 h-3.5" />
                             <span>Upcoming</span>
                           </span>
@@ -229,7 +229,7 @@ export const OnlineDashboard: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-accent flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-accent-subtle text-accent flex items-center justify-center">
                         <BookOpen className="w-4 h-4" />
                       </div>
                       {readingCompleted ? (
@@ -445,7 +445,7 @@ export const OnlineDashboard: React.FC = () => {
                   <div
                     key={student.id}
                     className={`py-3 flex items-center justify-between text-xs ${
-                      student.isCurrentUser ? 'bg-blue-50/70 -mx-3 px-3 rounded-xl border border-blue-200' : ''
+                      student.isCurrentUser ? 'bg-accent-subtle -mx-3 px-3 rounded-xl border border-accent-light/60' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">

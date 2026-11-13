@@ -37,7 +37,7 @@ export const OnlineLevels: React.FC = () => {
         {/* Header */}
         <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle">
           <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-3 py-1 rounded-full border border-accent-light/60">
               Curriculum Roadmap
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mt-3">
@@ -146,7 +146,7 @@ export const OnlineLevels: React.FC = () => {
                         <div className="p-4 rounded-2xl bg-surface border border-border hover:border-accent transition-all shadow-subtle flex flex-col justify-between">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <div className="w-8 h-8 rounded-xl bg-blue-100 text-accent flex items-center justify-center">
+                              <div className="w-8 h-8 rounded-xl bg-accent-subtle text-accent flex items-center justify-center">
                                 <BookOpen className="w-4 h-4" />
                               </div>
                               {readingCompleted ? (

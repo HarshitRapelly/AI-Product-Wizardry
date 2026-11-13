@@ -8,44 +8,58 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#0F172A', // Slate 900 - Deep Corporate Navy
-          50: '#F8FAFC',
-          100: '#F1F5F9',
-          200: '#E2E8F0',
-          300: '#CBD5E1',
-          400: '#94A3B8',
-          500: '#64748B',
-          600: '#475569',
-          700: '#334155',
-          800: '#1E293B',
-          900: '#0F172A',
-          950: '#020617',
+          DEFAULT: '#1C1A17', // Warm Charcoal Espresso (presentation dark canvas)
+          50: '#FAF7F2',
+          100: '#F4EFEA',
+          200: '#E7E1D8',
+          300: '#C9C4BB',
+          400: '#9C948A',
+          500: '#6B645C',
+          600: '#44546A', // Steel slate from presentation
+          700: '#3D3931', // Dark border from presentation
+          800: '#2A2723', // Dark card surface
+          900: '#1C1A17', // Deep dark background
+          950: '#12110F',
         },
         secondary: {
-          DEFAULT: '#334155', // Slate 700
-          light: '#475569',
-          dark: '#1E293B',
+          DEFAULT: '#3D3931', // Deep Warm Umber
+          light: '#6B645C',
+          dark: '#2A2723',
+          slate: '#44546A', // Steel slate from presentation
         },
         accent: {
-          DEFAULT: '#2563EB', // Blue 600
-          hover: '#1D4ED8', // Blue 700
-          light: '#DBEAFE', // Blue 100
-          subtle: '#EFF6FF', // Blue 50
+          DEFAULT: '#D1531F', // Signature Presentation Terracotta / Burnt Orange
+          hover: '#B84414',
+          dark: '#9E380E',
+          light: '#F7D6C8',
+          subtle: '#FDF5F0',
+          bright: '#ED7D31',
         },
-        background: '#F8FAFC', // Slate 50
+        cerulean: {
+          DEFAULT: '#5B9BD5', // Presentation Cerulean Blue
+          hover: '#4A88C5',
+          dark: '#326AA0',
+          light: '#D6E8F7',
+          subtle: '#EEF5FC',
+        },
+        background: '#FAF7F2', // Warm Ivory Cream (presentation light canvas)
         surface: {
           DEFAULT: '#FFFFFF',
-          subtle: '#F1F5F9',
+          subtle: '#F4EFEA',
+          muted: '#ECE5DC',
+          dark: '#2A2723',
         },
         text: {
-          DEFAULT: '#0F172A',
-          muted: '#64748B',
-          light: '#94A3B8',
+          DEFAULT: '#1C1A17', // Warm Deep Charcoal
+          muted: '#6B645C',   // Warm Muted Umber
+          light: '#9C948A',
+          inverse: '#FAF7F2',
         },
         border: {
-          DEFAULT: '#E2E8F0',
-          subtle: '#F1F5F9',
-          strong: '#CBD5E1',
+          DEFAULT: '#E7E1D8', // Warm Light Border
+          subtle: '#F0EAE1',
+          strong: '#C9C4BB', // Presentation Divider
+          dark: '#3D3931',
         },
         success: {
           DEFAULT: '#10B981',
@@ -60,16 +74,17 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
       },
       boxShadow: {
-        'subtle': '0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05)',
-        'card': '0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.04)',
-        'premium': '0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04)',
-        'elevated': '0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.05)',
+        'subtle': '0 1px 3px 0 rgba(28, 26, 23, 0.04), 0 1px 2px -1px rgba(28, 26, 23, 0.04)',
+        'card': '0 4px 6px -1px rgba(28, 26, 23, 0.04), 0 2px 4px -2px rgba(28, 26, 23, 0.04)',
+        'premium': '0 10px 25px -5px rgba(209, 83, 31, 0.15), 0 8px 10px -6px rgba(28, 26, 23, 0.04)',
+        'elevated': '0 20px 25px -5px rgba(28, 26, 23, 0.08), 0 8px 10px -6px rgba(28, 26, 23, 0.05)',
       },
       borderRadius: {
-        'card': '0.75rem', // 12px
-        'button': '0.5rem', // 8px
+        'card': '0.75rem',
+        'button': '0.5rem',
       }
     },
   },

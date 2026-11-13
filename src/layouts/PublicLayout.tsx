@@ -86,7 +86,10 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-secondary">
-              <Link to="/" className="hover:text-accent transition-colors">
+              <Link 
+                to="/" 
+                className={`transition-colors ${location.pathname === '/' ? 'text-primary font-bold' : 'hover:text-accent'}`}
+              >
                 Home
               </Link>
               <button 
@@ -94,6 +97,12 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                 className="hover:text-accent transition-colors text-left"
               >
                 Program Overview
+              </button>
+              <button 
+                onClick={() => scrollToSection('brochure')} 
+                className="hover:text-accent transition-colors text-left"
+              >
+                Brochure
               </button>
               <button 
                 onClick={() => scrollToSection('curriculum')} 
@@ -106,12 +115,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                 className="hover:text-accent transition-colors text-left"
               >
                 Your Journey
-              </button>
-              <button 
-                onClick={() => scrollToSection('brochure')} 
-                className="hover:text-accent transition-colors text-left font-semibold text-accent"
-              >
-                Brochure
               </button>
               <button 
                 onClick={() => scrollToSection('faqs')} 
@@ -202,9 +205,9 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             </button>
             <button
               onClick={() => scrollToSection('brochure')}
-              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-slate-50"
+              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
             >
-              Download Brochure
+              Brochure
             </button>
             <button
               onClick={() => scrollToSection('faqs')}

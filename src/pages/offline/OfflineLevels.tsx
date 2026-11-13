@@ -141,7 +141,7 @@ export const OfflineLevels: React.FC = () => {
                         <div className="p-5 rounded-2xl bg-surface border border-border hover:border-primary transition-all shadow-subtle flex flex-col justify-between">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <div className="w-9 h-9 rounded-xl bg-blue-100 text-accent flex items-center justify-center">
+                              <div className="w-9 h-9 rounded-xl bg-accent-subtle text-accent flex items-center justify-center">
                                 <BookOpen className="w-5 h-5" />
                               </div>
                               {readingCompleted ? (

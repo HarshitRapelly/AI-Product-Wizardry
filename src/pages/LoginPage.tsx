@@ -60,22 +60,7 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleTriggerGoogleAuth = () => {
-    if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-      try {
-        (window as any).google.accounts.id.initialize({
-          client_id: '9876543210-example.apps.googleusercontent.com',
-          callback: () => {
-            loginWithGoogleAccount('student@gmail.com', 'Google Fellow');
-            redirectAfterAuth();
-          }
-        });
-        (window as any).google.accounts.id.prompt();
-      } catch {
-        setGoogleModalOpen(true);
-      }
-    } else {
-      setGoogleModalOpen(true);
-    }
+    setGoogleModalOpen(true);
   };
 
   const handleConfirmGoogleSignIn = (e: React.FormEvent) => {

@@ -100,7 +100,7 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-border">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-accent uppercase border border-blue-200">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent uppercase border border-accent-light/60">
                   Level 01 Core Reading Material
                 </span>
                 <span className="text-xs text-text-muted flex items-center gap-1">
@@ -174,14 +174,14 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
           </div>
 
           {/* Key Takeaways Card */}
-          <div className="p-6 rounded-xl bg-blue-50/60 border border-blue-200 space-y-3">
+          <div className="p-6 rounded-xl bg-accent-subtle border border-accent-light/60 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-accent" />
-              <h3 className="font-bold text-xs uppercase tracking-wider text-blue-900">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-accent">
                 Key Strategic Takeaways
               </h3>
             </div>
-            <ul className="space-y-2 text-xs text-blue-950 font-medium">
+            <ul className="space-y-2 text-xs text-secondary font-medium">
               {currentSection.keyTakeaways.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />

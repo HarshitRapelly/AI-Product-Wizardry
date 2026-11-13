@@ -65,7 +65,7 @@ export const OfflineDashboard: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                {getGreeting()}, {studentName}
+                {getGreeting()}, <span className="text-cerulean">{studentName}</span>
               </h1>
               <p className="text-sm text-text-muted max-w-2xl leading-relaxed">
                 Welcome to your campus learning space. Today's focus: complete the handbook reading and prepare for Thursday's in-person whiteboarding lab in Lecture Hall 4B.
@@ -91,7 +91,7 @@ export const OfflineDashboard: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-accent flex-shrink-0 border border-slate-700">
-                <Building2 className="w-6 h-6 text-blue-400" />
+                <Building2 className="w-6 h-6 text-cerulean" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -158,7 +158,7 @@ export const OfflineDashboard: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 text-accent flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-accent-subtle text-accent flex items-center justify-center">
                         <BookOpen className="w-5 h-5" />
                       </div>
                       {readingCompleted ? (

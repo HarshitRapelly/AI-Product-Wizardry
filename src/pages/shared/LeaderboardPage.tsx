@@ -166,7 +166,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({ mode }) => {
                   <tr
                     key={st.id}
                     className={`hover:bg-slate-50/80 transition-colors ${
-                      st.isCurrentUser ? 'bg-blue-50/70 font-semibold' : ''
+                      st.isCurrentUser ? 'bg-accent-subtle font-semibold border-l-4 border-accent' : ''
                     }`}
                   >
                     <td className="py-3.5 px-4 font-bold text-sm">

@@ -76,10 +76,11 @@ export const LandingPage: React.FC = () => {
                 </Link>
 
                 <a
-                  href="#overview"
+                  href="#brochure"
                   className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-surface hover:bg-slate-50 text-secondary border border-border text-base font-semibold transition-all shadow-subtle hover:border-slate-300"
                 >
-                  <span>Explore Program</span>
+                  <Download className="w-4 h-4 text-accent" />
+                  <span>Download Brochure</span>
                 </a>
               </div>
 
@@ -138,14 +139,14 @@ export const LandingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center gap-4 transition-transform hover:scale-[1.01]">
-                      <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-extrabold flex-shrink-0 shadow-subtle">
+                    <div className="p-4 rounded-2xl bg-cerulean-subtle border border-cerulean-light flex items-center gap-4 transition-transform hover:scale-[1.01]">
+                      <div className="w-12 h-12 rounded-xl bg-cerulean text-white flex items-center justify-center font-extrabold flex-shrink-0 shadow-subtle">
                         <Rocket className="w-6 h-6" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">Step 2 • Build</span>
-                        <h4 className="font-bold text-sm text-slate-900">Make the First Version</h4>
-                        <p className="text-xs text-blue-900/80 mt-0.5">Prototype fast, test with real users, and iterate the UX.</p>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-cerulean-dark">Step 2 • Build</span>
+                        <h4 className="font-bold text-sm text-primary">Make the First Version</h4>
+                        <p className="text-xs text-secondary leading-relaxed mt-0.5">Prototype fast, test with real users, and iterate the UX.</p>
                       </div>
                     </div>
 
@@ -183,7 +184,7 @@ export const LandingPage: React.FC = () => {
           
           {/* Main Statement from PDF */}
           <div className="max-w-3xl mb-16">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-3 py-1 rounded-full border border-accent-light/60">
               The Philosophy
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight leading-tight">
@@ -204,7 +205,7 @@ export const LandingPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Question 1 */}
               <div className="p-6 rounded-2xl bg-background border border-border shadow-card hover:border-accent transition-all">
-                <div className="w-12 h-12 rounded-xl bg-blue-100 text-accent flex items-center justify-center mb-5 font-extrabold text-lg">
+                <div className="w-12 h-12 rounded-xl bg-cerulean-subtle text-cerulean flex items-center justify-center mb-5 font-extrabold text-lg">
                   <Search className="w-6 h-6" />
                 </div>
                 <h4 className="text-lg font-bold text-primary mb-2">A real problem?</h4>
@@ -267,12 +268,71 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 2.5 BROCHURE DOWNLOAD SECTION - Positioned Prominently in Early/Middle */}
+      <section id="brochure" className="py-16 bg-slate-50/70 border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+          
+          <div className="p-8 sm:p-10 rounded-3xl bg-surface border border-border shadow-elevated relative overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              
+              {/* Left Column: Text & Download Action */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle text-accent text-xs font-bold border border-accent-light/60">
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Official Curriculum & Syllabus</span>
+                </div>
+
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                  Download the Official Program Brochure
+                </h3>
+
+                <p className="text-sm text-text-muted leading-relaxed">
+                  Get the complete 3-page guide containing the 12-module roadmap, three foundational questions, jury evaluation rubrics, and certificate requirements.
+                </p>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <a
+                    href="/assets/ai-product-wizardry-brochure.pdf"
+                    download="AI_Product_Wizardry_Brochure.pdf"
+                    className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm shadow-premium transition-all transform hover:-translate-y-0.5"
+                  >
+                    <Download className="w-4 h-4 text-white" />
+                    <span>Download Brochure (PDF)</span>
+                  </a>
+
+                  <span className="text-xs text-text-muted flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Official 3-Page PDF · Instant Download</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Column: Visual Document Badge Card */}
+              <div className="lg:col-span-4 bg-slate-50 p-6 rounded-2xl border border-border text-center space-y-3">
+                <div className="w-14 h-14 rounded-2xl bg-accent-subtle text-accent flex items-center justify-center mx-auto shadow-subtle">
+                  <FileText className="w-7 h-7" />
+                </div>
+                <div>
+                  <span className="font-bold text-sm text-primary block">Official Syllabus</span>
+                  <span className="text-[11px] text-text-muted block">Format: High-Res PDF (3 Pages)</span>
+                </div>
+                <div className="pt-2 border-t border-border text-[11px] text-secondary font-medium">
+                  <span>Batch 1 Free Fellowship Included</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* 3. YOUR JOURNEY: From a spark of curiosity to something you built yourself (PDF Page 2) */}
       <section id="journey" className="py-20 bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
           
           <div className="max-w-3xl mb-14">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-3 py-1 rounded-full border border-accent-light/60">
               Your Journey
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
@@ -400,7 +460,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
           
           <div className="max-w-3xl mb-14">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-3 py-1 rounded-full border border-accent-light/60">
               The Curriculum
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">
@@ -426,7 +486,7 @@ export const LandingPage: React.FC = () => {
                     ${isUnlocked 
                       ? (isSelected 
                           ? 'bg-surface border-accent shadow-premium ring-2 ring-accent/20' 
-                          : 'bg-surface border-blue-200 shadow-card hover:border-accent') 
+                          : 'bg-surface border-accent-light/60 shadow-card hover:border-accent') 
                       : (isSelected
                           ? 'bg-slate-50 border-slate-400 shadow-subtle'
                           : 'bg-slate-50/80 border-border hover:border-slate-300')}
@@ -531,66 +591,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. NICELY INTEGRATED BROCHURE DOWNLOAD SECTION (Requirement 1) */}
-      <section id="brochure" className="py-20 bg-background border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
-          
-          <div className="p-8 sm:p-12 rounded-3xl bg-surface border border-border shadow-elevated relative overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              
-              {/* Left Column: Text & Download Action */}
-              <div className="lg:col-span-8 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-accent text-xs font-bold border border-blue-200">
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Official Syllabus & Guide</span>
-                </div>
-
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                  Download the Full Program Brochure
-                </h3>
-
-                <p className="text-sm text-text-muted leading-relaxed">
-                  Get a complete copy of the 12-module syllabus, course policies, jury presentation schedule, certificate criteria, and faculty biographies in a high-resolution PDF document.
-                </p>
-
-                <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <a
-                    href="/assets/ai-product-wizardry-brochure.pdf"
-                    download="ai-product-wizardry-brochure.pdf"
-                    className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm shadow-premium transition-all transform hover:-translate-y-0.5"
-                  >
-                    <Download className="w-4 h-4 text-white" />
-                    <span>Download Brochure (PDF)</span>
-                  </a>
-
-                  <span className="text-xs text-text-muted flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Official Document · Free Instant Download</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Column: Visual Document Badge Card */}
-              <div className="lg:col-span-4 bg-slate-50 p-6 rounded-2xl border border-border text-center space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-blue-100 text-accent flex items-center justify-center mx-auto shadow-subtle">
-                  <FileText className="w-7 h-7" />
-                </div>
-                <div>
-                  <span className="font-bold text-sm text-primary block">Curriculum Handbook</span>
-                  <span className="text-[11px] text-text-muted block">Format: PDF Document</span>
-                </div>
-                <div className="pt-2 border-t border-border text-[11px] text-secondary font-medium">
-                  <span>Batch 1 Free Fellowship Included</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* 6. TUITION FEE & COMMITMENT (Page 2 of PDF) */}
+      {/* 5. TUITION FEE & COMMITMENT (Page 2 of PDF) */}
       <section className="py-16 bg-surface border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
@@ -622,7 +623,7 @@ export const LandingPage: React.FC = () => {
       <section id="faqs" className="py-20 bg-background">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
           <div className="text-center mb-14">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-3 py-1 rounded-full border border-accent-light/60">
               Common Inquiries
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-primary mt-3 tracking-tight">

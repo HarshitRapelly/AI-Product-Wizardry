@@ -52,10 +52,10 @@ export const ChooseLearningModePage: React.FC = () => {
           <div className="bg-surface rounded-3xl border-2 border-border hover:border-accent shadow-card hover:shadow-premium transition-all p-8 flex flex-col justify-between group">
             <div>
               <div className="flex items-center justify-between mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="w-14 h-14 rounded-2xl bg-accent-subtle text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
                   <Globe className="w-7 h-7 text-accent" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-blue-50 text-accent text-xs font-bold border border-blue-200">
+                <span className="px-3 py-1 rounded-full bg-accent-subtle text-accent text-xs font-bold border border-accent-light/60">
                   VIRTUAL COHORT
                 </span>
               </div>

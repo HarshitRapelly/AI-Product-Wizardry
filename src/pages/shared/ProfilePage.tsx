@@ -91,7 +91,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-extrabold text-primary">{user?.name || "Rahul Sharma"}</h1>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-accent uppercase border border-blue-200">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-subtle text-accent uppercase border border-accent-light/60">
                     Batch 1 Fellow
                   </span>
                 </div>
@@ -205,7 +205,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
                   <h3 className="font-bold text-base text-primary">Module 1 Deliverables Checklist</h3>
                   <p className="text-xs text-text-muted">Foundations of Product Management</p>
                 </div>
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-accent border border-blue-200">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent border border-accent-light/60">
                   Active Sprint
                 </span>
               </div>
@@ -287,7 +287,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
           <div className="space-y-6">
             <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle space-y-6">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
+                <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2.5 py-0.5 rounded border border-accent-light/60">
                   Graduation Criteria
                 </span>
                 <h3 className="text-xl font-extrabold text-primary mt-2">

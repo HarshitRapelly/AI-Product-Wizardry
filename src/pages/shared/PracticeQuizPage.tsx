@@ -165,7 +165,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-accent uppercase border border-blue-200">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent uppercase border border-accent-light/60">
                   Level 01 Knowledge Evaluation
                 </span>
                 <span className="text-xs text-text-muted">{totalQuestions} Scenario Questions</span>
@@ -213,7 +213,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
               >
                 {/* Question Header */}
                 <div className="flex items-start justify-between gap-4 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2 py-0.5 rounded border border-accent-light/60">
                     Question {qIdx + 1} of {totalQuestions}
                   </span>
 
@@ -255,7 +255,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
                         optionStyle = 'border-border/60 opacity-60 text-text-muted';
                       }
                     } else if (isSelected) {
-                      optionStyle = 'border-accent bg-blue-50/80 text-primary font-semibold ring-1 ring-accent';
+                      optionStyle = 'border-accent bg-accent-subtle text-primary font-semibold ring-1 ring-accent';
                     }
 
                     return (

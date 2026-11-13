@@ -69,25 +69,7 @@ export const RegisterPage: React.FC = () => {
   };
 
   const handleTriggerGoogleAuth = () => {
-    // If Google Identity Services is available in window, we can request token or open account dialog
-    if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-      try {
-        (window as any).google.accounts.id.initialize({
-          client_id: '9876543210-example.apps.googleusercontent.com',
-          callback: (response: any) => {
-            if (response?.credential) {
-              loginWithGoogleAccount('student@gmail.com', 'Google Fellow');
-              navigate('/checkout');
-            }
-          }
-        });
-        (window as any).google.accounts.id.prompt();
-      } catch {
-        setGoogleModalOpen(true);
-      }
-    } else {
-      setGoogleModalOpen(true);
-    }
+    setGoogleModalOpen(true);
   };
 
   const handleConfirmGoogleSignIn = (e: React.FormEvent) => {

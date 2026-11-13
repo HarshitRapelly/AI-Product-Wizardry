@@ -48,7 +48,7 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({ mode }) => {
               <div className="flex items-center gap-2">
                 <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold uppercase border ${
                   mode === 'online' 
-                    ? 'bg-blue-50 text-accent border-blue-200' 
+                    ? 'bg-accent-subtle text-accent border-accent-light/60' 
                     : 'bg-slate-100 text-slate-800 border-slate-300'
                 }`}>
                   {mode === 'online' ? 'Virtual Studio Schedule' : 'Campus Lab Schedule'}
@@ -147,7 +147,7 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({ mode }) => {
                     <div className="flex items-center gap-1.5 text-xs text-text-muted">
                       {mode === 'online' ? (
                         <>
-                          <Globe className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                          <Globe className="w-3.5 h-3.5 text-cerulean flex-shrink-0" />
                           <span className="truncate">{cls.locationOrPlatform}</span>
                         </>
                       ) : (
