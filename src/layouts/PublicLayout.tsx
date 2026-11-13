@@ -55,7 +55,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-semibold text-emerald-300">FOR UNDERGRADUATES</span>
             <span className="hidden sm:inline text-slate-400">•</span>
-            <span className="font-medium text-slate-300">Batch 1 Applications Now Open (Free for this batch)</span>
+            <span className="font-medium text-slate-300">Batch 1 Applications Now Open</span>
           </div>
           <div className="hidden md:flex items-center gap-4 text-slate-300">
             <span>Powered by NIAT × NxtWave</span>
@@ -232,7 +232,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent text-white text-sm font-bold"
                   >
-                    <span>Register Now (Free for Batch 1)</span>
+                    <span>Register</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <Link
@@ -323,8 +323,8 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Admissions</h4>
               <div className="space-y-2 text-sm text-slate-400">
-                <p className="font-semibold text-white">Batch 1: Free Fellowship</p>
-                <p className="text-xs">₹11,000 from Batch 2 onwards.</p>
+                <p className="font-semibold text-white">Batch 1: Cohort Admissions</p>
+                <p className="text-xs">Selective enrollment for undergraduates.</p>
                 <p className="text-xs">admissions@aiproductwizardry.edu</p>
                 <div className="pt-2">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 text-xs text-slate-300 border border-slate-700">

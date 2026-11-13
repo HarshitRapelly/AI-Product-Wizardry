@@ -2,6 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, LearningMode, PaymentDetails, QuizAttempt, AttendanceRecord, LeaderboardStudent } from '../types';
 import { COURSE_PRICE, INITIAL_ATTENDANCE_RECORDS, INITIAL_LEADERBOARD } from '../data/mockData';
 
+export interface TopicProgressItem {
+  videoWatched: boolean;
+  quizCompleted: boolean;
+  quizScore?: number;
+  readingCompleted: boolean;
+}
+
+export type Level1TopicsState = Record<number, TopicProgressItem>;
+
 interface AuthAndCourseContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -15,13 +24,14 @@ interface AuthAndCourseContextType {
   registeredClassIds: string[];
   attendanceRecords: AttendanceRecord[];
   watchedSessionIds: string[];
+  topicProgress: Level1TopicsState;
   
   // Actions
   login: (email: string, name?: string) => boolean;
   loginWithGoogleAccount: (email: string, name: string, avatar?: string) => void;
   register: (name: string, email: string) => boolean;
   logout: () => void;
-  processPayment: (method: string) => PaymentDetails;
+  processPayment: (method: string, customAmount?: number) => PaymentDetails;
   selectLearningMode: (mode: LearningMode) => void;
   toggleReadingCompleted: () => void;
   submitQuizAttempt: (selectedAnswers: Record<number, number>, totalQuestions: number, correctAnswersCount: number) => QuizAttempt;
@@ -30,6 +40,12 @@ interface AuthAndCourseContextType {
   unregisterClass: (classId: string) => void;
   markAttendance: (sessionTitle?: string) => void;
   markSessionWatched: (sessionId: string) => void;
+  
+  // Topic Level 1 sequential progress
+  getTopicProgress: (topicId: number) => TopicProgressItem;
+  markTopicVideoWatched: (topicId: number) => void;
+  markTopicQuizCompleted: (topicId: number, score?: number) => void;
+  toggleTopicReadingCompleted: (topicId: number) => void;
   resetAllDemoData: () => void;
   
   // Computed values
@@ -48,6 +64,14 @@ const STORAGE_KEYS = {
   REGISTERED_CLASSES: 'aiw_registered_classes',
   ATTENDANCE: 'aiw_attendance_records',
   WATCHED_SESSIONS: 'aiw_watched_sessions',
+  TOPIC_PROGRESS: 'aiw_topic_progress',
+};
+
+const DEFAULT_TOPIC_PROGRESS: Level1TopicsState = {
+  1: { videoWatched: false, quizCompleted: false, readingCompleted: false },
+  2: { videoWatched: false, quizCompleted: false, readingCompleted: false },
+  3: { videoWatched: false, quizCompleted: false, readingCompleted: false },
+  4: { videoWatched: false, quizCompleted: false, readingCompleted: false }
 };
 
 const AuthAndCourseContext = createContext<AuthAndCourseContextType | undefined>(undefined);
@@ -132,6 +156,16 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
 
+  // 9. Level 1 4-topic sequential progress
+  const [topicProgress, setTopicProgress] = useState<Level1TopicsState>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TOPIC_PROGRESS);
+      return saved ? JSON.parse(saved) : DEFAULT_TOPIC_PROGRESS;
+    } catch {
+      return DEFAULT_TOPIC_PROGRESS;
+    }
+  });
+
   // Sync to localStorage
   useEffect(() => {
     if (user) {
@@ -181,6 +215,10 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem(STORAGE_KEYS.WATCHED_SESSIONS, JSON.stringify(watchedSessionIds));
   }, [watchedSessionIds]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.TOPIC_PROGRESS, JSON.stringify(topicProgress));
+  }, [topicProgress]);
+
   // Actions
   const login = (email: string, name?: string): boolean => {
     const studentName = name || (email.split('@')[0] ? email.split('@')[0].replace(/[._]/g, ' ') : 'Student Fellow');
@@ -227,16 +265,19 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
   };
 
-  const processPayment = (method: string): PaymentDetails => {
+  const processPayment = (method: string, customAmount?: number): PaymentDetails => {
     const txId = 'AIW-ADM-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+    const finalAmount = customAmount !== undefined 
+      ? customAmount 
+      : (learningMode === 'online' ? 11000 : 0);
     const details: PaymentDetails = {
       transactionId: txId,
-      amount: COURSE_PRICE.current,
-      currency: COURSE_PRICE.currency,
+      amount: finalAmount,
+      currency: 'INR',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       method: method,
       status: 'completed',
-      programName: 'AI Product Wizardry — Undergraduate Fellowship',
+      programName: `AI Product Wizardry — ${learningMode === 'online' ? 'Online Virtual Cohort' : 'Offline Campus Batch'}`,
       cohort: 'Batch 1 (Winter/Spring 2026)'
     };
     setPaymentDetails(details);
@@ -297,6 +338,44 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     setWatchedSessionIds(prev => prev.includes(sessionId) ? prev : [...prev, sessionId]);
   };
 
+  const getTopicProgress = (topicId: number): TopicProgressItem => {
+    return topicProgress[topicId] || { videoWatched: false, quizCompleted: false, readingCompleted: false };
+  };
+
+  const markTopicVideoWatched = (topicId: number) => {
+    setTopicProgress(prev => ({
+      ...prev,
+      [topicId]: {
+        ...(prev[topicId] || { videoWatched: false, quizCompleted: false, readingCompleted: false }),
+        videoWatched: true
+      }
+    }));
+  };
+
+  const markTopicQuizCompleted = (topicId: number, score: number = 100) => {
+    setTopicProgress(prev => ({
+      ...prev,
+      [topicId]: {
+        ...(prev[topicId] || { videoWatched: false, quizCompleted: false, readingCompleted: false }),
+        quizCompleted: true,
+        quizScore: score
+      }
+    }));
+  };
+
+  const toggleTopicReadingCompleted = (topicId: number) => {
+    setTopicProgress(prev => {
+      const current = prev[topicId] || { videoWatched: false, quizCompleted: false, readingCompleted: false };
+      return {
+        ...prev,
+        [topicId]: {
+          ...current,
+          readingCompleted: !current.readingCompleted
+        }
+      };
+    });
+  };
+
   const resetAllDemoData = () => {
     localStorage.clear();
     setUser(null);
@@ -307,6 +386,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     setRegisteredClassIds(['cls-101', 'cls-201']);
     setAttendanceRecords(INITIAL_ATTENDANCE_RECORDS);
     setWatchedSessionIds(['rec-101']);
+    setTopicProgress(DEFAULT_TOPIC_PROGRESS);
   };
 
   // Computations
@@ -387,6 +467,11 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         unregisterClass,
         markAttendance,
         markSessionWatched,
+        topicProgress,
+        getTopicProgress,
+        markTopicVideoWatched,
+        markTopicQuizCompleted,
+        toggleTopicReadingCompleted,
         resetAllDemoData,
         courseProgressPercentage,
         totalPoints,

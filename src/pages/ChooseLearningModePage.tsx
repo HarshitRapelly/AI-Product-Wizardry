@@ -15,11 +15,7 @@ export const ChooseLearningModePage: React.FC = () => {
 
   const handleSelectMode = (mode: 'online' | 'offline') => {
     selectLearningMode(mode);
-    if (mode === 'online') {
-      navigate('/online/dashboard');
-    } else {
-      navigate('/offline/dashboard');
-    }
+    navigate(`/checkout?mode=${mode}`);
   };
 
   return (
@@ -56,7 +52,7 @@ export const ChooseLearningModePage: React.FC = () => {
                   <Globe className="w-7 h-7 text-accent" />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-accent-subtle text-accent text-xs font-bold border border-accent-light/60">
-                  VIRTUAL COHORT
+                  ONLINE COHORT · ₹11,000
                 </span>
               </div>
 
@@ -104,7 +100,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 onClick={() => handleSelectMode('online')}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all"
               >
-                <span>Select Online Mode</span>
+                <span>Proceed to Online Payment (₹11,000)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -117,8 +113,8 @@ export const ChooseLearningModePage: React.FC = () => {
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <MapPin className="w-7 h-7 text-primary" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-300">
-                  CAMPUS BATCH
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-300">
+                  CAMPUS BATCH · 100% WAIVED
                 </span>
               </div>
 
@@ -166,7 +162,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 onClick={() => handleSelectMode('offline')}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-primary hover:bg-slate-800 text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all"
               >
-                <span>Select Offline Mode</span>
+                <span>Proceed to Campus Enrollment (100% Waived)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

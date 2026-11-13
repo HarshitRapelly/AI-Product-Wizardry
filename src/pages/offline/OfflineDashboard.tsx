@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { UPCOMING_CLASSES } from '../../data/mockData';
+import { MilestoneProgressChain } from '../../components/dashboard/MilestoneProgressChain';
 import {
   Calendar,
   Clock,
@@ -85,6 +86,9 @@ export const OfflineDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Milestone Progress Chain (--o--o--o--o--) */}
+        <MilestoneProgressChain mode="offline" />
 
         {/* Campus Location & Facility Banner */}
         <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-card text-left">

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const PaymentSuccessPage: React.FC = () => {
-  const { user, paymentDetails } = useAuthAndCourse();
+  const { user, paymentDetails, learningMode } = useAuthAndCourse();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -101,28 +101,32 @@ export const PaymentSuccessPage: React.FC = () => {
 
             <div className="pt-2 flex justify-between text-sm font-bold text-primary">
               <span>Total Fee Charged</span>
-              <span className="text-emerald-600 text-base">₹0 (100% Free Scholarship)</span>
+              <span className="text-accent text-base">
+                {paymentDetails?.amount && paymentDetails.amount > 0 
+                  ? `₹${paymentDetails.amount.toLocaleString()} (Paid)` 
+                  : '₹0 (100% Waived)'}
+              </span>
             </div>
           </div>
 
           {/* Next Step Guidance Alert */}
-          <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
-            <span className="font-bold flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-accent" />
-              <span>Next Step: Select Your Learning Mode</span>
+          <div className="p-4 rounded-xl bg-accent-subtle border border-accent-light/60 text-xs text-secondary space-y-1">
+            <span className="font-bold text-accent flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Enrollment Activated: {learningMode === 'online' ? 'Online Cohort' : 'Campus Batch'}</span>
             </span>
-            <p className="text-blue-800 leading-relaxed">
-              Now choose whether you wish to attend as an <span className="font-semibold">Online Cohort Fellow</span> or join the <span className="font-semibold">In-Person Campus Batch</span>.
+            <p className="leading-relaxed">
+              Your student dashboard and Module 1 curriculum materials are now fully unlocked.
             </p>
           </div>
 
           {/* Action CTAs */}
           <div className="pt-2 space-y-3">
             <button
-              onClick={() => navigate('/choose-learning-mode')}
+              onClick={() => navigate(learningMode === 'online' ? '/online/dashboard' : '/offline/dashboard')}
               className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl shadow-premium bg-accent hover:bg-accent-hover text-white text-base font-bold transition-all transform hover:-translate-y-0.5"
             >
-              <span>Choose Learning Mode</span>
+              <span>{learningMode === 'online' ? 'Enter Online Dashboard' : 'Enter Campus Dashboard'}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
 

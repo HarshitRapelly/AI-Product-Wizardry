@@ -30,6 +30,9 @@ import { PracticeQuizPage } from './pages/shared/PracticeQuizPage';
 import { ClassesPage } from './pages/shared/ClassesPage';
 import { LeaderboardPage } from './pages/shared/LeaderboardPage';
 import { ProfilePage } from './pages/shared/ProfilePage';
+import { AssignmentsPage } from './pages/shared/AssignmentsPage';
+import { GradesPage } from './pages/shared/GradesPage';
+import { CohortCommunityPage } from './pages/shared/CohortCommunityPage';
 
 export function App() {
   return (
@@ -61,9 +64,9 @@ export function App() {
           <Route
             path="/choose-learning-mode"
             element={
-              <PaidGuard>
+              <AuthGuard>
                 <ChooseLearningModePage />
-              </PaidGuard>
+              </AuthGuard>
             }
           />
 
@@ -121,6 +124,30 @@ export function App() {
             element={
               <PortalModeGuard requiredMode="online">
                 <ClassesPage mode="online" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
+            path="/online/assignments"
+            element={
+              <PortalModeGuard requiredMode="online">
+                <AssignmentsPage mode="online" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
+            path="/online/grades"
+            element={
+              <PortalModeGuard requiredMode="online">
+                <GradesPage mode="online" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
+            path="/online/cohort"
+            element={
+              <PortalModeGuard requiredMode="online">
+                <CohortCommunityPage mode="online" />
               </PortalModeGuard>
             }
           />
@@ -187,6 +214,30 @@ export function App() {
             element={
               <PortalModeGuard requiredMode="offline">
                 <ClassesPage mode="offline" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
+            path="/offline/assignments"
+            element={
+              <PortalModeGuard requiredMode="offline">
+                <AssignmentsPage mode="offline" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
+            path="/offline/grades"
+            element={
+              <PortalModeGuard requiredMode="offline">
+                <GradesPage mode="offline" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
+            path="/offline/cohort"
+            element={
+              <PortalModeGuard requiredMode="offline">
+                <CohortCommunityPage mode="offline" />
               </PortalModeGuard>
             }
           />

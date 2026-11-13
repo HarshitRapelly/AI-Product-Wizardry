@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { UPCOMING_CLASSES } from '../../data/mockData';
+import { MilestoneProgressChain } from '../../components/dashboard/MilestoneProgressChain';
 import {
   Calendar,
   Clock,
@@ -100,99 +101,84 @@ export const OnlineDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Milestone Progress Chain (--o--o--o--o--) */}
+        <MilestoneProgressChain mode="online" />
+
         {/* 2. Grid of Core Modules */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
           
-          {/* Left Column (8 Cols): Attendance, Course Progress, Upcoming Classes */}
+          {/* Left Column (8 Cols): Upcoming Sessions to Register & Module 1 Hub */}
           <div className="lg:col-span-8 space-y-8">
             
-            {/* A. ATTENDANCE MODULE (Online Only) */}
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle">
+            {/* A. UPCOMING SESSIONS TO BE REGISTERED (Minimalistic & Student-Friendly) */}
+            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-emerald-600" />
-                    <h2 className="text-base font-bold text-primary">Live Attendance & Verification</h2>
+                    <Calendar className="w-4 h-4 text-accent" />
+                    <h2 className="text-base font-bold text-primary">Upcoming Sessions to be Registered</h2>
                   </div>
                   <p className="text-xs text-text-muted mt-0.5">
-                    Track digital session participation for fellowship accreditation.
+                    Live interactive studio masterclasses — reserve your seat below to participate live.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleMarkAttendance}
-                    disabled={markedToday}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-subtle transition-all disabled:opacity-75"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{markedToday ? 'Attendance Logged!' : 'Mark Today\'s Attendance'}</span>
-                  </button>
-                </div>
+                <Link
+                  to="/online/classes"
+                  className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 self-start sm:self-auto"
+                >
+                  <span>View All Sessions</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
 
-              {/* Attendance Statistics Bar */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-5">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-border text-left">
-                  <span className="text-[11px] font-semibold text-text-muted uppercase">Attendance Rate</span>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary">{attendancePercentage}%</span>
-                    <span className="text-xs text-emerald-600 font-semibold">Good Standing</span>
-                  </div>
-                  <span className="text-[11px] text-text-muted">Target ≥ 80% attendance</span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-border text-left">
-                  <span className="text-[11px] font-semibold text-text-muted uppercase">Sessions Attended</span>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary">{attendedSessionsCount}</span>
-                    <span className="text-xs text-text-muted">of {totalTrackedSessions} recorded</span>
-                  </div>
-                  <span className="text-[11px] text-text-muted">Live webinars & faculty clinics</span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-border text-left">
-                  <span className="text-[11px] font-semibold text-text-muted uppercase">Next Cohort Meeting</span>
-                  <div className="mt-1">
-                    <span className="text-sm font-bold text-primary block truncate">Wednesday Masterclass</span>
-                    <span className="text-xs text-accent font-medium">06:00 PM IST</span>
-                  </div>
-                  <span className="text-[11px] text-text-muted">Zoom Interactive Theater</span>
-                </div>
-              </div>
-
-              {/* Recent Attendance Log */}
-              <div className="pt-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-secondary mb-3 block text-left">
-                  Recent Verified Sessions
-                </span>
-                <div className="divide-y divide-border border border-border rounded-2xl overflow-hidden">
-                  {attendanceRecords.slice(0, 3).map((rec) => (
-                    <div key={rec.id} className="p-3.5 bg-surface hover:bg-slate-50 transition-colors flex items-center justify-between text-xs text-left">
-                      <div className="space-y-0.5">
-                        <span className="font-semibold text-primary block">{rec.sessionTitle}</span>
-                        <div className="flex items-center gap-2 text-[11px] text-text-muted">
-                          <span>{rec.date}</span>
-                          <span>•</span>
-                          <span>{rec.time}</span>
+              {/* Minimalistic Upcoming Sessions List */}
+              <div className="divide-y divide-border pt-2">
+                {onlineClasses.slice(0, 3).map((cls) => {
+                  const isRegistered = registeredClassIds.includes(cls.id);
+                  return (
+                    <div key={cls.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block text-[11px] font-bold text-accent uppercase tracking-wider">
+                            {cls.date} • {cls.time}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                            Virtual Studio
+                          </span>
                         </div>
+                        <h4 className="font-bold text-sm text-primary">{cls.title}</h4>
+                        <p className="text-xs text-text-muted">
+                          Faculty: <span className="text-secondary font-medium">{cls.instructor}</span> ({cls.instructorRole})
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {rec.status === 'present' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Verified</span>
-                          </span>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        {isRegistered ? (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                              <CheckCheck className="w-4 h-4" />
+                              <span>Registered ✓</span>
+                            </span>
+                            <button
+                              onClick={() => unregisterClass(cls.id)}
+                              className="text-xs text-text-muted hover:text-red-600 underline font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-cerulean-subtle text-cerulean-dark text-[11px] font-medium border border-cerulean-light">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Upcoming</span>
-                          </span>
+                          <button
+                            onClick={() => registerClass(cls.id)}
+                            className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold shadow-subtle transition-colors"
+                          >
+                            Register for Session
+                          </button>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -215,47 +201,16 @@ export const OnlineDashboard: React.FC = () => {
                   to="/online/level/1"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold shadow-subtle transition-colors"
                 >
-                  <span>Open Module 1 Hub</span>
+                  <span>Open 4 Learning Topics</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
 
               {/* 3 Components Preview */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
-                {/* 1. Reading */}
+                {/* 1. Video Masterclasses */}
                 <Link
-                  to="/online/level/1/reading"
-                  className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-accent-subtle text-accent flex items-center justify-center">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      {readingCompleted ? (
-                        <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Done
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-text-muted">15 min read</span>
-                      )}
-                    </div>
-                    <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Reading Material
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Great code vs product thinking and the 3 core wizard questions.
-                    </p>
-                  </div>
-                  <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>{readingCompleted ? 'Review Material' : 'Read Handbook'}</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-
-                {/* 2. Recorded Sessions (Online Only) */}
-                <Link
-                  to="/online/level/1/recordings"
+                  to="/online/level/1"
                   className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -263,24 +218,24 @@ export const OnlineDashboard: React.FC = () => {
                       <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
                         <Video className="w-4 h-4" />
                       </div>
-                      <span className="text-[10px] text-text-muted">3 Sessions</span>
+                      <span className="text-[10px] text-text-muted">Step 1</span>
                     </div>
                     <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Recorded Sessions
+                      Video Masterclasses
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Masterclasses from Swiggy & Razorpay product engineering leaders.
+                      Watch faculty video lectures to unlock knowledge check quizzes.
                     </p>
                   </div>
                   <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>Watch Replays</span>
+                    <span>Watch Videos</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </span>
                 </Link>
 
-                {/* 3. Quiz */}
+                {/* 2. Practice Quizzes */}
                 <Link
-                  to="/online/level/1/quiz"
+                  to="/online/level/1"
                   className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -288,84 +243,45 @@ export const OnlineDashboard: React.FC = () => {
                       <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
                         <Award className="w-4 h-4" />
                       </div>
-                      {quizAttempt ? (
-                        <span className={`text-[10px] font-bold ${quizAttempt.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
-                          Score: {quizAttempt.percentage}%
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-text-muted">5 Questions</span>
-                      )}
+                      <span className="text-[10px] text-text-muted">Step 2 (Unlocks after Video)</span>
                     </div>
                     <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Practice Quiz
+                      Interactive Quizzes
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Scenario-based evaluation of Module 1 product decisions.
+                      Scenario-based evaluation across all 4 module topics.
                     </p>
                   </div>
                   <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>{quizAttempt ? 'Review Score / Retake' : 'Take Quiz'}</span>
+                    <span>Take Quizzes</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </span>
                 </Link>
-              </div>
-            </div>
 
-            {/* C. UPCOMING ONLINE CLASSES */}
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
-              <div className="flex items-center justify-between pb-4 border-b border-border">
-                <div>
-                  <h2 className="text-base font-bold text-primary">Upcoming Live Sessions</h2>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    Live masterclasses conducted via interactive virtual studio.
-                  </p>
-                </div>
-                <Link to="/online/classes" className="text-xs font-semibold text-accent hover:underline">
-                  View Full Schedule →
-                </Link>
-              </div>
-
-              <div className="divide-y divide-border pt-2">
-                {onlineClasses.slice(0, 2).map((cls) => {
-                  const isRegistered = registeredClassIds.includes(cls.id);
-                  return (
-                    <div key={cls.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <span className="inline-block text-[11px] font-bold text-accent uppercase tracking-wider">
-                          {cls.date} • {cls.time}
-                        </span>
-                        <h4 className="font-bold text-sm text-primary">{cls.title}</h4>
-                        <p className="text-xs text-text-muted">
-                          Faculty: <span className="text-secondary font-medium">{cls.instructor}</span> ({cls.instructorRole})
-                        </p>
+                {/* 3. Reading Material */}
+                <Link
+                  to="/online/level/1"
+                  className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-accent-subtle text-accent flex items-center justify-center">
+                        <BookOpen className="w-4 h-4" />
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        {isRegistered ? (
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                              <CheckCheck className="w-4 h-4" />
-                              <span>Seat Reserved</span>
-                            </span>
-                            <button
-                              onClick={() => unregisterClass(cls.id)}
-                              className="text-xs text-text-muted hover:text-red-600 underline font-medium"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => registerClass(cls.id)}
-                            className="px-4 py-2 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold shadow-subtle transition-colors"
-                          >
-                            Reserve Seat
-                          </button>
-                        )}
-                      </div>
+                      <span className="text-[10px] text-text-muted">Step 3 (Unlocks after Quiz)</span>
                     </div>
-                  );
-                })}
+                    <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
+                      Reading Handbooks
+                    </h3>
+                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                      Executive framework handbooks and PRD syntheses.
+                    </p>
+                  </div>
+                  <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
+                    <span>Read Handbooks</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
+                </Link>
               </div>
             </div>
 

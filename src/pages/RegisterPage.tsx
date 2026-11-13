@@ -64,7 +64,7 @@ export const RegisterPage: React.FC = () => {
     setTimeout(() => {
       register(fullName, email);
       setIsSubmitting(false);
-      navigate('/checkout');
+      navigate('/choose-learning-mode');
     }, 400);
   };
 
@@ -78,7 +78,7 @@ export const RegisterPage: React.FC = () => {
     const name = googleName.trim() || googleEmail.split('@')[0];
     loginWithGoogleAccount(googleEmail, name);
     setGoogleModalOpen(false);
-    navigate('/checkout');
+    navigate('/choose-learning-mode');
   };
 
   return (

@@ -71,7 +71,7 @@ export const LandingPage: React.FC = () => {
                   to="/register"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-bold shadow-premium transition-all transform hover:-translate-y-0.5"
                 >
-                  <span>Register for Batch 1 (Free)</span>
+                  <span>Register</span>
                   <ArrowRight className="w-5 h-5" />
                 </Link>
 
@@ -121,8 +121,8 @@ export const LandingPage: React.FC = () => {
                         <span className="text-[10px] text-text-muted">Idea · Build · Launch</span>
                       </div>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
-                      FREE BATCH 1
+                    <span className="px-2.5 py-0.5 rounded-full bg-accent-subtle text-accent text-[11px] font-bold border border-accent-light/60">
+                      BATCH 1 ADMISSIONS
                     </span>
                   </div>
 
@@ -317,7 +317,7 @@ export const LandingPage: React.FC = () => {
                   <span className="text-[11px] text-text-muted block">Format: High-Res PDF (3 Pages)</span>
                 </div>
                 <div className="pt-2 border-t border-border text-[11px] text-secondary font-medium">
-                  <span>Batch 1 Free Fellowship Included</span>
+                  <span>Batch 1 Complete Syllabus Included</span>
                 </div>
               </div>
 
@@ -591,16 +591,16 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. TUITION FEE & COMMITMENT (Page 2 of PDF) */}
+      {/* 5. PROGRAM COMMITMENT */}
       <section className="py-16 bg-surface border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
-            <span>THE FEE & COMMITMENT</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle text-accent text-xs font-bold border border-accent-light/60">
+            <span>PROGRAM COMMITMENT</span>
           </div>
           
           <h2 className="text-3xl font-extrabold text-primary tracking-tight">
-            ₹11,000 from Batch 2 onwards. <br />
-            <span className="text-emerald-600">100% Free for Batch 1.</span>
+            Six Months of Building. <br />
+            <span className="text-accent">Designed for Ambitious Students.</span>
           </h2>
           
           <p className="text-sm text-text-muted max-w-xl mx-auto leading-relaxed">
@@ -612,7 +612,7 @@ export const LandingPage: React.FC = () => {
               to="/register"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-bold shadow-premium transition-all transform hover:-translate-y-0.5"
             >
-              <span>Register Now for Free Batch 1</span>
+              <span>Register</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -672,11 +672,11 @@ export const LandingPage: React.FC = () => {
               to="/register"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-base font-bold shadow-premium transition-all transform hover:-translate-y-0.5"
             >
-              <span>Register for AI Product Wizardry</span>
+              <span>Register</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
             <p className="text-xs text-text-muted mt-3">
-              Batch 1 Enrollment • 100% Free Fellowship
+              Batch 1 Enrollment • Applications Now Open
             </p>
           </div>
         </div>

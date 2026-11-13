@@ -139,8 +139,85 @@ export const OnlineLevels: React.FC = () => {
                     </div>
 
                     {isUnlocked ? (
-                      /* 3 Stacked Module Action Cards inside dropdown */
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                      level.id === 2 ? (
+                        /* Module 1: 4 Sets of Topics Preview with Sequential Indicators */
+                        <div className="space-y-4 pt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-accent">
+                              Module 1: 4 Sequential Topics (Video → Quiz → Reading)
+                            </span>
+                            <Link
+                              to="/online/level/1"
+                              className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
+                            >
+                              <span>Open Module 1 Hub</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1.5">
+                              <span className="text-[10px] font-bold text-accent uppercase">Topic 01</span>
+                              <h5 className="font-bold text-xs text-primary truncate">What is a Product & Spotting Real Needs</h5>
+                              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                                <span className="text-indigo-600 font-semibold">1. Video</span>
+                                <span>→</span>
+                                <span className="text-emerald-600 font-semibold">2. Quiz</span>
+                                <span>→</span>
+                                <span className="text-accent font-semibold">3. Reading</span>
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1.5">
+                              <span className="text-[10px] font-bold text-accent uppercase">Topic 02</span>
+                              <h5 className="font-bold text-xs text-primary truncate">User Friction: "Can Say" vs "Point At"</h5>
+                              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                                <span className="text-indigo-600 font-semibold">1. Video</span>
+                                <span>→</span>
+                                <span className="text-emerald-600 font-semibold">2. Quiz</span>
+                                <span>→</span>
+                                <span className="text-accent font-semibold">3. Reading</span>
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1.5">
+                              <span className="text-[10px] font-bold text-accent uppercase">Topic 03</span>
+                              <h5 className="font-bold text-xs text-primary truncate">Three Stories, One Pattern (Burbn, Airbnb, Slack)</h5>
+                              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                                <span className="text-indigo-600 font-semibold">1. Video</span>
+                                <span>→</span>
+                                <span className="text-emerald-600 font-semibold">2. Quiz</span>
+                                <span>→</span>
+                                <span className="text-accent font-semibold">3. Reading</span>
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1.5">
+                              <span className="text-[10px] font-bold text-accent uppercase">Topic 04</span>
+                              <h5 className="font-bold text-xs text-primary truncate">Product Stickiness: What People Can't Stop Using</h5>
+                              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                                <span className="text-indigo-600 font-semibold">1. Video</span>
+                                <span>→</span>
+                                <span className="text-emerald-600 font-semibold">2. Quiz</span>
+                                <span>→</span>
+                                <span className="text-accent font-semibold">3. Reading</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2">
+                            <Link
+                              to="/online/level/1"
+                              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold transition-colors shadow-subtle"
+                            >
+                              <span>Enter Module 1 Hub (4 Topics & Sequential Player)</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Module 0 / Other Unlocked Modules */
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                         
                         {/* 1. Reading Material Card */}
                         <div className="p-4 rounded-2xl bg-surface border border-border hover:border-accent transition-all shadow-subtle flex flex-col justify-between">
@@ -235,7 +312,8 @@ export const OnlineLevels: React.FC = () => {
                         </div>
 
                       </div>
-                    ) : (
+                    )
+                  ) : (
                       /* Locked Guidance */
                       <div className="p-4 rounded-2xl bg-surface border border-border flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 text-xs text-text-muted">

@@ -16,7 +16,10 @@ import {
   MapPin,
   RefreshCw,
   ArrowRightLeft,
-  CheckCircle2
+  CheckCircle2,
+  FileText,
+  Award,
+  Users
 } from 'lucide-react';
 
 interface PortalLayoutProps {
@@ -49,6 +52,21 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       name: mode === 'online' ? 'Live Classes' : 'Classroom Sessions',
       path: `${prefix}/classes`,
       icon: Calendar,
+    },
+    {
+      name: 'Assignments',
+      path: `${prefix}/assignments`,
+      icon: FileText,
+    },
+    {
+      name: 'Grades',
+      path: `${prefix}/grades`,
+      icon: Award,
+    },
+    {
+      name: 'Cohort',
+      path: `${prefix}/cohort`,
+      icon: Users,
     },
     {
       name: 'Cohort Leaderboard',
