@@ -24,8 +24,6 @@ export interface CourseLevel {
   id: number;
   levelNumber: string;
   title: string;
-  subtitle: string;
-  description: string;
   status: 'unlocked' | 'locked';
   estimatedHours: number;
   skills: string[];

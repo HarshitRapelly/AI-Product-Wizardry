@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthAndCourseProvider } from './context/AuthAndCourseContext';
+import { AuthAndCourseProvider, useAuthAndCourse } from './context/AuthAndCourseContext';
 
 // Route Guards
 import { AuthGuard, PaidGuard, PortalModeGuard } from './components/guards/RouteGuards';
@@ -16,12 +16,14 @@ import { ChooseLearningModePage } from './pages/ChooseLearningModePage';
 // Online Portal Pages
 import { OnlineDashboard } from './pages/online/OnlineDashboard';
 import { OnlineLevels } from './pages/online/OnlineLevels';
+import { OnlineLevel0 } from './pages/online/OnlineLevel0';
 import { OnlineLevel1 } from './pages/online/OnlineLevel1';
 import { OnlineRecordings } from './pages/online/OnlineRecordings';
 
 // Offline Portal Pages
 import { OfflineDashboard } from './pages/offline/OfflineDashboard';
 import { OfflineLevels } from './pages/offline/OfflineLevels';
+import { OfflineLevel0 } from './pages/offline/OfflineLevel0';
 import { OfflineLevel1 } from './pages/offline/OfflineLevel1';
 
 // Shared Parameterized Pages
@@ -33,6 +35,12 @@ import { ProfilePage } from './pages/shared/ProfilePage';
 import { AssignmentsPage } from './pages/shared/AssignmentsPage';
 import { GradesPage } from './pages/shared/GradesPage';
 import { CohortCommunityPage } from './pages/shared/CohortCommunityPage';
+
+const ModeRedirect: React.FC<{ subpath: string }> = ({ subpath }) => {
+  const { learningMode } = useAuthAndCourse();
+  const mode = learningMode || 'online';
+  return <Navigate to={`/${mode}/${subpath}`} replace />;
+};
 
 export function App() {
   return (
@@ -87,6 +95,17 @@ export function App() {
               </PortalModeGuard>
             }
           />
+          <Route
+            path="/online/level/0"
+            element={
+              <PortalModeGuard requiredMode="online">
+                <OnlineLevel0 />
+              </PortalModeGuard>
+            }
+          />
+          <Route path="/online/level/0/reading" element={<Navigate to="/online/level/0" replace />} />
+          <Route path="/online/level/0/recordings" element={<Navigate to="/online/level/0" replace />} />
+          <Route path="/online/level/0/quiz" element={<Navigate to="/online/level/0" replace />} />
           <Route
             path="/online/level/1"
             element={
@@ -186,6 +205,16 @@ export function App() {
             }
           />
           <Route
+            path="/offline/level/0"
+            element={
+              <PortalModeGuard requiredMode="offline">
+                <OfflineLevel0 />
+              </PortalModeGuard>
+            }
+          />
+          <Route path="/offline/level/0/reading" element={<Navigate to="/offline/level/0" replace />} />
+          <Route path="/offline/level/0/quiz" element={<Navigate to="/offline/level/0" replace />} />
+          <Route
             path="/offline/level/1"
             element={
               <PortalModeGuard requiredMode="offline">
@@ -257,6 +286,16 @@ export function App() {
               </PortalModeGuard>
             }
           />
+
+          {/* Mode-Adaptive Direct Root Routes */}
+          <Route path="/dashboard" element={<PaidGuard><ModeRedirect subpath="dashboard" /></PaidGuard>} />
+          <Route path="/levels" element={<PaidGuard><ModeRedirect subpath="levels" /></PaidGuard>} />
+          <Route path="/cohort" element={<PaidGuard><ModeRedirect subpath="cohort" /></PaidGuard>} />
+          <Route path="/assignments" element={<PaidGuard><ModeRedirect subpath="assignments" /></PaidGuard>} />
+          <Route path="/grades" element={<PaidGuard><ModeRedirect subpath="grades" /></PaidGuard>} />
+          <Route path="/classes" element={<PaidGuard><ModeRedirect subpath="classes" /></PaidGuard>} />
+          <Route path="/leaderboard" element={<PaidGuard><ModeRedirect subpath="leaderboard" /></PaidGuard>} />
+          <Route path="/profile" element={<PaidGuard><ModeRedirect subpath="profile" /></PaidGuard>} />
 
           {/* Catch-all redirect to homepage */}
           <Route path="*" element={<Navigate to="/" replace />} />

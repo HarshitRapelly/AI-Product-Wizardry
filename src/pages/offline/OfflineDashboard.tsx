@@ -77,18 +77,18 @@ export const OfflineDashboard: React.FC = () => {
             <div className="flex-shrink-0 flex items-center gap-4 bg-background p-4 rounded-2xl border border-border">
               <div>
                 <span className="text-[11px] font-semibold text-text-muted uppercase">Active Curriculum</span>
-                <div className="text-lg font-bold text-primary">Module 1 Active</div>
-                <span className="text-xs text-secondary font-semibold">{courseProgressPercentage}% of 12 Modules Completed</span>
+                <div className="text-lg font-bold text-primary">Level 0 Active</div>
+                <span className="text-xs text-secondary font-semibold">{courseProgressPercentage}% of 12 Levels Completed</span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-base shadow-subtle">
-                01
+                00
               </div>
             </div>
           </div>
         </div>
 
         {/* Milestone Progress Chain (--o--o--o--o--) */}
-        <MilestoneProgressChain mode="offline" />
+        <MilestoneProgressChain mode="offline" currentLevelId={1} />
 
         {/* Campus Location & Facility Banner */}
         <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-card text-left">
@@ -129,7 +129,7 @@ export const OfflineDashboard: React.FC = () => {
           {/* Left Column (8 Cols): Module 1 Content & Upcoming Classroom Sessions */}
           <div className="lg:col-span-8 space-y-8">
             
-            {/* MODULE 1 ACTIVE MODULE CARD (OFFLINE: Reading & Quiz ONLY - NO RECORDINGS) */}
+            {/* LEVEL 0 ACTIVE MODULE CARD */}
             <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-border gap-3">
                 <div>
@@ -137,27 +137,27 @@ export const OfflineDashboard: React.FC = () => {
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
                       Unlocked & Active
                     </span>
-                    <span className="text-xs font-bold text-secondary">Module 1 of 12</span>
+                    <span className="text-xs font-bold text-secondary">Level 0 of 12</span>
                   </div>
                   <h2 className="text-lg font-bold text-primary mt-1">
-                    Foundations of Product Management
+                    Orientation & Program Essentials
                   </h2>
                 </div>
 
                 <Link
-                  to="/offline/level/1"
+                  to="/offline/level/0"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold shadow-subtle transition-colors"
                 >
-                  <span>Open Module 1 Hub</span>
+                  <span>Open Level 0 Hub</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
 
-              {/* 2 Modules for Offline: Reading and Practice Quiz (NO Recorded Sessions!) */}
+              {/* Learning preview */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-5">
-                {/* 1. Reading Material */}
+                {/* 1. Orientation Handbook */}
                 <Link
-                  to="/offline/level/1/reading"
+                  to="/offline/level/0"
                   className="p-5 rounded-2xl border border-border hover:border-primary bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -165,30 +165,24 @@ export const OfflineDashboard: React.FC = () => {
                       <div className="w-10 h-10 rounded-xl bg-accent-subtle text-accent flex items-center justify-center">
                         <BookOpen className="w-5 h-5" />
                       </div>
-                      {readingCompleted ? (
-                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                        </span>
-                      ) : (
-                        <span className="text-xs text-text-muted">15 min study</span>
-                      )}
+                      <span className="text-xs text-text-muted">4 Topics</span>
                     </div>
                     <h3 className="font-bold text-base text-primary group-hover:text-accent transition-colors">
-                      Reading Material
+                      Orientation Handbook
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Structured curriculum handbook for classroom discussion and pre-reading.
+                      Fellowship roadmap, pod charters, and studio toolchain setup.
                     </p>
                   </div>
                   <span className="mt-5 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>{readingCompleted ? 'Review Handbook' : 'Study Handbook'}</span>
+                    <span>Study Materials</span>
                     <ChevronRight className="w-4 h-4" />
                   </span>
                 </Link>
 
-                {/* 2. Practice Quiz */}
+                {/* 2. Knowledge Checks */}
                 <Link
-                  to="/offline/level/1/quiz"
+                  to="/offline/level/0"
                   className="p-5 rounded-2xl border border-border hover:border-primary bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -196,23 +190,17 @@ export const OfflineDashboard: React.FC = () => {
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
                         <Award className="w-5 h-5" />
                       </div>
-                      {quizAttempt ? (
-                        <span className={`text-xs font-bold ${quizAttempt.passed ? 'text-emerald-600' : 'text-amber-600'}`}>
-                          Score: {quizAttempt.percentage}%
-                        </span>
-                      ) : (
-                        <span className="text-xs text-text-muted">5 Questions</span>
-                      )}
+                      <span className="text-xs text-text-muted">Knowledge Checks</span>
                     </div>
                     <h3 className="font-bold text-base text-primary group-hover:text-accent transition-colors">
-                      Practice Quiz
+                      Knowledge Checks
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      In-classroom knowledge check and peer scenario evaluation.
+                      Verify grasp of program milestones, pod standups, and Level 1 unlock.
                     </p>
                   </div>
                   <span className="mt-5 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>{quizAttempt ? 'Review Score / Retake' : 'Attempt Quiz'}</span>
+                    <span>Take Checks</span>
                     <ChevronRight className="w-4 h-4" />
                   </span>
                 </Link>

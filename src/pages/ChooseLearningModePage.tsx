@@ -52,7 +52,7 @@ export const ChooseLearningModePage: React.FC = () => {
                   <Globe className="w-7 h-7 text-accent" />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-accent-subtle text-accent text-xs font-bold border border-accent-light/60">
-                  ONLINE COHORT · ₹11,000
+                  ONLINE COHORT
                 </span>
               </div>
 
@@ -100,7 +100,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 onClick={() => handleSelectMode('online')}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all"
               >
-                <span>Proceed to Online Payment (₹11,000)</span>
+                <span>Proceed to Online Payment</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -114,7 +114,7 @@ export const ChooseLearningModePage: React.FC = () => {
                   <MapPin className="w-7 h-7 text-primary" />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-300">
-                  CAMPUS BATCH · 100% WAIVED
+                  CAMPUS BATCH
                 </span>
               </div>
 
@@ -162,7 +162,7 @@ export const ChooseLearningModePage: React.FC = () => {
                 onClick={() => handleSelectMode('offline')}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-primary hover:bg-slate-800 text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all"
               >
-                <span>Proceed to Campus Enrollment (100% Waived)</span>
+                <span>Proceed to Campus Enrollment</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

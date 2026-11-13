@@ -98,24 +98,9 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               >
                 Program Overview
               </button>
-              <button 
-                onClick={() => scrollToSection('brochure')} 
-                className="hover:text-accent transition-colors text-left"
-              >
-                Brochure
-              </button>
-              <button 
-                onClick={() => scrollToSection('curriculum')} 
-                className="hover:text-accent transition-colors text-left"
-              >
-                12 Modules
-              </button>
-              <button 
-                onClick={() => scrollToSection('journey')} 
-                className="hover:text-accent transition-colors text-left"
-              >
-                Your Journey
-              </button>
+              
+              
+              
               <button 
                 onClick={() => scrollToSection('faqs')} 
                 className="hover:text-accent transition-colors text-left"
@@ -185,30 +170,10 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             >
               Home
             </Link>
-            <button
-              onClick={() => scrollToSection('overview')}
-              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
-            >
-              Program Overview
-            </button>
-            <button
-              onClick={() => scrollToSection('curriculum')}
-              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
-            >
-              12 Modules
-            </button>
-            <button
-              onClick={() => scrollToSection('journey')}
-              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
-            >
-              Your Journey
-            </button>
-            <button
-              onClick={() => scrollToSection('brochure')}
-              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
-            >
-              Brochure
-            </button>
+            
+            
+            
+            
             <button
               onClick={() => scrollToSection('faqs')}
               className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
@@ -285,16 +250,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             </div>
 
             {/* Quick Links */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Curriculum</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">12 Progressive Modules</Link></li>
-                <li><Link to="/#overview" className="hover:text-white transition-colors">Orientation (Module 0)</Link></li>
-                <li><Link to="/#curriculum" className="hover:text-white transition-colors">Foundations (Module 1)</Link></li>
-                <li><Link to="/#journey" className="hover:text-white transition-colors">Idea · Build · Launch</Link></li>
-                <li><Link to="/#journey" className="hover:text-white transition-colors">Capstone Jury Defense</Link></li>
-              </ul>
-            </div>
+           
 
             {/* Modalities */}
             <div>
@@ -308,14 +264,8 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                   <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Offline Campus Batches</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Story-Led Handbooks</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Users className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Hear from Makers</span>
-                </li>
+                
+                
               </ul>
             </div>
 

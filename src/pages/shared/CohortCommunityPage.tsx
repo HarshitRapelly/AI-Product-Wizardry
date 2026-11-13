@@ -102,11 +102,19 @@ export const CohortCommunityPage: React.FC<CohortCommunityPageProps> = ({ mode }
   const [posts, setPosts] = useState<PeerPost[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : INITIAL_PEER_POSTS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return INITIAL_PEER_POSTS;
     } catch {
       return INITIAL_PEER_POSTS;
     }
   });
+
+  const safePosts = Array.isArray(posts) && posts.length > 0 ? posts : INITIAL_PEER_POSTS;
 
   const [headline, setHeadline] = useState('');
   const [aboutYouText, setAboutYouText] = useState('');
@@ -201,7 +209,7 @@ export const CohortCommunityPage: React.FC<CohortCommunityPageProps> = ({ mode }
               <div className="text-left">
                 <span className="text-[11px] font-semibold text-text-muted uppercase">Active Modality</span>
                 <div className="text-base font-bold text-primary">{mode === 'online' ? 'Online Cohort' : 'Campus Batch'}</div>
-                <span className="text-xs text-accent font-semibold">{posts.length} Introductions Shared</span>
+                <span className="text-xs text-accent font-semibold">{safePosts.length} Introductions Shared</span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-base shadow-subtle">
                 <Users className="w-6 h-6" />
@@ -291,12 +299,12 @@ export const CohortCommunityPage: React.FC<CohortCommunityPageProps> = ({ mode }
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-              Recent Fellow Introductions ({posts.length})
+              Recent Fellow Introductions ({safePosts.length})
             </span>
             <span className="text-xs text-text-muted">Sorted by Community Upvotes</span>
           </div>
 
-          {posts.map((post) => (
+          {safePosts.map((post) => (
             <div
               key={post.id}
               className="bg-surface rounded-2xl border border-border hover:border-slate-300 shadow-card transition-all flex text-xs overflow-hidden"

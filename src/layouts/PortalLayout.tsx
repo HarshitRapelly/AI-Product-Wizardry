@@ -29,13 +29,14 @@ interface PortalLayoutProps {
 }
 
 export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, title }) => {
-  const { user, logout, selectLearningMode, resetAllDemoData, courseProgressPercentage } = useAuthAndCourse();
+  const { user, logout, selectLearningMode, resetAllDemoData, courseProgressPercentage, learningMode } = useAuthAndCourse();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [modeSwitchModalOpen, setModeSwitchModalOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const prefix = mode === 'online' ? '/online' : '/offline';
+  const activeMode = learningMode || mode;
+  const prefix = activeMode === 'online' ? '/online' : '/offline';
 
   const navItems = [
     {
@@ -44,7 +45,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       icon: LayoutDashboard,
     },
     {
-      name: '12 Modules / Levels',
+      name: '12 Levels',
       path: `${prefix}/levels`,
       icon: Layers,
     },
@@ -69,7 +70,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       icon: Users,
     },
     {
-      name: 'Cohort Leaderboard',
+      name: 'Leaderboard',
       path: `${prefix}/leaderboard`,
       icon: Trophy,
     },

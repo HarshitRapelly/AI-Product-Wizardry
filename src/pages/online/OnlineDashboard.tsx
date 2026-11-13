@@ -80,7 +80,7 @@ export const OnlineDashboard: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                {getGreeting()}, <span className="text-cerulean">{studentName}</span>
+                {getGreeting()}, <span className="text-accent">{studentName}</span>
               </h1>
               {/* <p className="text-sm text-text-muted max-w-2xl leading-relaxed">
                 Welcome back to your learning space. Today's focus: master the 3 core questions every product wizard must ask and formulate your Module 1 problem statement.
@@ -91,18 +91,18 @@ export const OnlineDashboard: React.FC = () => {
             <div className="flex-shrink-0 flex items-center gap-4 bg-background p-4 rounded-2xl border border-border">
               <div className="text-left">
                 <span className="text-[11px] font-semibold text-text-muted uppercase">Active Curriculum</span>
-                <div className="text-lg font-bold text-primary">Module 1 Active</div>
-                <span className="text-xs text-accent font-semibold">{courseProgressPercentage}% of 12 Modules Completed</span>
+                <div className="text-lg font-bold text-primary">Level 0 Active</div>
+                <span className="text-xs text-accent font-semibold">{courseProgressPercentage}% of 12 Levels Completed</span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-base shadow-subtle">
-                01
+                00
               </div>
             </div>
           </div>
         </div>
 
         {/* Milestone Progress Chain (--o--o--o--o--) */}
-        <MilestoneProgressChain mode="online" />
+        <MilestoneProgressChain mode="online" currentLevelId={1} />
 
         {/* 2. Grid of Core Modules */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
@@ -182,7 +182,7 @@ export const OnlineDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* B. MODULE 1 ACTIVE MODULE CARD */}
+            {/* B. LEVEL 0 ACTIVE MODULE CARD */}
             <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-border gap-3">
                 <div>
@@ -190,18 +190,18 @@ export const OnlineDashboard: React.FC = () => {
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
                       Unlocked & Active
                     </span>
-                    <span className="text-xs font-bold text-secondary">Module 1 of 12</span>
+                    <span className="text-xs font-bold text-secondary">Level 0 of 12</span>
                   </div>
                   <h2 className="text-lg font-bold text-primary mt-1">
-                    Foundations of Product Management
+                    Orientation & Program Essentials
                   </h2>
                 </div>
 
                 <Link
-                  to="/online/level/1"
+                  to="/online/level/0"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold shadow-subtle transition-colors"
                 >
-                  <span>Open 4 Learning Topics</span>
+                  <span>Open Level 0 Hub</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -210,7 +210,7 @@ export const OnlineDashboard: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
                 {/* 1. Video Masterclasses */}
                 <Link
-                  to="/online/level/1"
+                  to="/online/level/0"
                   className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -224,7 +224,7 @@ export const OnlineDashboard: React.FC = () => {
                       Video Masterclasses
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Watch faculty video lectures to unlock knowledge check quizzes.
+                      Watch Level 0 video lectures to unlock knowledge check quizzes.
                     </p>
                   </div>
                   <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
@@ -235,7 +235,7 @@ export const OnlineDashboard: React.FC = () => {
 
                 {/* 2. Practice Quizzes */}
                 <Link
-                  to="/online/level/1"
+                  to="/online/level/0"
                   className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -246,10 +246,10 @@ export const OnlineDashboard: React.FC = () => {
                       <span className="text-[10px] text-text-muted">Step 2 (Unlocks after Video)</span>
                     </div>
                     <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Interactive Quizzes
+                      Knowledge Quizzes
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Scenario-based evaluation across all 4 module topics.
+                      Scenario-based evaluation across all 4 Level 0 topics.
                     </p>
                   </div>
                   <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
@@ -260,7 +260,7 @@ export const OnlineDashboard: React.FC = () => {
 
                 {/* 3. Reading Material */}
                 <Link
-                  to="/online/level/1"
+                  to="/online/level/0"
                   className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
                 >
                   <div>
@@ -274,7 +274,7 @@ export const OnlineDashboard: React.FC = () => {
                       Reading Handbooks
                     </h3>
                     <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Executive framework handbooks and PRD syntheses.
+                      Fellowship orientation guidelines, rubrics, and pod charters.
                     </p>
                   </div>
                   <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">

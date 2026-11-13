@@ -8,11 +8,11 @@ interface MilestoneProgressChainProps {
 }
 
 export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({ 
-  currentLevelId = 2,
+  currentLevelId = 1,
   mode 
 }) => {
-  // Module 0 (id: 1) is completed. Module 1 (id: 2) is active. Modules 2-11 (id: 3-12) are upcoming.
-  const completedLevelIds = [1];
+  // Level 0 (id: 1) is active. Level 1 (id: 2) and others are locked.
+  const completedLevelIds: number[] = [];
   const activeLevelId = currentLevelId;
 
   const totalLevels = COURSE_LEVELS.length; // 12
@@ -25,19 +25,20 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2.5 py-0.5 rounded border border-accent-light/60">
-              Curriculum Milestone Pathway
+            <span className="text-xs text-text-muted">12 Levels Pathway</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-[11px] font-semibold text-accent bg-accent-subtle px-2 py-0.5 rounded">
+              Level 0 Active
             </span>
-            <span className="text-xs text-text-muted">12 Levels</span>
           </div>
           <h3 className="text-base font-extrabold text-primary tracking-tight mt-1">
-            Progress Chain: Module 0 to Module 11
+            Progress Chain: Level 0 to Level 11
           </h3>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <span className="text-xs font-bold text-primary block">{completedCount} of {totalLevels} Levels</span>
+            <span className="text-xs font-bold text-primary block">{completedCount} of {totalLevels} Levels Completed</span>
             <span className="text-[11px] text-accent font-semibold">{progressPercent}% Completed</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-accent-subtle text-accent flex items-center justify-center font-bold text-xs border border-accent-light/60">
@@ -48,7 +49,7 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
 
       {/* The Visual --o--o--o--o--o--o-- Chain */}
       <div className="overflow-x-auto pb-2 pt-4">
-        <div className="min-w-[720px] relative px-4">
+        <div className="min-w-[720px] relative px-3">
           
           {/* Continuous Connecting Line Behind Nodes */}
           <div className="absolute top-[22px] left-8 right-8 h-1 bg-border rounded-full z-0">
@@ -101,9 +102,7 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
                     }`}>
                       {shortCode}
                     </span>
-                    <span className="text-[9px] text-text-muted hidden sm:block truncate max-w-[55px]" title={level.title}>
-                      {level.title.split(' ')[0]}
-                    </span>
+                    
                   </div>
 
                   {/* Hover Floating Tooltip */}
