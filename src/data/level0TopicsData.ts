@@ -65,38 +65,38 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'What is the primary weighting structure for earning certification in AI Product Wizardry?',
           scenario: 'Reviewing the academic syllabus during your first orientation session.',
           options: [
-            '50% Written PRD Assignments, 30% Live Capstone Defense, 20% Content Quizzes.',
             '100% attendance without any written deliverables or evaluations.',
             'Only multiple choice trivia quizzes graded by an automated bot.',
+            '50% Written PRD Assignments, 30% Live Capstone Defense, 20% Content Quizzes.',
             'Who commits the highest number of code lines to GitHub.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 2,
           explanation: 'Certification is awarded through rigorous portfolio defense: 50% written assignments, 30% live jury defense, and 20% foundational knowledge quizzes.'
         },
         {
           id: 2,
-          question: 'What happens when you complete Level 0 in the academy curriculum?',
+          question: 'What happens when you complete Level 1 in the academy curriculum?',
           scenario: 'Planning your progression through the 12 curriculum levels.',
           options: [
-            'Level 1 (Foundations of Product Management) automatically unlocks for study.',
+            'Level 2 (Foundations of Product Management) unlocks for study.',
             'The entire 6-month course immediately ends with an honorary diploma.',
             'All quizzes are waived for the remainder of the year.',
             'You are transferred to a sales marketing department.'
           ],
           correctAnswer: 0,
-          explanation: 'Curriculum levels unlock sequentially. Completing Level 0 orientation unlocks Level 1 Foundations of Product Management.'
+          explanation: 'Curriculum levels unlock sequentially. Completing all four Level 1 orientation topics unlocks Level 2: Foundations of Product Management.'
         },
         {
           id: 3,
           question: 'How do student peer pods function during the program?',
           scenario: 'Forming your 3-to-4 person project team for upcoming modules.',
           options: [
-            'Fellows collaborate in multidisciplinary pods to conduct research, critique wireframes, and rehearse jury defenses.',
             'Pods compete in video game tournaments instead of attending classes.',
             'Each pod is assigned a single shared email address for all submissions.',
-            'Pods only meet once at the very end of the graduation ceremony.'
+            'Pods only meet once at the very end of the graduation ceremony.',
+            'Fellows collaborate in multidisciplinary pods to conduct research, critique wireframes, and rehearse jury defenses.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 3,
           explanation: 'Peer pods provide collaborative accountability: fellows critique PRDs, conduct mock user interviews, and pressure-test assumptions together.'
         }
       ]
@@ -155,12 +155,12 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'Why do so many technically flawless student projects fail to get daily active users?',
           scenario: 'Reviewing a beautifully architected Kubernetes app that has 0 signups.',
           options: [
-            'They solved a hypothetical problem that no real user was in acute pain over.',
             'The cloud server was located in the wrong geographic timezone.',
+            'They solved a hypothetical problem that no real user was in acute pain over.',
             'They used PostgreSQL instead of MongoDB.',
             'The font size on the landing page was 14px instead of 16px.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 1,
           explanation: 'Software adoption fails when developers build speculative features without first validating that a person is feeling acute, urgent friction.'
         },
         {
@@ -168,12 +168,12 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'What is the golden rule of feature additions for early product builders?',
           scenario: 'A teammate wants to add 5 new features to your initial prototype.',
           options: [
-            'Every feature is cognitive load for the user; subtract until only the core loop remains.',
             'Always say yes to every feature request to please all potential audiences.',
             'Add as many toggles and settings menus as possible to look advanced.',
-            'Wait until competitors copy you before adding any features.'
+            'Wait until competitors copy you before adding any features.',
+            'Every feature is cognitive load for the user; subtract until only the core loop remains.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 3,
           explanation: 'Subtractive design wins early on. Eliminating distractions clarifies the core loop and accelerates time-to-value for the user.'
         },
         {
@@ -181,12 +181,12 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'What should a product wizard do before opening an IDE to code an idea?',
           scenario: 'You get an exciting flash of inspiration for a new campus app.',
           options: [
-            'Write down the exact moment of human frustration you are resolving and observe users.',
             'Immediately buy a custom domain name and pay for 3 years of server hosting.',
             'Post on LinkedIn announcing that you are the founder and CEO.',
+            'Write down the exact moment of human frustration you are resolving and observe users.',
             'Build 10 database tables with foreign key constraints.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 2,
           explanation: 'Always start with user empathy and observational discovery. Clarify the friction before writing a single line of code.'
         }
       ]
@@ -244,12 +244,12 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'What is the purpose of an Executive 1-Page PRD (Product Requirement Document)?',
           scenario: 'Preparing your first written assignment in the academy portal.',
           options: [
-            'To clearly articulate the problem, target user, friction evidence, and success metrics.',
             'To write a 50-page legal contract that engineers cannot understand.',
             'To list every database column type and server IP address.',
-            'To replace the need to talk to users.'
+            'To replace the need to talk to users.',
+            'To clearly articulate the problem, target user, friction evidence, and success metrics.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 3,
           explanation: 'A great PRD aligns teams on the problem, target persona, customer friction, and measurable success criteria without drowning in unnecessary bureaucracy.'
         },
         {
@@ -257,12 +257,12 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'Why should early prototypes be low-fidelity wireframes rather than pixel-perfect code?',
           scenario: 'Testing an initial concept with 5 prospective campus users.',
           options: [
-            'Low-fidelity wireframes let you iterate and discard assumptions in minutes rather than weeks.',
             'Users refuse to look at high-resolution designs on computer screens.',
+            'Low-fidelity wireframes let you iterate and discard assumptions in minutes rather than weeks.',
             'Figma files take too long to download over WiFi.',
             'Engineers are not allowed to view colorful mockups.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 1,
           explanation: 'Low-fidelity prototyping maximizes learning velocity: you can test 10 variations in a single afternoon before committing engineering hours.'
         },
         {
@@ -348,26 +348,26 @@ export const LEVEL_0_TOPICS: LevelTopicItem[] = [
           question: 'What three questions power an effective weekly asynchronous pod standup?',
           scenario: 'Posting your Monday morning update in your pod channel.',
           options: [
-            '1. What did I ship? 2. What am I shipping next? 3. What is blocking me?',
             '1. What time did I wake up? 2. What is for lunch? 3. What movie is good?',
             '1. How many lines of code? 2. What color is my IDE? 3. Who is online?',
+            '1. What did I ship? 2. What am I shipping next? 3. What is blocking me?',
             '1. Can we postpone the deadline? 2. Who is to blame? 3. When is vacation?'
           ],
-          correctAnswer: 0,
+          correctAnswer: 2,
           explanation: 'The classic 3-question cadence (Shipped, Next, Blockers) highlights obstacles early and keeps momentum visible to all collaborators.'
         },
         {
           id: 12,
-          question: 'What is the graduation deliverable for Level 0 in your student portal?',
-          scenario: 'Completing the Level 0 checklist to unlock Level 1.',
+          question: 'What must you finish to complete Level 1 in your student portal?',
+          scenario: 'Completing the Level 1 checklist to unlock Level 2.',
           options: [
-            'Watch the 4 videos, pass all 4 knowledge quizzes, and complete handbook readings.',
             'Pay an additional coaching fee to a third party.',
+            'Complete all 4 topics: submit each knowledge check and finish each handbook reading (online learners also watch each topic video).',
             'Write 10,000 words on machine learning mathematics.',
             'Wait 6 months for an automated timer to expire.'
           ],
-          correctAnswer: 0,
-          explanation: 'Level 0 mastery is achieved by completing the 4 foundational orientation topics with their video, quiz, and handbook requirements.'
+          correctAnswer: 1,
+          explanation: 'Level 1 is complete when all 4 orientation topics are done: each knowledge check submitted and each handbook reading completed. Online learners watch each topic video first; offline learners cover that material in campus sessions.'
         }
       ]
     },

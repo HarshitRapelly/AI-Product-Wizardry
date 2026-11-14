@@ -67,12 +67,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'According to the core philosophy of AI Product Wizardry, what is the fundamental difference between code and product thinking?',
           scenario: 'You are planning your initial 3-week sprint for a newly conceived EdTech AI assistant.',
           options: [
-            'Great code builds the product; product thinking decides if anyone keeps it.',
             'Code dictates user retention, while product thinking only manages landing page copy.',
+            'Great code builds the product; product thinking decides if anyone keeps it.',
             'Product thinking writes technical tests, while code determines market viability.',
             'There is no meaningful difference; clean code automatically achieves product-market fit.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 1,
           explanation: 'Technical skill builds functional software, but understanding human needs, friction, and retention is what decides whether anyone actually uses and keeps the product.'
         },
         {
@@ -80,12 +80,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'What is the very first question every product wizard learns to ask before building?',
           scenario: 'A teammate proposes building an AI summarizing tool with 20 speculative features for college students.',
           options: [
-            'A real problem? Start from a person\'s need, not a speculative feature.',
             'Which database technology is trending highest on Hacker News this month?',
             'How much venture capital can we raise in the first 2 weeks?',
-            'Can we patent the algorithm before showing it to a single user?'
+            'Can we patent the algorithm before showing it to a single user?',
+            'A real problem? Start from a person\'s need, not a speculative feature.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 3,
           explanation: 'The first core question is always: "A real problem? Start from a person\'s need, not a feature." Building features without acute user needs produces empty products.'
         },
         {
@@ -93,12 +93,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'When is a problem acute enough to justify building software for it?',
           scenario: 'Interviewing 10 potential users about their workflow struggles.',
           options: [
-            'When users are currently hacking together clumsy workarounds and feeling authentic frustration.',
             'When 100% of survey respondents politely say they might try a hypothetical free tool.',
             'When a competitor raises funding in a distantly related category.',
+            'When users are currently hacking together clumsy workarounds and feeling authentic frustration.',
             'When the software can be written in less than 48 hours without sleep.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 2,
           explanation: 'Acute demand is proven when people are already expending time, money, or manual energy hacking together imperfect workarounds to solve the pain.'
         }
       ]
@@ -174,12 +174,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'Why do customer surveys often mislead product engineers during initial discovery?',
           scenario: 'You send a Google Form to 100 peers asking: "Would you use an automated note-taking app?" and 85 say yes.',
           options: [
-            'Users answer with aspirational intent; actual daily habits and switching costs are invisible in surveys.',
             'Surveys require too much internet bandwidth for modern mobile users.',
             'Google Forms randomly flips responses due to browser caching issues.',
-            'Surveys only work if paid incentives exceed ₹5,000 per response.'
+            'Surveys only work if paid incentives exceed ₹5,000 per response.',
+            'Users answer with aspirational intent; actual daily habits and switching costs are invisible in surveys.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 3,
           explanation: 'Users routinely answer surveys with who they wish they were (aspirational intent). Real product demand is observed through daily behavior, active workarounds, and willingness to tolerate bugs.'
         },
         {
@@ -200,12 +200,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'How did Swiggy identify the need for Instamart grocery delivery before building a warehouse network?',
           scenario: 'Studying rapid delivery pivots in metropolitan hubs.',
           options: [
-            'They observed delivery executives being tipped to buy milk, lemons, and cigarettes from corner stores during food drops.',
             'They held a 6-month academic symposium on supply chain logistics.',
+            'They observed delivery executives being tipped to buy milk, lemons, and cigarettes from corner stores during food drops.',
             'They waited until an international competitor launched in Mumbai.',
             'They ran a Twitter poll asking people if they liked groceries.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 1,
           explanation: 'Real consumer behavior provided the signal: customers were already informalizing quick grocery requests through food delivery drivers, revealing an unserved acute need.'
         }
       ]
@@ -279,12 +279,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'What made Kevin Systrom and Mike Krieger strip down Burbn into Instagram?',
           scenario: 'Burbn was a complex location-check-in mobile app with points, avatars, and photo uploads.',
           options: [
-            'Users ignored check-ins and points, but excessively shared filtered photos with friends.',
             'Apple rejected the location tracking code from the iOS App Store.',
             'They ran out of cloud storage for location coordinates.',
+            'Users ignored check-ins and points, but excessively shared filtered photos with friends.',
             'Their investors demanded they build an enterprise B2B sales tool instead.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 2,
           explanation: 'Telemetry revealed users found the check-in and gaming elements confusing, but couldn\'t stop uploading photos treated with vintage filters. They ruthlessly deleted everything else.'
         },
         {
@@ -292,12 +292,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'In Stewart Butterfield\'s journey with Slack, what was the primary signal that the internal tool was special?',
           scenario: 'The gaming studio had 50 developers distributed across San Francisco and Vancouver.',
           options: [
-            'Engineers refused to work on days when the internal IRC relay went offline, feeling isolated and unproductive.',
             'They received 1,000 inbound PR requests from Fortune 500 CEOs.',
+            'Engineers refused to work on days when the internal IRC relay went offline, feeling isolated and unproductive.',
             'Microsoft offered to buy the tool within 48 hours of installation.',
             'They ran a viral TikTok campaign targeting enterprise software buyers.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 1,
           explanation: 'The team realized they could not imagine working a single day without their internal communication tool, realizing its organic utility far surpassed the game they were building.'
         },
         {
@@ -397,12 +397,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'How are grades and graduation calculated for the AI Product Wizardry Fellowship certification?',
           scenario: 'Planning your weekly workload across assignments, content, and the live capstone.',
           options: [
-            '50% Assignments (written PRDs) + 30% Live Capstone Defense + 20% Content MCQs.',
             '100% based on multiple choice quiz scores with no written projects.',
             'Exclusively based on who writes the most lines of TypeScript code on GitHub.',
-            'Assigned randomly by an automated AI grading bot without human jury review.'
+            'Assigned randomly by an automated AI grading bot without human jury review.',
+            '50% Assignments (written PRDs) + 30% Live Capstone Defense + 20% Content MCQs.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 3,
           explanation: 'The evaluation framework mirrors industry product leadership: 50% written Assignments, 30% live Jury Defense, and 20% Foundational Content & Quizzes.'
         },
         {
@@ -410,12 +410,12 @@ export const LEVEL_1_TOPICS: Level1TopicItem[] = [
           question: 'What is the primary deliverable for the Module 1 Assignment submitted to your evaluator?',
           scenario: 'Reviewing the assignment rubric in your student dashboard.',
           options: [
-            'A crisp Problem Statement & User Friction Teardown articulating the 3 wizard questions.',
             'A 10,000-word academic dissertation in LaTeX format.',
             'A fully deployed Kubernetes cluster running 5 microservices.',
+            'A crisp Problem Statement & User Friction Teardown articulating the 3 wizard questions.',
             'A Figma mockup with 100 artboards and fancy neon gradients.'
           ],
-          correctAnswer: 0,
+          correctAnswer: 2,
           explanation: 'Module 1 requires a crisp, defensible Problem Statement and User Friction Teardown answering: A real problem? Will people want it? Will they return?'
         }
       ]

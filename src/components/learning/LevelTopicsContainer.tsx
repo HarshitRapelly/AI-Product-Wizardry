@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { userKey } from '../../lib/userStorage';
 import { LevelTopicItem } from '../../data/level0TopicsData';
 import {
   Video,
@@ -28,7 +30,9 @@ export const LevelTopicsContainer: React.FC<LevelTopicsContainerProps> = ({
   levelId = 0,
   topics
 }) => {
-  const STORAGE_KEY = `aiw_level_${levelId}_topics_progress`;
+  // Per-student key (aiw:<userId>:...) until topic progress moves to the database in Stage 4.
+  const { userId } = useAuth();
+  const STORAGE_KEY = userKey(userId ?? 'signed-out', `level_${levelId}_topics_progress`);
 
   const [topicProgress, setTopicProgress] = useState<Record<number, { videoWatched: boolean; quizCompleted: boolean; quizScore?: number; readingCompleted: boolean }>>(() => {
     try {

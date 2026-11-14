@@ -251,12 +251,12 @@ export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
     question: 'According to the core philosophy of AI Product Wizardry, what is the fundamental difference between code and product thinking?',
     scenario: 'You are designing an app with your team and deciding how to allocate your initial 3-week sprint.',
     options: [
-      'Great code builds the product; product thinking decides if anyone keeps it.',
       'Code determines whether people return, while product thinking only writes marketing copy.',
       'Product thinking writes technical tests, while code decides the business model.',
+      'Great code builds the product; product thinking decides if anyone keeps it.',
       'There is no meaningful difference; coding automatically solves user retention.'
     ],
-    correctAnswer: 0,
+    correctAnswer: 2,
     explanation: 'Technical skill builds functional software, but understanding human needs, friction, and retention is what decides whether anyone actually uses and keeps the product.'
   },
   {
@@ -277,12 +277,12 @@ export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
     question: 'What does "Will they return?" measure in product evaluation?',
     scenario: 'Your mobile app received 5,000 downloads in week 1 from a viral TikTok post, but daily active users plummeted by week 4.',
     options: [
-      'It measures sustainable user retention and earning a permanent place on the user\'s home screen.',
       'It measures how much money was spent on paid Instagram advertisements.',
       'It measures how many lines of JavaScript are in the frontend bundle.',
-      'It measures the number of 5-star ratings left by friends and family.'
+      'It measures the number of 5-star ratings left by friends and family.',
+      'It measures sustainable user retention and earning a permanent place on the user\'s home screen.'
     ],
-    correctAnswer: 0,
+    correctAnswer: 3,
     explanation: 'Anyone can get initial downloads through curiosity. Earning a permanent place on the home screen means users experience ongoing value and habitually return.'
   },
   {
@@ -290,12 +290,12 @@ export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
     question: 'In the program grading framework, how is the certification score calculated?',
     scenario: 'You are planning your weekly coursework and milestone deliverables across the 6-month journey.',
     options: [
-      '50% Assignments, 30% Capstone Jury Defense, 20% Content/MCQs.',
       '100% on the final multiple choice quiz with no practical projects.',
+      '50% Assignments, 30% Capstone Jury Defense, 20% Content/MCQs.',
       '70% Attendance only with zero project submissions.',
       'Purely random grading based on peer voting.'
     ],
-    correctAnswer: 0,
+    correctAnswer: 1,
     explanation: 'The academic structure rewards consistent work: 50% written assignments, 30% live capstone defense before a jury, and 20% content mastery and MCQs.'
   },
   {
@@ -303,12 +303,12 @@ export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
     question: 'Which of the following describes the learning methodology of AI Product Wizardry?',
     scenario: 'You are introducing the program syllabus to a prospective peer in your university department.',
     options: [
-      'Stories first, concepts second, building always.',
       'Memorizing heavy theoretical textbooks without touching real software.',
       'Writing code in complete isolation without ever speaking to real users.',
+      'Stories first, concepts second, building always.',
       'Solely watching recorded video lectures with no teamwork or assignments.'
     ],
-    correctAnswer: 0,
+    correctAnswer: 2,
     explanation: 'AI Product Wizardry is story-led and hands-on: real product stories open every topic, concepts follow, and teams build and test with real users from end to end.'
   }
 ];

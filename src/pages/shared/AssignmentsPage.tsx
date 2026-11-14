@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { PortalLayout } from '../../layouts/PortalLayout';
+import { useAuth } from '../../context/AuthContext';
+import { userKey } from '../../lib/userStorage';
 import { 
   FileText, 
   CheckCircle2, 
@@ -27,7 +29,9 @@ interface SubmittedAssignment {
 }
 
 export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
-  const STORAGE_KEY = 'aiw_module1_assignment';
+  // Per-student key (aiw:<userId>:...) until assignments move to the database in Stage 4.
+  const { userId } = useAuth();
+  const STORAGE_KEY = userKey(userId ?? 'signed-out', 'module1_assignment');
 
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [assignmentTitle, setAssignmentTitle] = useState(() => {

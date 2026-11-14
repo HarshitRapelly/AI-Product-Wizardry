@@ -5,17 +5,29 @@ import {
   Globe, 
   MapPin, 
   CheckCircle2, 
-  ArrowRight, 
-  Sparkles
+  ArrowRight,
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 
 export const ChooseLearningModePage: React.FC = () => {
   const { selectLearningMode } = useAuthAndCourse();
   const navigate = useNavigate();
+  const [savingMode, setSavingMode] = useState<'online' | 'offline' | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleSelectMode = (mode: 'online' | 'offline') => {
-    selectLearningMode(mode);
-    navigate(`/checkout?mode=${mode}`);
+  // Saves to profiles.learning_mode first; only continues to checkout once the database confirms.
+  const handleSelectMode = async (mode: 'online' | 'offline') => {
+    if (savingMode) return;
+    setSaveError(null);
+    setSavingMode(mode);
+    const result = await selectLearningMode(mode);
+    setSavingMode(null);
+    if (result.ok) {
+      navigate(`/checkout?mode=${mode}`);
+    } else {
+      setSaveError(result.message);
+    }
   };
 
   return (
@@ -40,6 +52,13 @@ export const ChooseLearningModePage: React.FC = () => {
             Choose how you wish to experience the 12-module curriculum. You can switch between modalities in your student profile at any time.
           </p>
         </div>
+
+        {saveError && (
+          <div role="alert" className="mb-8 max-w-xl mx-auto flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-700 text-left">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>{saveError}</span>
+          </div>
+        )}
 
         {/* Two Selectable Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
@@ -98,9 +117,10 @@ export const ChooseLearningModePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSelectMode('online')}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all"
+                disabled={savingMode !== null}
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <span>Proceed to Online Payment</span>
+                <span>{savingMode === 'online' ? 'Saving your choice...' : 'Proceed to Online Payment'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -160,9 +180,10 @@ export const ChooseLearningModePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSelectMode('offline')}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-primary hover:bg-slate-800 text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all"
+                disabled={savingMode !== null}
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-primary hover:bg-slate-800 text-white text-sm font-bold shadow-subtle group-hover:shadow-premium transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <span>Proceed to Campus Enrollment</span>
+                <span>{savingMode === 'offline' ? 'Saving your choice...' : 'Proceed to Campus Enrollment'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

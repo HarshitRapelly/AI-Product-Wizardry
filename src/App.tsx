@@ -1,9 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { AuthAndCourseProvider, useAuthAndCourse } from './context/AuthAndCourseContext';
 
 // Route Guards
-import { AuthGuard, PaidGuard, PortalModeGuard } from './components/guards/RouteGuards';
+import { AuthGuard, GuestOnlyGuard, PaidGuard, PortalModeGuard, RequireModeGuard } from './components/guards/RouteGuards';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 // Public Pages
 import { LandingPage } from './pages/LandingPage';
@@ -44,21 +47,26 @@ const ModeRedirect: React.FC<{ subpath: string }> = ({ subpath }) => {
 
 export function App() {
   return (
+    <AuthProvider>
     <AuthAndCourseProvider>
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<GuestOnlyGuard><LoginPage /></GuestOnlyGuard>} />
+          <Route path="/register" element={<GuestOnlyGuard><RegisterPage /></GuestOnlyGuard>} />
+          {/* Email confirmation links land here (and Google sign-in in Batch C) */}
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          {/* Password reset links land here. No guard: the link itself signs the student in. */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Payment & Onboarding (Protected) */}
           <Route
             path="/checkout"
             element={
-              <AuthGuard>
+              <RequireModeGuard>
                 <CheckoutPage />
-              </AuthGuard>
+              </RequireModeGuard>
             }
           />
           <Route
@@ -302,6 +310,7 @@ export function App() {
         </Routes>
       </BrowserRouter>
     </AuthAndCourseProvider>
+    </AuthProvider>
   );
 }
 
