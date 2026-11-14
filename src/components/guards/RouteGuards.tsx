@@ -81,6 +81,21 @@ export const PortalModeGuard: React.FC<PortalModeGuardProps> = ({ children, requ
 };
 
 /**
+ * For "/" (the public landing page): signed-out visitors see it; a signed-in
+ * student never does — they go to their next onboarding step or dashboard.
+ * Waits while the session/profile load, so nothing redirects prematurely.
+ */
+export const HomeRoute: React.FC<GuardProps> = ({ children }) => {
+  const { status } = useAuth();
+  const { isPaid, learningMode } = useAuthAndCourse();
+
+  if (status === 'loading') return <AuthLoadingScreen />;
+  if (status === 'profile_error') return <ProfileErrorScreen />;
+  if (status === 'ready') return <Navigate to={homeFor({ learningMode, isPaid })} replace />;
+  return <>{children}</>;
+};
+
+/**
  * For /login and /register: signed-out visitors see the page; a signed-in student
  * is sent to the page they originally wanted (if safe) or their next onboarding
  * step. The destination's own guard re-checks mode and payment.

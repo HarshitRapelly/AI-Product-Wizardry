@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthAndCourseProvider, useAuthAndCourse } from './context/AuthAndCourseContext';
 
 // Route Guards
-import { AuthGuard, GuestOnlyGuard, PaidGuard, PortalModeGuard, RequireModeGuard } from './components/guards/RouteGuards';
+import { AuthGuard, GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RequireModeGuard } from './components/guards/RouteGuards';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
@@ -52,7 +52,8 @@ export function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* Signed-in students are sent to their next step instead of the public landing page */}
+          <Route path="/" element={<HomeRoute><LandingPage /></HomeRoute>} />
           <Route path="/login" element={<GuestOnlyGuard><LoginPage /></GuestOnlyGuard>} />
           <Route path="/register" element={<GuestOnlyGuard><RegisterPage /></GuestOnlyGuard>} />
           {/* Email confirmation links land here (and Google sign-in in Batch C) */}

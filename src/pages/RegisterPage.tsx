@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Sparkles, Eye, EyeOff, ArrowRight, Lock, Mail, User, AlertCircle } from 'lucide-react';
 import { validateRegistration, PASSWORD_MIN_LENGTH, type RegistrationErrors } from '../lib/registrationValidation';
 import { signUpWithEmail, resendSignupConfirmation } from '../services/authService';
@@ -10,7 +10,6 @@ const RESEND_COOLDOWN_SECONDS = 60;
 type FormError = { kind: 'already_registered' } | { kind: 'message'; text: string } | null;
 
 export const RegisterPage: React.FC = () => {
-  const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -51,6 +50,14 @@ export const RegisterPage: React.FC = () => {
     setIsSubmitting(true);
     // confirmPassword is deliberately not passed: it never leaves the browser.
     const result = await signUpWithEmail({ fullName, email, password });
+    if (result.status === 'signed_in') {
+      // Only happens if email confirmation is switched off. Like login, keep the
+      // button in its submitting state: AuthContext loads the profile and the
+      // GuestOnlyGuard on this route sends the student to their next step.
+      setPassword('');
+      setConfirmPassword('');
+      return;
+    }
     setIsSubmitting(false);
 
     switch (result.status) {
@@ -60,9 +67,6 @@ export const RegisterPage: React.FC = () => {
         setResendStatus(null);
         setResendCooldown(RESEND_COOLDOWN_SECONDS);
         setConfirmationEmail(result.email);
-        break;
-      case 'signed_in':
-        navigate('/choose-learning-mode');
         break;
       case 'already_registered':
         setFormError({ kind: 'already_registered' });
@@ -194,10 +198,8 @@ export const RegisterPage: React.FC = () => {
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 {formError.kind === 'already_registered' ? (
                   <span>
-                    This email is already registered. Please{' '}
-                    <Link to="/login" className="font-semibold underline hover:text-rose-900">log in</Link>
-                    {' or '}
-                    <Link to="/login" className="font-semibold underline hover:text-rose-900">reset your password</Link>.
+                    This email is already registered. Please log in.{' '}
+                    <Link to="/login" className="font-semibold underline hover:text-rose-900">Go to Login</Link>
                   </span>
                 ) : (
                   <span>{formError.text}</span>

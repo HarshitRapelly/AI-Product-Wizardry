@@ -9,7 +9,7 @@ import { normalizeEmail } from '../lib/registrationValidation';
 import { savePendingOAuth, clearPendingOAuth } from '../lib/oauthPending';
 
 export const ALREADY_REGISTERED_MESSAGE =
-  'This email is already registered. Please log in or reset your password.';
+  'This email is already registered. Please log in.';
 
 /**
  * Where the email-confirmation link sends the student. /auth/callback handles
