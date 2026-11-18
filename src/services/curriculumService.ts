@@ -173,7 +173,7 @@ export async function saveReadingPosition(s: Pick<CourseSubtopic, 'id' | 'levelI
   });
 }
 
-/** my_level_progress(): 12 rows (level_id 1 = "Level 0"). */
+/** my_level_progress(): one row per level — 13 with Migration 13 (Level 0–12), 12 before it (level_id 1 = "Level 0"). */
 export async function fetchMyLevelProgress(): Promise<Result<LevelProgressRow[]>> {
   if (!supabase) return notConfigured();
   const client = supabase;

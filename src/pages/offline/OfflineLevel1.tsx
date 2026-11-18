@@ -32,7 +32,7 @@ export const OfflineLevel1: React.FC = () => {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to All 12 Levels</span>
+            <span>Back to All 13 Levels</span>
           </Link>
         </div>
 

@@ -59,7 +59,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
           <div className="hidden md:flex items-center gap-4 text-slate-300">
             <span>Powered by NIAT × NxtWave</span>
             <span className="text-slate-600">|</span>
-            <span className="text-slate-400">6 Months · 12 Levels (0–11) · 3–4 hrs/week</span>
+            <span className="text-slate-400">6 Months · 13 Levels (0–12) · 3–4 hrs/week</span>
           </div>
         </div>
       </div>

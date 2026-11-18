@@ -224,7 +224,7 @@ export const OfflineDashboard: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <Layers className="w-4 h-4 text-accent" />
-                    <span>View All 12 Levels (0–11)</span>
+                    <span>View All 13 Levels (0–12)</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-text-muted" />
                 </Link>

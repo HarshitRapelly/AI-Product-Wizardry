@@ -182,7 +182,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
               <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
                 <span className="text-[10px] font-bold text-text-muted uppercase">Program Fellowship</span>
                 <p className="font-bold text-primary mt-1 text-sm truncate">AI Product Wizardry</p>
-                <span className="text-[10px] text-emerald-600 font-semibold">12 Levels (0–11) · 6 Months</span>
+                <span className="text-[10px] text-emerald-600 font-semibold">13 Levels (0–12) · 6 Months</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">

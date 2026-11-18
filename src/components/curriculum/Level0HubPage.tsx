@@ -33,7 +33,7 @@ export const Level0HubPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors flex-shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to 12 Levels</span>
+              <span>Back to 13 Levels</span>
             </Link>
             <span className="w-px h-5 bg-white/15" aria-hidden="true" />
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border flex-shrink-0 ${online ? 'bg-accent-subtle text-accent border-accent-light/60' : 'bg-slate-100 text-slate-800 border-slate-300'}`}>

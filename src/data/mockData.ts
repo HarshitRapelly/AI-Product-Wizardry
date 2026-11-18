@@ -129,6 +129,17 @@ export const COURSE_LEVELS: CourseLevel[] = [
     skills: ['Executive Defense', 'Product Portfolio', 'Jury Presentation'],
     topicsCount: 5,
     iconName: 'Award'
+  },
+  {
+    id: 13,
+    levelNumber: 'Level 12',
+    // Placeholder: the Level 12 title and details have not been published yet.
+    title: 'Title to be announced',
+    status: 'locked',
+    estimatedHours: 0,
+    skills: ['Details to be announced'],
+    topicsCount: 0,
+    iconName: 'Award'
   }
 ];
 
@@ -554,11 +565,11 @@ export const FAQS = [
   },
   {
     question: 'How is the program structured across the 6 months?',
-    answer: 'The program spans 6 months across 12 levels, Level 0 to Level 11 (2 levels a month). Level 0 sets expectations. Every level after it ends with a written assignment, followed by a live jury presentation where you defend your thinking.'
+    answer: 'The program spans 6 months across 13 levels, Level 0 to Level 12. Level 0 sets expectations. Every level after it ends with a written assignment, followed by a live jury presentation where you defend your thinking.'
   },
   {
     question: 'What is the difference between the Online and Offline learning modes?',
-    answer: 'Both modes cover the identical 12 levels (Level 0–Level 11) and assignments. Online students join interactive live webinars, review on-demand video masterclasses, and track attendance digitally. Offline students attend in-person classroom labs, physical whiteboarding sessions, and hallway usability testing at the Innovation Campus.'
+    answer: 'Both modes cover the identical 13 levels (Level 0–Level 12) and assignments. Online students join interactive live webinars, review on-demand video masterclasses, and track attendance digitally. Offline students attend in-person classroom labs, physical whiteboarding sessions, and hallway usability testing at the Innovation Campus.'
   },
   {
     question: 'What are the certificate requirements?',
