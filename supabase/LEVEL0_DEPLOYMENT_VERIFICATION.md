@@ -101,3 +101,41 @@ Run `supabase/rollback/20261118120011_quiz_reading_prerequisite.down.sql` (singl
 It restores the Migration 9 `submit_quiz_attempt` verbatim first, then drops the trigger and the
 two helper functions. No data is changed; reading-confirmation rows stay and are inert. The current
 frontend keeps working after a rollback. Do not roll back Migrations 9 or 10 (they hold student data).
+
+---
+
+# Migrations 12 and 13 — College ID Number; only Level 0 open
+
+| File | What it does | Rollback |
+|---|---|---|
+| `supabase/migrations/20261118120012_college_id_number.sql` | `student_registrations.college_id_number` (text, nullable, 1–40 chars, letters/digits and `space . / _ -`, not unique); registration functions store it | `supabase/rollback/20261118120012_college_id_number.down.sql` (keeps the column and its data) |
+| `supabase/migrations/20261118120013_level_release_lock.sql` | `curriculum_level_releases` (only Level 0 released); `my_level_progress()` requires a release; write guards on `lesson_progress` / `quiz_attempts`; restrictive read policies on `course_subtopics` / `quiz_questions` | `supabase/rollback/20261118120013_level_release_lock.down.sql` |
+
+Both are re-runnable, change no existing student row and fabricate nothing (existing
+registrations keep `college_id_number = NULL`; nobody is marked complete).
+
+## Order (manual, SQL Editor)
+
+1. **Migration 12 first, before the new frontend.** It is backward compatible with the old
+   frontend (the field is optional in the database). Applying it first means the College ID
+   typed by students who register after the frontend deploy is stored, not silently dropped.
+2. Deploy the new frontend and smoke-test it.
+3. **Migration 11** (reading prerequisite — see above).
+4. **Migration 13.** The frontend already keeps Levels 1–11 locked on its own
+   (`src/lib/levelStatus.ts`), so Migration 13 can follow at any time; it adds the server-side
+   enforcement (API writes, quiz submissions, content reads).
+
+## Verify (read-only, safe on production)
+
+Run `supabase/tests/migrations_12_13_readonly_verification.sql` before and after:
+before → `m12_*` / `m13_*` false; after → every `*_ok` true, `snapshot_*` unchanged.
+On staging run `college_id_checks.sql` and `level_release_checks.sql` (they write inside a
+transaction and roll back — not on production).
+
+## Releasing Level 1 later (administrator)
+
+```sql
+update public.curriculum_level_releases set released = true, updated_at = now() where level_id = 2; -- Level 1
+```
+and add `2` to `RELEASED_LEVEL_IDS` in `src/lib/levelStatus.ts` (then deploy). Both are needed:
+the database enforces, the app displays.

@@ -576,6 +576,11 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                       <input id="reg-college" type="text" value={form.college} onChange={(e) => set('college')(e.target.value)}
                         className={inputClass(!!errors.college)} />
                     </Field>
+                    <Field id="reg-college-id" label="College ID Number" error={errors.collegeIdNumber}>
+                      <input id="reg-college-id" type="text" inputMode="text" autoComplete="off" spellCheck={false}
+                        placeholder="e.g. 21BCE0042" maxLength={60} value={form.collegeIdNumber}
+                        onChange={(e) => set('collegeIdNumber')(e.target.value)} className={inputClass(!!errors.collegeIdNumber)} />
+                    </Field>
                     <Field id="reg-degree" label="Degree" error={errors.degree}>
                       <div className="relative">
                         <select id="reg-degree" value={form.degree} onChange={(e) => set('degree')(e.target.value)}
@@ -686,6 +691,7 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                       ['Date of birth', form.dateOfBirth],
                       ['City', form.city.trim()],
                       ['College', form.college.trim()],
+                      ['College ID Number', form.collegeIdNumber.trim()],
                       ['Degree', `${degreeLabel}, ${form.branch.trim()}`],
                       ['Year', form.yearOfStudy === 'Graduated' ? `Graduated · ${form.graduationYear}` : `${form.yearOfStudy} · graduating ${form.graduationYear}`],
                       ['Mode', `${modeLabel} · ${form.preferredSlot}`],

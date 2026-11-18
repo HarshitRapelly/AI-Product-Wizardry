@@ -8,8 +8,8 @@ import { isLevelUnlocked } from '../../lib/levelStatus';
 
 /**
  * Dashboard card for Level 0 (both portals): real subtopic progress from
- * Supabase and the student's next step. Level 1 is offered only when the
- * server says it is unlocked.
+ * Supabase and the student's next step. Level 1 is offered only when it is
+ * released AND the server says it is unlocked (it is not released yet).
  */
 export const Level0ProgressCard: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   const { levelProgress } = useAuthAndCourse();
@@ -69,7 +69,7 @@ export const Level0ProgressCard: React.FC<{ mode: 'online' | 'offline' }> = ({ m
           <div className="rounded-2xl border border-border bg-slate-50/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" data-testid="level0-next-step">
             {complete ? (
               <>
-                <p className="text-sm text-primary font-semibold">Level 0 complete. {level1Open ? 'Level 1 is unlocked.' : 'Unlocking Level 1…'}</p>
+                <p className="text-sm text-primary font-semibold" data-testid="level0-complete-note">Level 0 complete. {level1Open ? 'Level 1 is unlocked.' : 'Level 1 is not open yet — it will open when the program team releases it.'}</p>
                 {level1Open && (
                   <Link to={`/${mode}/level/1`} data-testid="level0-card-open-level1" className="inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:underline">
                     <span>Open Level 1</span><ArrowRight className="w-4 h-4" />
@@ -110,7 +110,7 @@ export const Level1QuickLink: React.FC<{ mode: 'online' | 'offline'; className: 
   }
   return (
     <div className={`${className} opacity-60 cursor-not-allowed`} aria-disabled="true" data-testid="quick-level1-locked">
-      <div className="flex items-center gap-2.5"><Lock className="w-4 h-4 text-slate-400" aria-hidden="true" /><span>Level 1 — locked until Level 0 is complete</span></div>
+      <div className="flex items-center gap-2.5"><Lock className="w-4 h-4 text-slate-400" aria-hidden="true" /><span>Level 1 — not open yet</span></div>
     </div>
   );
 };

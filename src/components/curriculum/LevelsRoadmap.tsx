@@ -4,7 +4,7 @@ import { Lock, CheckCircle2, ArrowRight, Clock, ChevronDown, ChevronUp, Circle, 
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { COURSE_LEVELS } from '../../data/mockData';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { activeLevelLabel, levelStateOf, levelNumberOf } from '../../lib/levelStatus';
+import { activeLevelLabel, isLevelReleased, levelStateOf, levelNumberOf } from '../../lib/levelStatus';
 import { useCurriculumLevel } from '../../hooks/useCurriculumLevel';
 
 /** level_id of "Level 0" / "Level 1". */
@@ -147,10 +147,10 @@ export const LevelsRoadmap: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
                         <div className="flex items-center gap-2 text-text-muted">
                           <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />
                           <span>
-                            {isUnlocked
-                              ? `${level.levelNumber} content is not available yet.`
-                              : level.id === LEVEL1
-                                ? 'Level 1 is locked. Complete all Level 0 modules, including the Plagiarism quiz, to unlock it.'
+                            {!isLevelReleased(level.id)
+                              ? `${level.levelNumber} is locked — not open yet. Only Level 0 is available right now; later levels open when the program team releases them.`
+                              : isUnlocked
+                                ? `${level.levelNumber} content is not available yet.`
                                 : `Locked. Complete preceding levels sequentially to unlock ${level.levelNumber}.`}
                           </span>
                         </div>

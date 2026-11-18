@@ -31,6 +31,8 @@ export interface QuizSession {
   index: number;
   /** Set when Submit was pressed: retries (also after a refresh) reuse it. */
   submissionId: string | null;
+  /** Times the student left the exam page (tab switch / window hidden). Local note only, never sent. */
+  awayCount?: number;
 }
 
 const PREFIX = 'aiw:quiz-session:v1:';
@@ -51,7 +53,7 @@ function parse(raw: string | null): QuizSession | null {
       for (const [k, x] of Object.entries(v.answers)) if (/^\d{1,4}$/.test(k) && Number.isInteger(x) && (x as number) >= 0 && (x as number) < 100) answers[k] = x as number;
     }
     const sid = typeof v.submissionId === 'string' && /^[0-9a-f-]{36}$/i.test(v.submissionId) ? v.submissionId : null;
-    return { v: 1, quizId: v.quizId, subtopicId: v.subtopicId, level: v.level, startedAt: v.startedAt, answers, index: Number.isInteger(v.index) && (v.index as number) >= 0 ? (v.index as number) : 0, submissionId: sid };
+    return { v: 1, quizId: v.quizId, subtopicId: v.subtopicId, level: v.level, startedAt: v.startedAt, answers, index: Number.isInteger(v.index) && (v.index as number) >= 0 ? (v.index as number) : 0, submissionId: sid, awayCount: Number.isInteger(v.awayCount) && (v.awayCount as number) >= 0 ? Math.min(v.awayCount as number, 9999) : 0 };
   } catch {
     return null;
   }

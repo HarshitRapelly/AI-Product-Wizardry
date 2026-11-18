@@ -63,6 +63,7 @@ export function mapCurriculumError(err: unknown): CurriculumError {
   if (code === 'PGRST205' || code === 'PGRST202' || code === '42P01' || code === '42883'
       || /could not find the (table|function)|does not exist|schema cache/i.test(msg)) return errorOf('unavailable');
   if (/registration_required/.test(msg)) return errorOf('registration');
+  if (/level_locked: level \d+ is not open yet/.test(msg)) return errorOf('level_locked', 'This level is not open yet. Only Level 0 is available right now.');
   if (/level_locked/.test(msg)) return errorOf('level_locked');
   if (/submit the quiz before/.test(msg)) return errorOf('quiz_required');
   if (/confirm the reading before/.test(msg)) return errorOf('reading_required');

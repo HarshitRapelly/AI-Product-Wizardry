@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Lock, RotateCcw, ShieldCheck, XCircle,
+  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Loader2, Lock, Maximize2,
+  RotateCcw, ShieldCheck, XCircle,
 } from 'lucide-react';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { useCurriculumLevel } from '../../hooks/useCurriculumLevel';
@@ -20,6 +21,11 @@ const REFUSED = new Set(['order', 'reading_required', 'level_locked', 'registrat
 type Questions = { status: 'loading' } | { status: 'ready'; items: QuizQuestion[] } | { status: 'error'; error: CurriculumError };
 
 const hubPath = (mode: string, moduleKey?: string | null) => `/${mode}/level/0${moduleKey ? `?module=${encodeURIComponent(moduleKey)}` : ''}`;
+
+/** Browser Fullscreen API available (it may still be refused, e.g. inside some embedded frames). */
+const fullscreenSupported = () =>
+  typeof document !== 'undefined' && typeof (document.documentElement as HTMLElement & { requestFullscreen?: unknown }).requestFullscreen === 'function';
+const isFullscreenNow = () => typeof document !== 'undefined' && !!document.fullscreenElement;
 
 function enterFullscreen() {
   try {
@@ -42,7 +48,22 @@ function exitFullscreen() {
  *    portal route leads back here (PortalModeGuard) until the SERVER accepts the
  *    submission. Refresh restores the answers; a retried submission reuses the same
  *    id, so it can never create a second attempt.
- *  - Answers and explanations are loaded only for a submitted attempt (get_my_quiz_review).
+ *  - Answers and explanations are loaded only for a submitted attempt (get_my_quiz_review),
+ *    and only shown when the student opens "Review Answers" after the marksheet.
+ *
+ * Examination mode (strongest LEGITIMATE browser protections; not a kiosk):
+ *  - Start requests browser fullscreen (Fullscreen API, from the student's click).
+ *  - Leaving fullscreen (Esc, browser UI) cannot be prevented: it is detected and a
+ *    warning with "Return to full screen" is shown; answers are never lost.
+ *  - Switching tabs / hiding the window is detected (visibilitychange) and counted
+ *    on this device; a warning is shown on return. It cannot be prevented.
+ *  - Browser Back is absorbed by a history guard entry and shows a warning; any
+ *    other portal URL redirects back here (PortalModeGuard).
+ *  - Closing / refreshing asks the browser's standard "Leave site?" confirmation
+ *    (beforeunload); if the student leaves anyway, the session and answers are
+ *    restored on return.
+ * Strict lockdown (blocking Esc, Alt+Tab, other apps, closing the browser) needs a
+ * managed kiosk browser or dedicated examination software; a web page cannot do it.
  */
 export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   const { quizId = '' } = useParams();
@@ -95,6 +116,45 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [mine]);
+
+  // ---- Examination mode: fullscreen, leaving the page, Back button --------------------
+  const [fullscreen, setFullscreen] = useState(isFullscreenNow());
+  useEffect(() => {
+    const onChange = () => setFullscreen(isFullscreenNow());
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const [awayWarning, setAwayWarning] = useState(false);
+  const sessionRef = useRef(mine);
+  sessionRef.current = mine;
+  useEffect(() => {
+    if (!mine || !uid) return;
+    const onVisibility = () => {
+      const cur = sessionRef.current;
+      if (document.visibilityState === 'hidden' && cur && !cur.submissionId) {
+        writeQuizSession(uid, { ...cur, awayCount: (cur.awayCount ?? 0) + 1 });
+        setAwayWarning(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [mine ? mine.startedAt : null, uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Back button: keep a guard history entry on top while the exam is active. A Back
+  // press pops it (same URL), so we warn and put it back instead of leaving the exam.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const guardArmed = useRef(false);
+  const [backWarning, setBackWarning] = useState(false);
+  useEffect(() => {
+    if (!mine) { guardArmed.current = false; return; }
+    if ((location.state as { examGuard?: unknown } | null)?.examGuard === true) { guardArmed.current = true; return; }
+    if (guardArmed.current) setBackWarning(true);
+    guardArmed.current = true;
+    navigate(location.pathname, { state: { examGuard: true } });
+  }, [mine ? mine.startedAt : null, location.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!mine) { setAwayWarning(false); setBackWarning(false); } }, [mine]);
 
   const start = () => {
     if (!uid || !quizModule || !available) return;
@@ -196,7 +256,18 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
           )}
         </div>
       </header>
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">{body}</main>
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-4">
+        {mine && !result && (
+          <ExamWarnings
+            fullscreenLeft={fullscreenSupported() && !fullscreen}
+            away={awayWarning ? mine.awayCount ?? 0 : 0}
+            back={backWarning}
+            onReturnFullscreen={enterFullscreen}
+            onDismiss={() => { setAwayWarning(false); setBackWarning(false); }}
+          />
+        )}
+        {body}
+      </main>
     </div>
   );
 };
@@ -231,7 +302,8 @@ const IntroView: React.FC<{
         <ul className="text-sm text-secondary space-y-2" data-testid="quiz-instructions">
           <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>{count ? `${count} questions` : 'Multiple-choice questions'}, one at a time. You can move back and forth and change answers before you submit.</span></li>
           <li className="flex items-start gap-2"><Lock className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>Once you start, the rest of the course is locked until your answers are submitted and accepted.</span></li>
-          <li className="flex items-start gap-2"><ShieldCheck className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>If the page reloads, your answers are restored. Your score, answers and explanations appear after you submit.</span></li>
+          <li className="flex items-start gap-2"><ShieldCheck className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>If the page reloads, your answers are restored. Your marksheet appears after you submit; you can then review the answers.</span></li>
+          <li className="flex items-start gap-2"><Maximize2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>The quiz opens in full screen. Leaving full screen, switching tabs or pressing Back shows a warning — your answers stay saved. (A web page cannot stop the browser from leaving full screen or closing; this is a focus aid, not exam-proctoring software.)</span></li>
         </ul>
         {closedReason && <p role="status" className="text-xs text-text-muted">{closedReason}</p>}
         <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -245,12 +317,13 @@ const IntroView: React.FC<{
 
       {latest && (
         <Card testId="quiz-last-result">
-          <p className="text-sm font-bold text-primary" data-testid="quiz-score">You got {latest.score} of {latest.totalQuestions} right.</p>
-          <p className="text-xs text-emerald-800">Attempt {latest.attemptNumber}{attempts.length > 1 ? ` of ${attempts.length}` : ''} · Quiz submitted — this completes the quiz for this subtopic.</p>
           {!showReview ? (
-            <button type="button" onClick={() => setShowReview(true)} data-testid="quiz-show-review" className="text-xs font-bold text-primary underline">Show my answer review</button>
+            <>
+              <Marksheet attempt={latest} attemptCount={attempts.length} heading="Your latest result" />
+              <ReviewButton onClick={() => setShowReview(true)} />
+            </>
           ) : questions.status === 'ready' && block ? (
-            <ReviewList attemptId={latest.id} items={questions.items} intro={block.review_intro} />
+            <ReviewPanel attemptId={latest.id} items={questions.items} intro={block.review_intro} onBack={() => setShowReview(false)} />
           ) : null}
         </Card>
       )}
@@ -390,14 +463,20 @@ const ResultView: React.FC<{
   const next = idx >= 0 ? modules[idx + 1] ?? null : null;
   const canContinue = !ackPending && !!next && next.state !== 'locked';
   const accent = mode === 'online' ? 'bg-accent hover:bg-accent-hover' : 'bg-primary hover:bg-slate-800';
+  const [reviewing, setReviewing] = useState(false);
+  if (reviewing && questions.status === 'ready' && block) {
+    return (
+      <div className="space-y-5" data-testid="quiz-result">
+        <Card><ReviewPanel attemptId={attempt.id} items={questions.items} intro={block.review_intro} onBack={() => setReviewing(false)} /></Card>
+      </div>
+    );
+  }
   return (
     <div className="space-y-5" data-testid="quiz-result">
       <Card>
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-1">
-          <p className="text-sm font-bold text-primary" data-testid="quiz-score">You got {attempt.score} of {attempt.totalQuestions} right.</p>
-          <p className="text-xs text-emerald-800">Attempt {attempt.attemptNumber}{attemptCount > 1 ? ` of ${attemptCount}` : ''} · Quiz submitted — this completes the quiz for this subtopic.</p>
-        </div>
+        <Marksheet attempt={attempt} attemptCount={attemptCount} heading="Marksheet" />
         {block && <p className="text-sm font-semibold text-primary" data-testid="quiz-guidance">{block.post_submission_note}</p>}
+        {questions.status === 'ready' && block && <ReviewButton onClick={() => setReviewing(true)} />}
         <div className="flex flex-wrap items-center gap-3">
           {canContinue && next ? (
             <Link to={hubPath(mode, next.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
@@ -413,9 +492,84 @@ const ResultView: React.FC<{
           </button>
         </div>
       </Card>
-      {questions.status === 'ready' && block && (
-        <Card><ReviewList attemptId={attempt.id} items={questions.items} intro={block.review_intro} /></Card>
-      )}
+    </div>
+  );
+};
+
+/** Marksheet from the server-recorded attempt (score / total / percentage are computed by submit_quiz_attempt). */
+const Marksheet: React.FC<{ attempt: QuizAttemptSummary; attemptCount: number; heading: string }> = ({ attempt, attemptCount, heading }) => {
+  const incorrect = Math.max(0, attempt.totalQuestions - attempt.score);
+  const cells: [string, string, string][] = [
+    ['Total marks', String(attempt.totalQuestions), 'marks-total'],
+    ['Marks obtained', String(attempt.score), 'marks-obtained'],
+    ['Correct answers', String(attempt.score), 'count-correct'],
+    ['Incorrect answers', String(incorrect), 'count-incorrect'],
+    ['Percentage', `${attempt.percentage}%`, 'percentage'],
+  ];
+  return (
+    <section aria-label={heading} data-testid="quiz-marksheet" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <ClipboardList className="w-5 h-5 text-accent" aria-hidden="true" />
+        <h2 className="text-lg font-extrabold text-primary">{heading}</h2>
+      </div>
+      <dl className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {cells.map(([label, value, id]) => (
+          <div key={id} className={`rounded-xl border p-3 text-center ${id === 'percentage' ? 'border-accent/40 bg-accent-subtle' : 'border-border bg-slate-50'}`}>
+            <dt className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{label}</dt>
+            <dd className="text-2xl font-extrabold text-primary mt-1" data-testid={id}>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-0.5">
+        <p className="text-sm font-bold text-primary" data-testid="quiz-score">You got {attempt.score} of {attempt.totalQuestions} right.</p>
+        <p className="text-xs text-emerald-800">Attempt {attempt.attemptNumber}{attemptCount > 1 ? ` of ${attemptCount}` : ''} · Quiz submitted — this completes the quiz for this subtopic. 1 mark per question.</p>
+      </div>
+    </section>
+  );
+};
+
+const ReviewButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button type="button" onClick={onClick} data-testid="quiz-review-open"
+    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-accent text-accent text-sm font-bold hover:bg-accent-subtle transition-colors">
+    <ClipboardList className="w-4 h-4" aria-hidden="true" /><span>Review Answers</span>
+  </button>
+);
+
+const ReviewPanel: React.FC<{ attemptId: number; items: QuizQuestion[]; intro: string; onBack: () => void }> = ({ attemptId, items, intro, onBack }) => (
+  <div className="space-y-4" data-testid="quiz-review-panel">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h2 className="text-lg font-extrabold text-primary">Answer review</h2>
+      <button type="button" onClick={onBack} data-testid="quiz-review-close" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-xs font-bold text-primary hover:bg-slate-50">
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" /><span>Back to marksheet</span>
+      </button>
+    </div>
+    <ReviewList attemptId={attemptId} items={items} intro={intro} />
+  </div>
+);
+
+/** Warnings while the exam is active. Honest: these detect and inform, they cannot prevent. */
+const ExamWarnings: React.FC<{ fullscreenLeft: boolean; away: number; back: boolean; onReturnFullscreen: () => void; onDismiss: () => void }> = ({
+  fullscreenLeft, away, back, onReturnFullscreen, onDismiss,
+}) => {
+  if (!fullscreenLeft && !away && !back) return null;
+  return (
+    <div role="alert" data-testid="exam-warning" className="rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 p-4 space-y-2">
+      <p className="flex items-center gap-2 text-sm font-bold"><AlertTriangle className="w-5 h-5" aria-hidden="true" />Your exam is still in progress — your answers are saved.</p>
+      <ul className="text-xs space-y-1 pl-7 list-disc">
+        {fullscreenLeft && <li data-testid="exam-warning-fullscreen">You left full screen. Return to full screen to continue the exam without distractions.</li>}
+        {away > 0 && <li data-testid="exam-warning-away">You switched away from the exam page ({away} {away === 1 ? 'time' : 'times'}). Please stay on this page until you submit.</li>}
+        {back && <li data-testid="exam-warning-back">The Back button is disabled during the exam. Submit your answers to return to the course.</li>}
+      </ul>
+      <div className="flex flex-wrap gap-2 pl-7">
+        {fullscreenLeft && (
+          <button type="button" onClick={onReturnFullscreen} data-testid="exam-return-fullscreen" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-bold">
+            <Maximize2 className="w-4 h-4" aria-hidden="true" />Return to full screen
+          </button>
+        )}
+        {(away > 0 || back) && (
+          <button type="button" onClick={onDismiss} data-testid="exam-warning-dismiss" className="px-3 py-1.5 rounded-lg border border-amber-400 text-xs font-bold">Continue the exam</button>
+        )}
+      </div>
     </div>
   );
 };
@@ -445,14 +599,34 @@ const ReviewList: React.FC<{ attemptId: number; items: QuizQuestion[]; intro: st
           {review.items.map((r) => {
             const q = byId.get(r.questionId);
             return (
-              <li key={r.questionId} data-question={r.questionId} data-correct={r.isCorrect ? 'true' : 'false'} className="rounded-xl border border-border p-4 space-y-2">
-                <p className="text-sm font-semibold text-primary">Q{r.position}. {q?.prompt}</p>
+              <li key={r.questionId} data-question={r.questionId} data-correct={r.isCorrect ? 'true' : 'false'}
+                className={`rounded-xl border p-4 space-y-3 ${r.isCorrect ? 'border-emerald-200' : 'border-rose-200'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold text-primary">Q{r.position}. {q?.prompt}</p>
+                  <span data-testid="review-verdict" className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${r.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                    {r.isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> : <XCircle className="w-3.5 h-3.5" aria-hidden="true" />}
+                    {r.isCorrect ? 'Correct' : 'Incorrect'}
+                  </span>
+                </div>
+                <div role="list" className="space-y-1.5" aria-label={`Options for question ${r.position}`}>
+                  {(q?.options ?? []).map((opt, i) => {
+                    const chosen = i === r.selectedOption, right = i === r.correctOption;
+                    return (
+                      <div role="listitem" key={i} data-option={i} data-chosen={chosen ? 'true' : 'false'} data-right={right ? 'true' : 'false'}
+                        className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${right ? 'border-emerald-400 bg-emerald-50 text-emerald-900' : chosen ? 'border-rose-400 bg-rose-50 text-rose-900' : 'border-border text-secondary'}`}>
+                        <span className="font-bold">{LETTERS[i]}.</span>
+                        <span className="flex-1">{opt}</span>
+                        {chosen && <span className={`font-bold uppercase text-[10px] ${right ? 'text-emerald-700' : 'text-rose-700'}`}>Your answer</span>}
+                        {right && <span className="font-bold uppercase text-[10px] text-emerald-700">Correct answer</span>}
+                      </div>
+                    );
+                  })}
+                </div>
                 <p className="flex items-start gap-1.5 text-xs">
-                  {r.isCorrect ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" aria-hidden="true" /> : <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0" aria-hidden="true" />}
                   <span>Your answer: {LETTERS[r.selectedOption]}. {q?.options[r.selectedOption]} {r.isCorrect ? '(correct)' : '(not correct)'}</span>
                 </p>
-                {!r.isCorrect && <p className="text-xs text-secondary" data-testid="correct-answer">Correct answer: {LETTERS[r.correctOption]}. {q?.options[r.correctOption]}</p>}
-                {r.explanation && <p className="text-xs text-text-muted" data-testid="explanation">{r.explanation}</p>}
+                {!r.isCorrect && <p className="text-xs font-semibold text-emerald-800" data-testid="correct-answer">Correct answer: {LETTERS[r.correctOption]}. {q?.options[r.correctOption]}</p>}
+                {r.explanation && <p className="text-xs text-text-muted"><span className="font-semibold">Why: </span><span data-testid="explanation">{r.explanation}</span></p>}
               </li>
             );
           })}

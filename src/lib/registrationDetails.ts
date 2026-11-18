@@ -20,6 +20,22 @@ export const MIN_AGE = 14;
 export const MAX_AGE = 80;
 export const ASPIRATION_MAX = 1000;
 
+/**
+ * College ID Number (Migration 12). Kept as TEXT exactly as typed (only outer
+ * spaces trimmed): letters, digits and leading zeros are preserved, it is never
+ * converted to a number. 1–40 characters: letters, digits and the separators
+ * space . / _ - (must start and end with a letter or digit). Not unique.
+ */
+export const COLLEGE_ID_MAX = 40;
+export const COLLEGE_ID_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9 ./_-]*[A-Za-z0-9])?$/;
+export function collegeIdError(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return 'College ID Number is required';
+  if (v.length > COLLEGE_ID_MAX) return `College ID Number must be ${COLLEGE_ID_MAX} characters or fewer`;
+  if (!COLLEGE_ID_PATTERN.test(v)) return 'Use letters, numbers and - / _ . or spaces only (start and end with a letter or number)';
+  return null;
+}
+
 /** Program fee shown in the form (unchanged: same amount as checkout). */
 export const ONLINE_FEE_LABEL = '₹11,000';
 
@@ -38,6 +54,7 @@ export interface RegistrationForm {
   password: string;
   confirmPassword: string;
   college: string;
+  collegeIdNumber: string;
   degree: string;
   degreeOther: string;
   branch: string;
@@ -63,6 +80,7 @@ export const EMPTY_REGISTRATION_FORM: RegistrationForm = {
   password: '',
   confirmPassword: '',
   college: '',
+  collegeIdNumber: '',
   degree: '',
   degreeOther: '',
   branch: '',
@@ -79,7 +97,7 @@ export const EMPTY_REGISTRATION_FORM: RegistrationForm = {
 /** Which step each field lives on (used to jump back to a field the server rejected). */
 export const FIELD_STEP: Record<RegistrationField, StepIndex> = {
   fullName: 0, email: 0, mobile: 0, dateOfBirth: 0, city: 0, password: 0, confirmPassword: 0,
-  college: 1, degree: 1, degreeOther: 1, branch: 1, yearOfStudy: 1, graduationYear: 1, aspiration: 1,
+  college: 1, collegeIdNumber: 1, degree: 1, degreeOther: 1, branch: 1, yearOfStudy: 1, graduationYear: 1, aspiration: 1,
   learningMode: 2, preferredSlot: 2, mainDevice: 2,
   agreedToCodeOfConduct: 3, scheduleUpdatesOptIn: 3,
 };
@@ -149,6 +167,8 @@ export function validateRegistrationStep(
     const college = form.college.trim();
     if (!college) e.college = 'College / university is required';
     else if (college.length > 160) e.college = 'College name must be 160 characters or fewer';
+    const cidError = collegeIdError(form.collegeIdNumber);
+    if (cidError) e.collegeIdNumber = cidError;
     if (!form.degree) e.degree = 'Select your degree';
     else if (!(DEGREE_OPTIONS as readonly string[]).includes(form.degree)) e.degree = 'Select a degree from the list';
     if (form.degree === 'Other') {
@@ -198,6 +218,8 @@ export interface RegistrationPayload {
   date_of_birth: string;
   city: string;
   college: string;
+  /** Text, never a number (leading zeros preserved). */
+  college_id_number: string;
   degree: string;
   degree_other?: string;
   branch: string;
@@ -219,6 +241,7 @@ export function toRegistrationPayload(form: RegistrationForm): RegistrationPaylo
     date_of_birth: form.dateOfBirth,
     city: form.city.trim(),
     college: form.college.trim(),
+    college_id_number: form.collegeIdNumber.trim(),
     degree: form.degree,
     ...(form.degree === 'Other' ? { degree_other: form.degreeOther.trim() } : {}),
     branch: form.branch.trim(),
@@ -235,7 +258,7 @@ export function toRegistrationPayload(form: RegistrationForm): RegistrationPaylo
 
 /** Maps the database's 'invalid_registration:<column>' error back to a form field. */
 const SERVER_FIELD: Record<string, RegistrationField> = {
-  full_name: 'fullName', mobile: 'mobile', date_of_birth: 'dateOfBirth', city: 'city', college: 'college',
+  full_name: 'fullName', mobile: 'mobile', date_of_birth: 'dateOfBirth', city: 'city', college: 'college', college_id_number: 'collegeIdNumber',
   degree: 'degree', degree_other: 'degreeOther', branch: 'branch', year_of_study: 'yearOfStudy',
   graduation_year: 'graduationYear', aspiration: 'aspiration', learning_mode: 'learningMode',
   preferred_slot: 'preferredSlot', main_device: 'mainDevice', agreed_to_code_of_conduct: 'agreedToCodeOfConduct',

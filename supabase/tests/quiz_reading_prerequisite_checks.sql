@@ -216,7 +216,9 @@ begin
   -- Final acknowledgment after the quiz (Migration 9 rule unchanged) → subtopic done
   insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
   insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
-  if public.my_course_progress() <> 100.0 or not (select is_unlocked from public.my_level_progress() where level_id = 2) then
+  -- Level 0 complete (Level 1 unlocking is release-dependent from Migration 13 on and is
+  -- checked in curriculum_checks.sql for 1–11 and level_release_checks.sql for 1–13)
+  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_level_progress() where level_id = 1) then
     raise exception 'FAIL: Level 0 not complete after the full sequence';
   end if;
 
@@ -259,7 +261,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 do $$
 declare a public.quiz_attempts%rowtype;
 begin
-  if public.my_course_progress() <> 100.0 or not (select is_unlocked from public.my_level_progress() where level_id = 2) then
+  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_level_progress() where level_id = 1) then
     raise exception 'FAIL: D lost completion after Migration 11';
   end if;
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());

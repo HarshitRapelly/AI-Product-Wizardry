@@ -43,6 +43,64 @@ export async function fetchRegistrationStatus(userId: string): Promise<Registrat
   }
 }
 
+/** The student's own academic registration details (RLS: own row only). */
+export interface MyRegistrationDetails {
+  college: string;
+  /** null for registrations made before Migration 12, or while it is not applied. */
+  collegeIdNumber: string | null;
+  degree: string;
+  degreeOther: string | null;
+  branch: string;
+  yearOfStudy: string;
+  graduationYear: number;
+}
+export type MyRegistrationDetailsResult =
+  | { ok: true; details: MyRegistrationDetails | null }
+  | { ok: false; message: string };
+
+const DETAIL_COLUMNS = 'college, degree, degree_other, branch, year_of_study, graduation_year';
+const isMissingColumn = (code: string, message: string) => code === '42703' || code === 'PGRST204' || /column .*college_id_number.* does not exist/i.test(message);
+
+/**
+ * Reads the signed-in student's registration details. RLS returns only their own row,
+ * so no other student's College ID is ever visible. Works before Migration 12 too
+ * (the College ID is then reported as null).
+ */
+export async function fetchMyRegistrationDetails(userId: string): Promise<MyRegistrationDetailsResult> {
+  if (!supabase) return { ok: false, message: supabaseConfigError ?? 'Supabase is not configured.' };
+  const client = supabase;
+  const read = (cols: string) => client.from('student_registrations').select(cols).eq('user_id', userId).maybeSingle();
+  try {
+    let withId = true;
+    let { data, error } = await read(`${DETAIL_COLUMNS}, college_id_number`);
+    if (error && isMissingColumn(error.code ?? '', error.message ?? '')) {
+      withId = false;
+      ({ data, error } = await read(DETAIL_COLUMNS));
+    }
+    if (error) {
+      if (isNotDeployed(error.code ?? '', error.message ?? '')) return { ok: true, details: null };
+      return { ok: false, message: 'Could not load your registration details.' };
+    }
+    if (!data) return { ok: true, details: null };
+    const r = data as unknown as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === 'string' ? v : '');
+    return {
+      ok: true,
+      details: {
+        college: str(r.college),
+        collegeIdNumber: withId && typeof r.college_id_number === 'string' ? r.college_id_number : null,
+        degree: str(r.degree),
+        degreeOther: typeof r.degree_other === 'string' ? r.degree_other : null,
+        branch: str(r.branch),
+        yearOfStudy: str(r.year_of_study),
+        graduationYear: typeof r.graduation_year === 'number' ? r.graduation_year : Number(r.graduation_year) || 0,
+      },
+    };
+  } catch {
+    return { ok: false, message: 'Could not load your registration details.' };
+  }
+}
+
 export type CompleteRegistrationResult =
   | { ok: true; status: 'saved' | 'already_registered' }
   | { ok: false; field: RegistrationField | null; message: string };

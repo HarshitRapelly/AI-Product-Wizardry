@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, Loader2, Lock, RotateCcw } from 'lucide-react';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { levelNumberOf, levelStateOf } from '../../lib/levelStatus';
+import { isLevelReleased, levelNumberOf, levelStateOf } from '../../lib/levelStatus';
 
 interface Props {
   mode: 'online' | 'offline';
@@ -13,6 +13,8 @@ interface Props {
 }
 
 /**
+ * Levels that are not released (lib/levelStatus RELEASED_LEVEL_IDS; database:
+ * Migration 13) are always locked, also after the previous level is complete.
  * Renders a level's pages only when the server says the level is unlocked
  * (my_level_progress().is_unlocked). Locked, not-yet-available, loading and
  * error states never render the level's pages (fail closed). The protected
@@ -36,8 +38,27 @@ export const LevelLockGate: React.FC<Props> = ({ mode, levelId, children }) => {
   if (levelProgress.status === 'ready' && levelStateOf(levelProgress, levelId) !== 'locked') return <>{children}</>;
 
   const accent = mode === 'online' ? 'bg-accent' : 'bg-primary';
+  const released = isLevelReleased(levelId);
   let body: React.ReactNode;
-  if (levelProgress.status === 'loading') {
+  if (!released) {
+    body = (
+      <div className="space-y-4" data-testid="level-locked" data-reason="not_released">
+        <div className="flex items-start gap-3">
+          <Lock className="w-6 h-6 text-slate-400 flex-shrink-0" aria-hidden="true" />
+          <div className="space-y-1">
+            <h1 className="text-xl font-extrabold text-primary">Level {n} is locked</h1>
+            <p className="text-sm text-secondary">
+              Level {n} is not open yet. Only Level 0 is available right now; later levels open when the program team releases them.
+              {prevRow?.isComplete ? ` You have completed Level ${prev} — well done.` : ''}
+            </p>
+          </div>
+        </div>
+        <Link to={`/${mode}/level/0`} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white ${accent}`}>
+          Go to Level 0
+        </Link>
+      </div>
+    );
+  } else if (levelProgress.status === 'loading') {
     body = (
       <div role="status" className="flex items-center gap-3 text-sm text-text-muted" data-testid="level-gate-loading">
         <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />

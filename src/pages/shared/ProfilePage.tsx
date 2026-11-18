@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { COURSE_LEVELS } from '../../data/mockData';
 import { courseProgressShort } from '../../services/progressService';
 import { activeLevelLabel } from '../../lib/levelStatus';
+import { fetchMyRegistrationDetails, type MyRegistrationDetailsResult } from '../../services/registrationService';
 import {
   User,
   Mail,
@@ -217,6 +218,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
                 </span>
               </div>
             </div>
+
+            <RegistrationDetailsCard userId={user?.id ?? null} />
 
             {/* Current Module Checklist */}
             <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle space-y-4">
@@ -449,5 +452,41 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
 
       </div>
     </PortalLayout>
+  );
+};
+
+/** The student's own registration details (Supabase, own row only — RLS). */
+const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }) => {
+  const [state, setState] = useState<MyRegistrationDetailsResult | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    let live = true;
+    void fetchMyRegistrationDetails(userId).then((r) => { if (live) setState(r); });
+    return () => { live = false; };
+  }, [userId]);
+  if (!userId || !state || (state.ok && !state.details)) return null;
+  return (
+    <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle space-y-4" data-testid="registration-details">
+      <h3 className="font-bold text-base text-primary pb-3 border-b border-border">Academic Details</h3>
+      {!state.ok ? (
+        <p role="alert" className="text-sm text-rose-700">{state.message}</p>
+      ) : state.details && (
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          {[
+            ['College / university', state.details.college],
+            ['College ID Number', state.details.collegeIdNumber ?? 'Not provided'],
+            ['Degree', state.details.degree === 'Other' && state.details.degreeOther ? state.details.degreeOther : state.details.degree],
+            ['Branch / specialisation', state.details.branch],
+            ['Year of study', state.details.yearOfStudy],
+            ['Graduation year', String(state.details.graduationYear || '—')],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-[10px] font-bold text-text-muted uppercase">{k}</dt>
+              <dd className="font-semibold text-primary break-words" data-field={k}>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
   );
 };
