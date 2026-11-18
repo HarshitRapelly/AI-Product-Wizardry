@@ -17,14 +17,14 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({ 
   const completedLevelIds: number[] = completedOf(levelProgress);
   const activeLevelId = activeLevelOf(levelProgress);
 
-  const totalLevels = COURSE_LEVELS.length; // 13
+  const totalLevels = COURSE_LEVELS.length; // 12
   const completedCount = completedLevelIds.length;
   // No percentage here: overall course progress is shown only from the server
   // (my_course_progress() → "Course Progress" on the dashboards and the sidebar).
 
-  // Display labels only. Levels are numbered from 0: Level 0 … Level 12 (13 in total).
+  // Display labels only. Levels are numbered from 0: Level 0 … Level 11 (12 in total).
   const firstLevelNo = 0;
-  const lastLevelNo = totalLevels - 1; // 12
+  const lastLevelNo = totalLevels - 1; // 11
   const activeIndex = COURSE_LEVELS.findIndex((l) => l.id === activeLevelId);
   const activeLabel = activeIndex >= 0 ? `Level ${activeIndex}` : null;
   const upcomingLabel = activeIndex >= 0 && activeIndex < lastLevelNo
@@ -44,7 +44,7 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({ 
             </span>
           </div>
           <h3 className="text-base font-extrabold text-primary tracking-tight mt-1">
-            Progress Chain: Level 0 to Level {lastLevelNo}
+            Progress Chain: Level 0 to Level 11
           </h3>
         </div>
 

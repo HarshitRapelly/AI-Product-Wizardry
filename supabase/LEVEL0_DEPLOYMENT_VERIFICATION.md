@@ -106,6 +106,9 @@ frontend keeps working after a rollback. Do not roll back Migrations 9 or 10 (th
 
 # Migrations 12 and 13 — College ID Number; only Level 0 open
 
+The curriculum has exactly 12 levels, Level 0 – Level 11 (`level_id` 1–12). Only Level 0 is
+released; Levels 1–11 stay locked, also after Level 0 is complete.
+
 | File | What it does | Rollback |
 |---|---|---|
 | `supabase/migrations/20261118120012_college_id_number.sql` | `student_registrations.college_id_number` (text, nullable, 1–40 chars, letters/digits and `space . / _ -`, not unique); registration functions store it | `supabase/rollback/20261118120012_college_id_number.down.sql` (keeps the column and its data) |

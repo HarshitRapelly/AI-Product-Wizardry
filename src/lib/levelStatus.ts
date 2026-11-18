@@ -19,7 +19,7 @@ export type LevelState = 'complete' | 'active' | 'locked';
 export const RELEASED_LEVEL_IDS: ReadonlySet<number> = new Set([1]);
 export const isLevelReleased = (levelId: number) => RELEASED_LEVEL_IDS.has(levelId);
 
-/** level_id → display number ("Level 0" … "Level 12"). */
+/** level_id → display number ("Level 0" … "Level 11"). */
 export const levelNumberOf = (levelId: number) => levelId - 1;
 
 export function rowsOf(p: LevelProgressState): LevelProgressRow[] {

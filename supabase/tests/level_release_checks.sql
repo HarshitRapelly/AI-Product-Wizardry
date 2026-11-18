@@ -6,7 +6,7 @@
 -- like the Data API, then ROLLS BACK. Nothing is persisted. Finishing with the
 -- notice "ALL LEVEL RELEASE CHECKS PASSED" means every check passed.
 --
--- level_id 1 = "Level 0", 2 = "Level 1", …, 13 = "Level 12" (13 levels).
+-- level_id 1 = "Level 0", 2 = "Level 1", …, 12 = "Level 11". Exactly 12 levels (no Level 12).
 -- Student L completes Level 0; Level 1 must stay locked until an administrator
 -- releases it.
 -- =============================================================================
@@ -44,19 +44,15 @@ values ('00000000-0000-4000-8000-0000000013a1', 'foundations-practice-quiz', 2, 
 do $$
 declare r record;
 begin
-  if (select count(*) from public.curriculum_level_releases) <> 13
+  if (select count(*) from public.curriculum_level_releases) <> 12
      or (select string_agg(level_id::text, ',' order by level_id) from public.curriculum_level_releases where released) <> '1' then
-    raise exception 'FAIL: release table must have 13 rows (Level 0–12) with only level_id 1 released';
+    raise exception 'FAIL: release table must have 12 rows with only level_id 1 released';
   end if;
-  -- 13 levels: every level_id range check now allows 1–13 (Level 12)
-  for r in select * from (values ('public.lesson_progress'), ('public.assignment_submissions'), ('private.quiz_definitions'),
-                                 ('public.quiz_attempts'), ('public.course_subtopics')) v(tbl) loop
-    if not exists (select 1 from pg_constraint where conrelid = r.tbl::regclass and conname = 'level_id_range_1_13_chk')
-       or exists (select 1 from pg_constraint where conrelid = r.tbl::regclass and contype = 'c'
-                   and pg_get_constraintdef(oid) ~ 'level_id <= 12') then
-      raise exception 'FAIL: % level range is not 1–13', r.tbl;
-    end if;
-  end loop;
+  -- exactly 12 levels: there is no Level 12 (level_id 13)
+  begin
+    insert into public.curriculum_level_releases (level_id, released) values (13, false);
+    raise exception 'FAIL: a 13th level (Level 12) can be added';
+  exception when check_violation then null; end;
   if not (select relrowsecurity from pg_class where oid = 'public.curriculum_level_releases'::regclass) then
     raise exception 'FAIL: RLS not enabled on curriculum_level_releases';
   end if;
@@ -96,7 +92,7 @@ do $$
 declare a public.quiz_attempts%rowtype; lvl record;
 begin
   -- Release table: readable, not writable
-  if (select count(*) from public.curriculum_level_releases) <> 13 then raise exception 'FAIL: student cannot read releases'; end if;
+  if (select count(*) from public.curriculum_level_releases) <> 12 then raise exception 'FAIL: student cannot read releases'; end if;
   begin
     update public.curriculum_level_releases set released = true where level_id = 2;
     raise exception 'FAIL: student released a level';
@@ -127,15 +123,16 @@ begin
   insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
   insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
 
-  -- Level 0 complete … and Levels 1–12 (level_id 2–13) all still locked
+  -- Level 0 complete … and Level 1 (and every later level) still locked
   select * into lvl from public.my_level_progress() where level_id = 1;
   if not lvl.is_complete or not lvl.is_unlocked then raise exception 'FAIL: Level 0 should be complete and open'; end if;
-  if (select count(*) from public.my_level_progress()) <> 13
-     or (select string_agg(level_id::text, ',' order by level_id) from public.my_level_progress() where not is_unlocked) <> '2,3,4,5,6,7,8,9,10,11,12,13' then
-    raise exception 'FAIL: Levels 1–12 must all be locked after Level 0 (got %)', (select string_agg(level_id || ':' || is_unlocked, ',' order by level_id) from public.my_level_progress());
-  end if;
   if exists (select 1 from public.my_level_progress() where level_id >= 2 and is_unlocked) then
     raise exception 'FAIL: a level after Level 0 is unlocked (%)', (select string_agg(level_id::text, ',') from public.my_level_progress() where is_unlocked);
+  end if;
+  -- explicitly: 12 levels (Level 0–11), and Levels 1–11 (level_id 2–12) all locked
+  if (select count(*) from public.my_level_progress()) <> 12
+     or (select string_agg(level_id::text, ',' order by level_id) from public.my_level_progress() where not is_unlocked) <> '2,3,4,5,6,7,8,9,10,11,12' then
+    raise exception 'FAIL: expected 12 levels with Levels 1–11 locked (got %)', (select string_agg(level_id || ':' || is_unlocked, ',' order by level_id) from public.my_level_progress());
   end if;
   -- (the test's extra Level 1 subtopic counts in the course total, so check Level 0 itself)
   if (select completed_items from public.my_level_progress() where level_id = 1) <> 6
@@ -154,13 +151,11 @@ begin
     insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (12, 'any-later-level', 'video', false);
     raise exception 'FAIL: Level 11 progress written while not released';
   exception when insufficient_privilege then null; end;
-  -- Level 12 (level_id 13): refused by the release lock (not by a range error)
+  -- there is no Level 12 (level_id 13): refused (the level guard fires before the 1–12 range check)
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (13, 'level-12-item', 'reading', false);
-    raise exception 'FAIL: Level 12 progress written while not released';
-  exception when insufficient_privilege then
-    if sqlerrm not like 'level_locked:%' then raise exception 'FAIL: wrong Level 12 error: %', sqlerrm; end if;
-  end;
+    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (13, 'no-level-12', 'reading', false);
+    raise exception 'FAIL: progress for a non-existent Level 12 accepted';
+  exception when check_violation or insufficient_privilege then null; end;
   begin
     perform public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', gen_random_uuid());
     raise exception 'FAIL: Level 1 quiz accepted while not released';
@@ -201,7 +196,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 do $$
 begin
   if not (select is_unlocked from public.my_level_progress() where level_id = 2) then raise exception 'FAIL: released Level 1 not unlocked'; end if;
-  if exists (select 1 from public.my_level_progress() where level_id >= 3 and is_unlocked) then raise exception 'FAIL: unreleased levels (2–12) unlocked'; end if;
+  if exists (select 1 from public.my_level_progress() where level_id >= 3 and is_unlocked) then raise exception 'FAIL: unreleased levels unlocked'; end if;
   if (select count(*) from public.course_subtopics where level_id = 2) <> 1 then raise exception 'FAIL: released content not readable'; end if;
   if (select count(*) from public.quiz_questions where quiz_id = 'foundations-practice-quiz') <> 1 then raise exception 'FAIL: released quiz questions not readable'; end if;
   insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (2, 'topic-1-reading', 'reading', true);

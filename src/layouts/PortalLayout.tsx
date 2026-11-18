@@ -49,7 +49,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       icon: LayoutDashboard,
     },
     {
-      name: '13 Levels',
+      name: '12 Levels',
       path: `${prefix}/levels`,
       icon: Layers,
     },
@@ -212,7 +212,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-cream/60 font-medium">
             <span data-testid="sidebar-active-level">{activeLevelLabel(levelProgress)}</span>
-            <span>13 Levels (0–12)</span>
+            <span>12 Levels (0–11)</span>
           </div>
         </div>
 

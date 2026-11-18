@@ -41,7 +41,7 @@ const Level0Subtopics: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => 
 };
 
 /**
- * The 13-level roadmap (Level 0 – Level 12) for both portals. Lock / complete states come from
+ * The 12-level roadmap for both portals. Lock / complete states come from
  * my_level_progress() only; Level 0 lists its real modules (reading and quiz).
  */
 export const LevelsRoadmap: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
@@ -59,7 +59,7 @@ export const LevelsRoadmap: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
               <span className="text-[11px] font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2.5 py-0.5 rounded border border-accent-light/60">
                 {online ? 'Sequential Curriculum' : 'Campus Curriculum'}
               </span>
-              <span className="text-xs text-text-muted">13 Levels · Level 0–12</span>
+              <span className="text-xs text-text-muted">12 Levels · Level 0–11</span>
             </div>
             <h1 className="text-2xl font-extrabold text-primary tracking-tight mt-1">Curriculum Roadmap</h1>
           </div>

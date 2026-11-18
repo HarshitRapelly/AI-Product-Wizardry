@@ -414,8 +414,7 @@ begin
   if p.total_items <> 6 or p.completed_items <> 0 or p.completion_fraction <> 0 or p.is_complete or not p.is_unlocked then
     raise exception 'FAIL: fresh Level 0 progress wrong: %', row_to_json(p);
   end if;
-  -- 12 levels before Migration 13, 13 (Level 0–12) with it
-  if (select count(*) from public.my_level_progress()) <> (case when to_regclass('public.curriculum_level_releases') is null then 12 else 13 end)
+  if (select count(*) from public.my_level_progress()) <> 12
      or exists (select 1 from public.my_level_progress() where level_id >= 2 and (is_unlocked or is_complete or total_items <> 0 or completion_fraction <> 0)) then
     raise exception 'FAIL: levels without content must be locked, incomplete and 0';
   end if;

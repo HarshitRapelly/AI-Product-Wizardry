@@ -6,9 +6,7 @@
 -- The current frontend still keeps Levels 1–11 locked (lib/levelStatus.ts).
 -- Order: my_level_progress is restored FIRST (the Migration 13 version calls
 -- private.level_released), then triggers, policies, helper and table are removed.
--- No student data is changed. The widened level_id range checks (1–13) are KEPT:
--- narrowing them back to 1–12 could fail on Level 12 rows and is not needed for the
--- Migration 9 behaviour (my_level_progress returns Levels 0–11 again after this).
+-- No student data is changed.
 -- =============================================================================
 
 begin;

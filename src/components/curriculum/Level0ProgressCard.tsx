@@ -31,7 +31,7 @@ export const Level0ProgressCard: React.FC<{ mode: 'online' | 'offline' }> = ({ m
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${complete ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-800'}`}>
               {complete ? 'Completed' : 'Unlocked & Active'}
             </span>
-            <span className="text-xs font-bold text-secondary">Level 0 · Levels 0–12</span>
+            <span className="text-xs font-bold text-secondary">Level 0 · Levels 0–11</span>
           </div>
           <h2 className="text-lg font-bold text-primary mt-1">{level?.title ?? 'Level 0'}</h2>
         </div>
