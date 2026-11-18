@@ -1,8 +1,19 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { User, LearningMode, PaymentDetails, QuizAttempt, AttendanceRecord, LeaderboardStudent } from '../types';
 import { INITIAL_ATTENDANCE_RECORDS, INITIAL_LEADERBOARD } from '../data/mockData';
 import { useAuth, type SaveModeResult } from './AuthContext';
 import { userKey, readStored, writeStored, clearUserData } from '../lib/userStorage';
+import { saveSimulatedPayment, clearSimulatedPayment } from '../services/paymentService';
+import { fetchMyCourseProgress, type CourseProgressState } from '../services/progressService';
+import { fetchMyLevelProgress } from '../services/curriculumService';
+import type { LevelProgressRow } from '../lib/curriculumTypes';
+
+export type LevelProgressState =
+  | { status: 'loading'; rows: LevelProgressRow[] }
+  | { status: 'ready'; rows: LevelProgressRow[] }
+  /** my_level_progress() not deployed yet (Migration 9 not applied). */
+  | { status: 'unavailable'; rows: LevelProgressRow[] }
+  | { status: 'error'; rows: LevelProgressRow[]; message: string };
 
 export interface TopicProgressItem {
   videoWatched: boolean;
@@ -17,6 +28,8 @@ interface AuthAndCourseContextType {
   // Identity — from Supabase Auth + profiles (via AuthContext)
   user: User | null;
   isAuthenticated: boolean;
+  /** Registration form completed? null = unknown (Migration 6 not deployed). */
+  isRegistered: boolean | null;
   learningMode: LearningMode | null; // profiles.learning_mode (database is the source of truth)
 
   // Simulated, frontend-only payment — stored per user in localStorage
@@ -33,7 +46,8 @@ interface AuthAndCourseContextType {
 
   // Actions
   logout: () => void;
-  processPayment: (method: string, customAmount?: number) => PaymentDetails;
+  /** Saves the simulated payment to Supabase FIRST; the student is paid only if that succeeds. */
+  processPayment: (method: string, customAmount?: number) => Promise<ActionResult<PaymentDetails>>;
   selectLearningMode: (mode: LearningMode) => Promise<SaveModeResult>;
   toggleReadingCompleted: () => void;
   submitQuizAttempt: (selectedAnswers: Record<number, number>, totalQuestions: number, correctAnswersCount: number) => QuizAttempt;
@@ -48,18 +62,33 @@ interface AuthAndCourseContextType {
   markTopicVideoWatched: (topicId: number) => void;
   markTopicQuizCompleted: (topicId: number, score?: number) => void;
   toggleTopicReadingCompleted: (topicId: number) => void;
-  resetAllDemoData: () => void;
+  /** Clears the Supabase payment record, then this student's local data, then signs out. */
+  resetAllDemoData: () => Promise<ActionResult<null>>;
+
+  // Overall course progress — from the database function my_course_progress() only
+  /** Server value with its loading / error state. Use this to render progress. */
+  courseProgress: CourseProgressState;
+  /** Server percentage when loaded, otherwise 0 (kept for existing numeric consumers). */
+  courseProgressPercentage: number;
+  /** Re-reads the server value (e.g. after progress is recorded). */
+  refreshCourseProgress: () => Promise<void>;
+  /** Per-level counts and unlock state from my_level_progress() (level_id 1 = "Level 0"). */
+  levelProgress: LevelProgressState;
+  /** Re-reads overall and per-level progress together (after any successful progress write). */
+  refreshProgress: () => Promise<void>;
 
   // Computed values
-  courseProgressPercentage: number;
   totalPoints: number;
   attendancePercentage: number;
   getEnrichedLeaderboard: () => LeaderboardStudent[];
 }
 
+export type ActionResult<T> = { ok: true; value: T } | { ok: false; message: string };
+
 // Names of the per-user keys (stored as aiw:<userId>:<name>)
+// (Payment is no longer stored here: it lives in the Supabase account. The old
+//  aiw:<userId>:payment key is only read once by paymentService's carry-over.)
 const STORAGE_NAMES = {
-  PAYMENT: 'payment',
   READING_COMPLETED: 'reading_completed',
   QUIZ_ATTEMPT: 'quiz_attempt',
   REGISTERED_CLASSES: 'registered_classes',
@@ -124,8 +153,12 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   // 2. Learning mode — straight from profiles.learning_mode
   const learningMode: LearningMode | null = profile?.learning_mode ?? null;
 
-  // 3. Per-user, frontend-only demo state
-  const [paymentDetails, setPaymentDetails] = useUserStoredState<PaymentDetails | null>(key(STORAGE_NAMES.PAYMENT), null);
+  // 3. Simulated payment — from the student's Supabase account (user_metadata),
+  //    loaded fresh before the student becomes 'ready'. Never read from browser
+  //    storage. See services/paymentService.ts (NOT proof of real payment).
+  const paymentDetails: PaymentDetails | null = ready ? auth.payment : null;
+
+  // 4. Per-user, frontend-only demo state
   const [readingCompleted, setReadingCompleted] = useUserStoredState<boolean>(key(STORAGE_NAMES.READING_COMPLETED), false);
   const [quizAttempt, setQuizAttempt] = useUserStoredState<QuizAttempt | null>(key(STORAGE_NAMES.QUIZ_ATTEMPT), null);
   const [registeredClassIds, setRegisteredClassIds] = useUserStoredState<string[]>(key(STORAGE_NAMES.REGISTERED_CLASSES), DEFAULT_REGISTERED_CLASSES);
@@ -141,7 +174,8 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     void auth.signOut();
   };
 
-  const processPayment = (method: string, customAmount?: number): PaymentDetails => {
+  const processPayment = async (method: string, customAmount?: number): Promise<ActionResult<PaymentDetails>> => {
+    if (!uid) return { ok: false, message: 'Please sign in again to complete your enrollment.' };
     const txId = 'AIW-ADM-' + Math.random().toString(36).substring(2, 9).toUpperCase();
     const finalAmount = customAmount !== undefined
       ? customAmount
@@ -156,8 +190,12 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
       programName: `AI Product Wizardry — ${learningMode === 'online' ? 'Online Virtual Cohort' : 'Offline Campus Batch'}`,
       cohort: 'Batch 1 (Winter/Spring 2026)'
     };
-    setPaymentDetails(details);
-    return details;
+    // Supabase first: nothing is marked paid (in memory or in the browser) unless
+    // Supabase confirms it saved this exact record for this student.
+    const saved = await saveSimulatedPayment(uid, details);
+    if (!saved.ok) return saved;
+    auth.setPaymentRecord(saved.value);
+    return { ok: true, value: saved.value };
   };
 
   const selectLearningMode = (mode: LearningMode) => auth.setLearningMode(mode);
@@ -250,13 +288,68 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  const resetAllDemoData = () => {
-    // Clears ONLY this student's local demo data (keys aiw:<theirId>:*), then signs
-    // out through Supabase. Never calls localStorage.clear(), never touches other
-    // students' keys, and never deletes or changes anything in the database
-    // (profile, learning mode and auth account are kept).
-    if (uid) clearUserData(uid);
+  // 5. Overall course progress — read from public.my_course_progress() for the
+  //    signed-in student. Never computed in the browser and never stored locally.
+  //    A response that arrives after the student changed (sign-out / another
+  //    account) is ignored, so one student's value can never show for another.
+  const [courseProgress, setCourseProgress] = useState<CourseProgressState>({ status: 'loading', percentage: null });
+  const progressRequest = useRef(0);
+  const loadCourseProgress = useCallback(async (forUid: string | null) => {
+    const req = ++progressRequest.current;
+    if (!forUid) { setCourseProgress({ status: 'loading', percentage: null }); return; }
+    setCourseProgress((prev) => (prev.status === 'ready' ? prev : { status: 'loading', percentage: null }));
+    const r = await fetchMyCourseProgress();
+    if (req !== progressRequest.current) return; // stale (user changed or a newer request started)
+    if (r.ok) setCourseProgress({ status: 'ready', percentage: r.percentage });
+    else if (r.reason === 'unavailable') setCourseProgress({ status: 'unavailable', percentage: null });
+    else setCourseProgress({ status: 'error', percentage: null, message: r.message });
+  }, []);
+  useEffect(() => {
+    // New student (or signed out): drop the previous value before loading.
+    setCourseProgress({ status: 'loading', percentage: null });
+    void loadCourseProgress(uid);
+    return () => { progressRequest.current++; };
+  }, [uid, loadCourseProgress]);
+  const refreshCourseProgress = useCallback(() => loadCourseProgress(uid), [uid, loadCourseProgress]);
+
+  // 6. Per-level progress and unlock state — public.my_level_progress().
+  //    Same rules as above: server only, nothing stored locally, stale replies ignored.
+  const [levelProgress, setLevelProgress] = useState<LevelProgressState>({ status: 'loading', rows: [] });
+  const levelRequest = useRef(0);
+  const loadLevelProgress = useCallback(async (forUid: string | null) => {
+    const req = ++levelRequest.current;
+    if (!forUid) { setLevelProgress({ status: 'loading', rows: [] }); return; }
+    setLevelProgress((prev) => (prev.status === 'ready' ? prev : { status: 'loading', rows: [] }));
+    const r = await fetchMyLevelProgress();
+    if (req !== levelRequest.current) return;
+    if (r.ok) setLevelProgress({ status: 'ready', rows: r.value });
+    else if (r.error.kind === 'unavailable') setLevelProgress({ status: 'unavailable', rows: [] });
+    else setLevelProgress({ status: 'error', rows: [], message: r.error.message });
+  }, []);
+  useEffect(() => {
+    setLevelProgress({ status: 'loading', rows: [] });
+    void loadLevelProgress(uid);
+    return () => { levelRequest.current++; };
+  }, [uid, loadLevelProgress]);
+  /** Re-reads overall AND per-level progress (call after any successful progress write). */
+  const refreshProgress = useCallback(async () => {
+    await Promise.all([loadCourseProgress(uid), loadLevelProgress(uid)]);
+  }, [uid, loadCourseProgress, loadLevelProgress]);
+
+  const resetAllDemoData = async (): Promise<ActionResult<null>> => {
+    // Order matters:
+    //  1. Remove the simulated payment from this student's Supabase account.
+    //     If that fails, STOP: local data and the signed-in session are kept.
+    //  2. Clear ONLY this student's local demo data (keys aiw:<theirId>:*).
+    //     Never localStorage.clear(), never other students' keys.
+    //  3. Sign out this device.
+    // The profile row and learning mode are never changed or deleted.
+    if (!uid) return { ok: false, message: 'Please sign in again to reset your account.' };
+    const cleared = await clearSimulatedPayment(uid);
+    if (!cleared.ok) return cleared;
+    clearUserData(uid);
     void auth.signOut();
+    return { ok: true, value: null };
   };
 
   // Computations
@@ -264,18 +357,8 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   const totalAttendanceConsidered = attendanceRecords.filter(r => r.status !== 'upcoming').length || 1;
   const attendancePercentage = Math.round((attendedCount / totalAttendanceConsidered) * 100);
 
-  let level1SubProgress = 0;
-  if (learningMode === 'offline') {
-    if (readingCompleted) level1SubProgress += 50;
-    if (quizAttempt && quizAttempt.passed) level1SubProgress += 50;
-  } else {
-    // Online
-    if (readingCompleted) level1SubProgress += 35;
-    if (quizAttempt && quizAttempt.passed) level1SubProgress += 45;
-    if (watchedSessionIds.length >= 1) level1SubProgress += 20;
-  }
-
-  const courseProgressPercentage = Math.round((level1SubProgress / 100) * 8.33);
+  // Overall course progress: the server value is the only source (no frontend formula).
+  const courseProgressPercentage = courseProgress.status === 'ready' ? courseProgress.percentage : 0;
 
   let points = 250;
   if (readingCompleted) points += 300;
@@ -316,6 +399,7 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         user,
         isAuthenticated: ready,
+        isRegistered: ready ? auth.registered : null,
         isPaid: !!paymentDetails,
         paymentDetails,
         learningMode,
@@ -340,7 +424,11 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         markTopicQuizCompleted,
         toggleTopicReadingCompleted,
         resetAllDemoData,
+        courseProgress,
         courseProgressPercentage,
+        refreshCourseProgress,
+        levelProgress,
+        refreshProgress,
         totalPoints,
         attendancePercentage,
         getEnrichedLeaderboard,

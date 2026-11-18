@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthAndCourse } from '../context/AuthAndCourseContext';
+import { courseProgressShort } from '../services/progressService';
+import { activeLevelLabel } from '../lib/levelStatus';
+import { BrandHat, BrandLogo } from '../components/brand/BrandLogo';
+import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 import {
   LayoutDashboard,
   Layers,
@@ -29,7 +33,7 @@ interface PortalLayoutProps {
 }
 
 export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, title }) => {
-  const { user, logout, selectLearningMode, resetAllDemoData, courseProgressPercentage, learningMode } = useAuthAndCourse();
+  const { user, logout, selectLearningMode, resetAllDemoData, courseProgress, courseProgressPercentage, levelProgress, learningMode } = useAuthAndCourse();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [modeSwitchModalOpen, setModeSwitchModalOpen] = useState(false);
   const location = useLocation();
@@ -96,34 +100,32 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row text-text font-sans">
+    <div className="min-h-screen bg-canvas bg-[radial-gradient(1200px_600px_at_70%_-10%,rgba(61,142,133,0.18),transparent)] flex flex-col md:flex-row text-text font-sans">
       {/* Mobile Top Navbar */}
-      <div className="md:hidden bg-surface border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-subtle">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
-            <Sparkles className="w-4 h-4 text-amber-300" />
-          </div>
+      <div className="md:hidden bg-canvas-deep/95 backdrop-blur border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-subtle">
+        <Link to="/" state={SHOW_HOME_STATE} className="flex items-center gap-2" aria-label="AI Product Wizardry home page" title="Go to the home page">
+          <BrandHat className="w-9 h-9" />
           <div className="text-left">
-            <span className="font-bold text-sm text-primary tracking-tight block">AI Product Wizardry</span>
+            <span className="font-bold text-sm text-cream tracking-tight block">AI Product Wizardry</span>
             <div className="flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${mode === 'online' ? 'bg-emerald-500' : 'bg-blue-600'}`}></span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-gold">
                 {mode === 'online' ? 'Online Cohort' : 'Campus Batch'}
               </span>
             </div>
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setModeSwitchModalOpen(true)}
-            className="p-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-primary hover:bg-slate-50"
+            className="p-1.5 rounded-lg border border-white/15 text-xs text-cream/70 hover:text-cream hover:bg-white/10"
             title="Switch Cohort Modality"
           >
             <ArrowRightLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-            className="p-2 rounded-lg text-secondary hover:text-primary hover:bg-slate-100"
+            className="p-2 rounded-lg text-cream/80 hover:text-cream hover:bg-white/10"
             aria-label="Toggle Navigation"
           >
             {mobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -133,40 +135,34 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
 
       {/* Sidebar for Desktop */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border flex flex-col transition-transform duration-200 ease-in-out
+        fixed inset-y-0 left-0 z-40 w-64 bg-canvas-deep border-r border-white/10 flex flex-col transition-transform duration-300 ease-out
         md:translate-x-0 md:static md:h-screen md:sticky md:top-0 text-left
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Brand Header */}
-        <div className="p-5 border-b border-border">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-              <Sparkles className="w-4 h-4 text-amber-300" />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="font-bold text-base text-primary tracking-tight">AI Product Wizardry</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">Powered by NxtWave</span>
-            </div>
+        <div className="p-5 border-b border-white/10">
+          <Link to="/" state={SHOW_HOME_STATE} className="flex items-center gap-3 group" aria-label="AI Product Wizardry home page" title="Go to the home page">
+            <BrandLogo imgClassName="block w-full" className="transition-transform duration-300 group-hover:scale-[1.03]" />
           </Link>
 
           {/* Mode Pill Badge */}
-          <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {mode === 'online' ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cerulean-subtle border border-cerulean-light text-[11px] font-bold text-cerulean-dark">
-                  <Globe className="w-3.5 h-3.5 text-cerulean" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/15 text-[11px] font-bold text-cream">
+                  <Globe className="w-3.5 h-3.5 text-gold" />
                   <span>ONLINE COHORT</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-300 text-[11px] font-bold text-slate-800">
-                  <MapPin className="w-3.5 h-3.5 text-slate-700" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/15 text-[11px] font-bold text-cream">
+                  <MapPin className="w-3.5 h-3.5 text-gold" />
                   <span>CAMPUS BATCH</span>
                 </div>
               )}
             </div>
             <button
               onClick={() => setModeSwitchModalOpen(true)}
-              className="text-[11px] text-accent hover:underline font-semibold flex items-center gap-1"
+              className="text-[11px] text-gold hover:underline font-semibold flex items-center gap-1"
               title="Change cohort mode"
             >
               <ArrowRightLeft className="w-3 h-3" />
@@ -186,61 +182,61 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
                 to={item.path}
                 onClick={() => setMobileSidebarOpen(false)}
                 className={`
-                  flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all
-                  ${active 
-                    ? 'bg-primary text-white shadow-subtle' 
-                    : 'text-secondary hover:text-primary hover:bg-slate-100'}
+                  flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300
+                  ${active
+                    ? 'bg-white/10 text-white shadow-subtle ring-1 ring-white/10'
+                    : 'text-cream/70 hover:text-white hover:bg-white/5 hover:translate-x-0.5'}
                 `}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${active ? 'text-amber-300' : 'text-text-muted'}`} />
+                  <Icon className={`w-4 h-4 transition-colors ${active ? 'text-gold' : 'text-cream/50'}`} />
                   <span>{item.name}</span>
                 </div>
-                {active && <ChevronRight className="w-4 h-4 text-slate-400" />}
+                {active && <ChevronRight className="w-4 h-4 text-gold/80" />}
               </Link>
             );
           })}
         </nav>
 
         {/* Curriculum Progress Widget in Sidebar */}
-        <div className="p-4 mx-3 mb-3 rounded-2xl bg-slate-50 border border-border">
-          <div className="flex items-center justify-between text-xs font-semibold text-secondary mb-1.5">
+        <div className="p-4 mx-3 mb-3 rounded-2xl bg-white/[0.06] border border-white/10">
+          <div className="flex items-center justify-between text-xs font-semibold text-cream/80 mb-1.5">
             <span>Overall Progress</span>
-            <span className="text-primary font-bold">{courseProgressPercentage}%</span>
+            <span className="text-gold font-bold">{courseProgressShort(courseProgress)}</span>
           </div>
-          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-            <div 
-              className="bg-accent h-full rounded-full transition-all duration-500 ease-out" 
-              style={{ width: `${Math.max(courseProgressPercentage, 6)}%` }}
+          <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+            <div
+              className="bg-gold h-full rounded-full transition-all duration-700 ease-out" 
+              style={{ width: `${courseProgressPercentage}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-text-muted font-medium">
-            <span>Module 1 Active</span>
-            <span>12 Modules Total</span>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-cream/60 font-medium">
+            <span data-testid="sidebar-active-level">{activeLevelLabel(levelProgress)}</span>
+            <span>12 Levels (0–11)</span>
           </div>
         </div>
 
         {/* User Card & Logout in Footer */}
-        <div className="p-3 border-t border-border bg-surface">
-          <div className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+        <div className="p-3 border-t border-white/10 bg-canvas-deep">
+          <div className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
             <Link to={`${prefix}/profile`} className="flex items-center gap-2.5 truncate">
               <img
                 src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
                 alt={user?.name || "Student"}
-                className="w-8 h-8 rounded-full border border-border object-cover"
+                className="w-8 h-8 rounded-full border border-white/20 object-cover"
               />
               <div className="truncate text-left">
-                <p className="text-xs font-bold text-primary truncate leading-tight">
+                <p className="text-xs font-bold text-cream truncate leading-tight">
                   {user?.name || "Student Fellow"}
                 </p>
-                <p className="text-[11px] text-text-muted truncate">
+                <p className="text-[11px] text-cream/60 truncate">
                   {user?.email || "student@university.edu"}
                 </p>
               </div>
             </Link>
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-md text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+              className="p-1.5 rounded-md text-cream/60 hover:text-white hover:bg-white/10 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -253,22 +249,22 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
       {mobileSidebarOpen && (
         <div 
           onClick={() => setMobileSidebarOpen(false)}
-          className="fixed inset-0 bg-slate-900/30 z-30 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/40 z-30 md:hidden backdrop-blur-sm"
         />
       )}
 
       {/* Main Content Viewport */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Top Header Bar for Desktop */}
-        <header className="hidden md:flex items-center justify-between h-16 px-8 bg-surface border-b border-border sticky top-0 z-20">
+        <header className="hidden md:flex items-center justify-between h-16 px-8 bg-canvas/85 backdrop-blur-md border-b border-white/10 sticky top-0 z-20">
           <div className="flex items-center gap-3 text-sm text-left">
-            <span className="text-text-muted font-medium">Student Academy</span>
-            <span className="text-slate-300">/</span>
-            <span className="font-semibold text-primary capitalize">{mode} Cohort</span>
+            <span className="text-cream/60 font-medium">Student Academy</span>
+            <span className="text-cream/30">/</span>
+            <span className="font-semibold text-cream capitalize">{mode} Cohort</span>
             {title && (
               <>
-                <span className="text-slate-300">/</span>
-                <span className="text-text font-medium">{title}</span>
+                <span className="text-cream/30">/</span>
+                <span className="text-gold font-medium">{title}</span>
               </>
             )}
           </div>
@@ -276,29 +272,29 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
           <div className="flex items-center gap-4">
             <button
               onClick={() => setModeSwitchModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-secondary hover:text-primary hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-xs font-semibold text-cream/80 hover:text-white hover:bg-white/10 transition-colors"
             >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-accent" />
+              <ArrowRightLeft className="w-3.5 h-3.5 text-gold" />
               <span>Switch to {mode === 'online' ? 'Campus Batch' : 'Online Cohort'}</span>
             </button>
 
             {/* Profile link */}
             <Link
               to={`${prefix}/profile`}
-              className="flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 pl-3 border-l border-white/15 hover:opacity-80 transition-opacity"
             >
               <img
                 src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
                 alt={user?.name || "Student"}
-                className="w-8 h-8 rounded-full border border-border object-cover"
+                className="w-8 h-8 rounded-full border border-white/20 object-cover"
               />
-              <span className="text-xs font-semibold text-secondary">{user?.name || "Student"}</span>
+              <span className="text-xs font-semibold text-cream">{user?.name || "Student"}</span>
             </Link>
           </div>
         </header>
 
         {/* Page Content Body */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main key={location.pathname} className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-aiw-fade-up">
           {children}
         </main>
       </div>

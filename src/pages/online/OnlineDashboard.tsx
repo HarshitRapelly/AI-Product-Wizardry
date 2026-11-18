@@ -4,6 +4,9 @@ import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { UPCOMING_CLASSES } from '../../data/mockData';
 import { MilestoneProgressChain } from '../../components/dashboard/MilestoneProgressChain';
+import { Level0ProgressCard } from '../../components/curriculum/Level0ProgressCard';
+import { activeLevelId, activeLevelLabel, levelNumberOf } from '../../lib/levelStatus';
+import { courseProgressLabel } from '../../services/progressService';
 import {
   Calendar,
   Clock,
@@ -22,7 +25,8 @@ import {
 export const OnlineDashboard: React.FC = () => {
   const { 
     user, 
-    courseProgressPercentage, 
+    courseProgress,
+    levelProgress,
     attendancePercentage, 
     attendanceRecords, 
     markAttendance,
@@ -91,11 +95,11 @@ export const OnlineDashboard: React.FC = () => {
             <div className="flex-shrink-0 flex items-center gap-4 bg-background p-4 rounded-2xl border border-border">
               <div className="text-left">
                 <span className="text-[11px] font-semibold text-text-muted uppercase">Active Curriculum</span>
-                <div className="text-lg font-bold text-primary">Level 0 Active</div>
-                <span className="text-xs text-accent font-semibold">{courseProgressPercentage}% of 12 Levels Completed</span>
+                <div className="text-lg font-bold text-primary" data-testid="active-level">{activeLevelLabel(levelProgress)}</div>
+                <span className="text-xs text-accent font-semibold">{courseProgressLabel(courseProgress)}</span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-base shadow-subtle">
-                00
+                {String(levelNumberOf(activeLevelId(levelProgress))).padStart(2, '0')}
               </div>
             </div>
           </div>
@@ -183,107 +187,7 @@ export const OnlineDashboard: React.FC = () => {
             </div>
 
             {/* B. LEVEL 0 ACTIVE MODULE CARD */}
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-border gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
-                      Unlocked & Active
-                    </span>
-                    <span className="text-xs font-bold text-secondary">Level 0 of 12</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-primary mt-1">
-                    Orientation & Program Essentials
-                  </h2>
-                </div>
-
-                <Link
-                  to="/online/level/0"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-bold shadow-subtle transition-colors"
-                >
-                  <span>Open Level 0 Hub</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-
-              {/* 3 Components Preview */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
-                {/* 1. Video Masterclasses */}
-                <Link
-                  to="/online/level/0"
-                  className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                        <Video className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] text-text-muted">Step 1</span>
-                    </div>
-                    <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Video Masterclasses
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Watch Level 0 video lectures to unlock knowledge check quizzes.
-                    </p>
-                  </div>
-                  <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>Watch Videos</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-
-                {/* 2. Practice Quizzes */}
-                <Link
-                  to="/online/level/0"
-                  className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                        <Award className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] text-text-muted">Step 2 (Unlocks after Video)</span>
-                    </div>
-                    <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Knowledge Quizzes
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Scenario-based evaluation across all 4 Level 0 topics.
-                    </p>
-                  </div>
-                  <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>Take Quizzes</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-
-                {/* 3. Reading Material */}
-                <Link
-                  to="/online/level/0"
-                  className="p-4 rounded-2xl border border-border hover:border-accent bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-accent-subtle text-accent flex items-center justify-center">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] text-text-muted">Step 3 (Unlocks after Quiz)</span>
-                    </div>
-                    <h3 className="font-bold text-sm text-primary group-hover:text-accent transition-colors">
-                      Reading Handbooks
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Fellowship orientation guidelines, rubrics, and pod charters.
-                    </p>
-                  </div>
-                  <span className="mt-4 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>Read Handbooks</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-              </div>
-            </div>
+            <Level0ProgressCard mode="online" />
 
           </div>
 
@@ -313,7 +217,7 @@ export const OnlineDashboard: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <Layers className="w-4 h-4 text-accent" />
-                    <span>View All 12 Modules</span>
+                    <span>View All 12 Levels (0–11)</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-text-muted" />
                 </Link>

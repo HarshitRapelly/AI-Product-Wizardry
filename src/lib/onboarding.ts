@@ -2,22 +2,39 @@ import type { LearningMode } from '../types';
 
 /**
  * The single onboarding rule used by the route guards and after-login routing:
- *   signed in → learning mode chosen → (simulated) payment → dashboard
+ *   signed in → registration completed → learning mode + (simulated) payment → dashboard
+ * Registration, the learning-mode choice and the enrollment payment all happen on
+ * /register; there are no separate mode-selection or checkout pages.
  */
 export interface OnboardingState {
   learningMode: LearningMode | null;
   isPaid: boolean;
+  /** false = registration form not completed yet. null/undefined = unknown → not enforced. */
+  registered?: boolean | null;
 }
 
 /** Where a signed-in student belongs right now if they didn't ask for a specific page. */
-export function homeFor({ learningMode, isPaid }: OnboardingState): string {
-  if (!learningMode) return '/choose-learning-mode';
-  if (!isPaid) return `/checkout?mode=${learningMode}`;
+export function homeFor({ learningMode, isPaid, registered }: OnboardingState): string {
+  if (registered === false) return '/register'; // finish the registration form
+  if (!learningMode || !isPaid) return '/register'; // choose mode / complete enrollment
   return `/${learningMode}/dashboard`;
 }
 
-// Pages a student should never be "returned" to after signing in.
-const NON_RETURNABLE = ['/login', '/register', '/auth/callback', '/reset-password'];
+// Pages a student should never be "returned" to after signing in:
+//  - the authentication pages themselves, and
+//  - the onboarding steps, which homeFor() must always decide fresh from the
+//    student's CURRENT state (otherwise a saved onboarding URL could send an
+//    already-paid student back into enrollment). The last three are old URLs
+//    that now simply redirect to /register.
+const NON_RETURNABLE = [
+  '/login',
+  '/register',
+  '/auth/callback',
+  '/reset-password',
+  '/choose-learning-mode',
+  '/checkout',
+  '/payment-success',
+];
 
 /**
  * Validates a "return to where you were going" target taken from router state.

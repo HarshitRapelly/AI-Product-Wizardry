@@ -5,6 +5,8 @@ import { signInWithEmail, resendSignupConfirmation } from '../services/authServi
 import { usePasswordResetRequest } from '../hooks/usePasswordResetRequest';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { safeReturnPath } from '../lib/onboarding';
+import { BrandLogo } from '../components/brand/BrandLogo';
+import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -92,23 +94,20 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-accent/15 selection:text-accent font-sans">
+    <div className="min-h-screen bg-canvas bg-[radial-gradient(1100px_520px_at_80%_-10%,rgba(61,142,133,0.22),transparent)] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-accent/15 selection:text-accent font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-3 group mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-            <Sparkles className="w-5 h-5 text-amber-300 group-hover:text-white transition-colors" />
-          </div>
-          <div className="text-left">
-            <span className="font-bold text-xl text-primary tracking-tight block">AI Product Wizardry</span>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-accent block">Student Sign In</span>
-          </div>
+        <Link to="/" state={SHOW_HOME_STATE} className="flex items-center justify-center gap-3 group mb-2" aria-label="AI Product Wizardry home page">
+          <span className="flex flex-col items-center gap-2">
+            <BrandLogo imgClassName="h-20" className="transition-transform duration-300 group-hover:scale-[1.03]" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold block">Student Sign In</span>
+          </span>
         </Link>
-        <h2 className="mt-6 text-center text-2xl font-extrabold text-primary">
+        <h2 className="mt-6 text-center font-serif text-3xl font-semibold text-white">
           Log In to Your Account
         </h2>
-        <p className="mt-2 text-center text-sm text-text-muted">
+        <p className="mt-2 text-center text-sm text-cream/70">
           New student?{' '}
-          <Link to="/register" className="font-semibold text-accent hover:text-accent-hover transition-colors">
+          <Link to="/register" className="font-semibold text-gold hover:text-white transition-colors">
             Register for Batch 1
           </Link>
         </p>

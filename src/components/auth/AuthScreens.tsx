@@ -2,31 +2,28 @@ import React, { useState } from 'react';
 import { Sparkles, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { ProfileErrorKind } from '../../services/profileService';
+import { BrandHat, BrandLogo } from '../brand/BrandLogo';
 
 /** Brand header used on the auth screens (same as Login / Register). */
 const BrandMark: React.FC = () => (
-  <div className="flex items-center justify-center gap-3 mb-2">
-    <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle">
-      <Sparkles className="w-5 h-5 text-amber-300" />
-    </div>
-    <div className="text-left">
-      <span className="font-bold text-xl text-primary tracking-tight block">AI Product Wizardry</span>
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-accent block">Student Portal</span>
-    </div>
+  <div className="flex flex-col items-center justify-center gap-2 mb-2">
+    <BrandLogo imgClassName="h-20" />
+    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold block">Student Portal</span>
   </div>
 );
 
 /** Shown while the session or profile is loading, so guards never redirect too early. */
 export const AuthLoadingScreen: React.FC<{ message?: string }> = ({ message = 'Loading your student account…' }) => (
   <div
-    className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 font-sans"
+    className="min-h-screen bg-canvas bg-[radial-gradient(1100px_520px_at_80%_-10%,rgba(61,142,133,0.22),transparent)] flex flex-col items-center justify-center gap-4 font-sans"
     role="status"
     aria-live="polite"
   >
-    <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-subtle animate-pulse">
-      <Sparkles className="w-6 h-6 text-amber-300" />
-    </div>
-    <p className="text-sm text-text-muted">{message}</p>
+    <span className="relative inline-flex">
+      <span className="absolute inset-0 rounded-2xl bg-accent/20 animate-ping" aria-hidden="true" />
+      <BrandHat className="relative w-14 h-14 shadow-subtle" tileClassName="bg-cream border border-border rounded-2xl" animated />
+    </span>
+    <p className="text-sm text-cream/75">{message}</p>
   </div>
 );
 
@@ -71,7 +68,7 @@ export const ProfileErrorScreen: React.FC = () => {
   const copy = ERROR_COPY[kind];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-canvas bg-[radial-gradient(1100px_520px_at_80%_-10%,rgba(61,142,133,0.22),transparent)] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <BrandMark />
       </div>

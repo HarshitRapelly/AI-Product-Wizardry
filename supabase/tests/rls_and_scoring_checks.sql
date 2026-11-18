@@ -1,5 +1,11 @@
 -- =============================================================================
--- Verification script — run AFTER migrations 1–5 (SQL Editor)
+-- Verification script — run AFTER migrations 1–10 or 1–11 (SQL Editor)
+-- (Migrations 9–10 lock Level 1 until Level 0 is complete; student A completes
+--  Level 0 — including the Plagiarism reading confirmation that Migration 11
+--  requires before the quiz — before the Level 1 quiz checks. Migration 9 also
+--  requires a registration record, so students A and B are registered in the
+--  setup. For a Migrations 1–8 database use the version of this file at commit
+--  602c714. Curriculum rules: curriculum_checks.sql.)
 -- =============================================================================
 -- Creates three throw-away test users inside a transaction, impersonates them
 -- exactly like the Data API does (role "authenticated" + JWT claims), checks
@@ -43,6 +49,15 @@ begin
     raise exception 'FAIL: Google-style profile C not created correctly: %', row_to_json(r);
   end if;
 end $$;
+
+-- Migration 9: only registered students may record progress or submit quizzes.
+-- A and B are registered (as the app's registration flow would do); C is not.
+select private.apply_registration('00000000-0000-4000-8000-00000000000a',
+  '{"full_name":"Test Student A","mobile":"9000000001","date_of_birth":"2003-01-01","city":"Chennai","college":"Anna University","degree":"B.Tech","branch":"CSE","year_of_study":"3rd year","graduation_year":2027,"learning_mode":"online","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
+  'email_signup');
+select private.apply_registration('00000000-0000-4000-8000-00000000000b',
+  '{"full_name":"Test Student B","mobile":"9000000002","date_of_birth":"2003-02-02","city":"Hyderabad","college":"JNTU","degree":"B.Tech","branch":"IT","year_of_study":"2nd year","graduation_year":2028,"learning_mode":"offline","preferred_slot":"Weekend mornings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
+  'email_signup');
 
 -- ===========================================================================
 -- Act as student A
@@ -216,6 +231,28 @@ begin
   if a.percentage <> 33 or a.passed or a.attempt_number <> 3 then
     raise exception 'FAIL: failing attempt scored wrong: %', row_to_json(a);
   end if;
+
+  -- Migration 9: a Level 1 quiz (level_id 2) is locked until Level 0 is complete
+  begin
+    perform public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', gen_random_uuid());
+    raise exception 'FAIL: Level 1 quiz accepted before Level 0 was complete';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Complete Level 0 (Migration 10 content) the way the app does: acknowledgments 1–4,
+  -- the Plagiarism quiz (any score), then acknowledgments 5–6.
+  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values
+    (1, 'l0-program-introduction', 'reading', true),
+    (1, 'l0-program-outline', 'reading', true),
+    (1, 'l0-completion-requirements', 'reading', true),
+    (1, 'l0-faqs', 'reading', true);
+  -- Plagiarism reading confirmed (required for the quiz from Migration 11 on)
+  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
+  perform public.submit_quiz_attempt('l0-plagiarism-quiz',
+    '{"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0}', gen_random_uuid());
+  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values
+    (1, 'l0-plagiarism', 'reading', true),
+    (1, 'l0-system-requirements', 'reading', true);
 
   -- Legacy quiz (keys Q1=2,Q2=0,Q3=3,Q4=1,Q5=2): 80 % pass mark. 4/5 = 80 → pass, 3/5 = 60 → fail
   a := public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}',

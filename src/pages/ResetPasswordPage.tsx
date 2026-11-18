@@ -9,6 +9,8 @@ import { validateNewPassword, PASSWORD_MIN_LENGTH, type NewPasswordErrors } from
 import { updatePassword, signOutOtherDevices } from '../services/authService';
 import { usePasswordResetRequest } from '../hooks/usePasswordResetRequest';
 import { AuthLoadingScreen } from '../components/auth/AuthScreens';
+import { BrandLogo } from '../components/brand/BrandLogo';
+import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 
 // The reset-link details apply only if the app was OPENED on /reset-password.
 const linkInfo = initialAuthRedirect && initialAuthRedirect.path === '/reset-password' ? initialAuthRedirect : null;
@@ -25,16 +27,13 @@ function detectProblem(): LinkProblem {
 const AUTO_CONTINUE_MS = 2500;
 
 const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-accent/15 selection:text-accent font-sans">
+  <div className="min-h-screen bg-canvas bg-[radial-gradient(1100px_520px_at_80%_-10%,rgba(61,142,133,0.22),transparent)] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-accent/15 selection:text-accent font-sans">
     <div className="sm:mx-auto sm:w-full sm:max-w-md">
-      <Link to="/" className="flex items-center justify-center gap-3 group mb-2">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-          <Sparkles className="w-5 h-5 text-amber-300 group-hover:text-white transition-colors" />
-        </div>
-        <div className="text-left">
-          <span className="font-bold text-xl text-primary tracking-tight block">AI Product Wizardry</span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-accent block">Password Reset</span>
-        </div>
+      <Link to="/" state={SHOW_HOME_STATE} className="flex items-center justify-center gap-3 group mb-2" aria-label="AI Product Wizardry home page">
+        <span className="flex flex-col items-center gap-2">
+          <BrandLogo imgClassName="h-20" className="transition-transform duration-300 group-hover:scale-[1.03]" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold block">Password Reset</span>
+        </span>
       </Link>
     </div>
     <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
@@ -271,13 +270,13 @@ const NewPasswordForm: React.FC<{ onSessionExpired: () => void; onUpdated: (othe
 };
 
 export const ResetPasswordPage: React.FC = () => {
-  const { status, profile } = useAuth();
+  const { status, profile, registered } = useAuth();
   const { learningMode, isPaid } = useAuthAndCourse();
   const navigate = useNavigate();
   const [problem, setProblem] = useState<LinkProblem>(detectProblem);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [updated, setUpdated] = useState<{ othersSignedOut: boolean } | null>(null);
-  const destination = homeFor({ learningMode, isPaid });
+  const destination = homeFor({ learningMode, isPaid, registered });
 
   // After success, continue to the student's next step (guards still re-check everything).
   useEffect(() => {

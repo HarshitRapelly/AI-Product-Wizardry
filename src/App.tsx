@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthAndCourseProvider, useAuthAndCourse } from './context/AuthAndCourseContext';
 
 // Route Guards
-import { AuthGuard, GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RequireModeGuard } from './components/guards/RouteGuards';
+import { GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RegisterRoute } from './components/guards/RouteGuards';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
@@ -12,9 +12,6 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { CheckoutPage } from './pages/CheckoutPage';
-import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
-import { ChooseLearningModePage } from './pages/ChooseLearningModePage';
 
 // Online Portal Pages
 import { OnlineDashboard } from './pages/online/OnlineDashboard';
@@ -32,6 +29,8 @@ import { OfflineLevel1 } from './pages/offline/OfflineLevel1';
 // Shared Parameterized Pages
 import { ReadingMaterialPage } from './pages/shared/ReadingMaterialPage';
 import { PracticeQuizPage } from './pages/shared/PracticeQuizPage';
+import { QuizSessionPage } from './pages/shared/QuizSessionPage';
+import { LevelLockGate } from './components/curriculum/LevelLockGate';
 import { ClassesPage } from './pages/shared/ClassesPage';
 import { LeaderboardPage } from './pages/shared/LeaderboardPage';
 import { ProfilePage } from './pages/shared/ProfilePage';
@@ -55,37 +54,17 @@ export function App() {
           {/* Signed-in students are sent to their next step instead of the public landing page */}
           <Route path="/" element={<HomeRoute><LandingPage /></HomeRoute>} />
           <Route path="/login" element={<GuestOnlyGuard><LoginPage /></GuestOnlyGuard>} />
-          <Route path="/register" element={<GuestOnlyGuard><RegisterPage /></GuestOnlyGuard>} />
+          {/* Signed out: create an account. Signed in without a registration: complete it once. */}
+          <Route path="/register" element={<RegisterRoute>{(view) => <RegisterPage mode={view} />}</RegisterRoute>} />
           {/* Email confirmation links land here (and Google sign-in in Batch C) */}
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           {/* Password reset links land here. No guard: the link itself signs the student in. */}
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Payment & Onboarding (Protected) */}
-          <Route
-            path="/checkout"
-            element={
-              <RequireModeGuard>
-                <CheckoutPage />
-              </RequireModeGuard>
-            }
-          />
-          <Route
-            path="/payment-success"
-            element={
-              <PaidGuard>
-                <PaymentSuccessPage />
-              </PaidGuard>
-            }
-          />
-          <Route
-            path="/choose-learning-mode"
-            element={
-              <AuthGuard>
-                <ChooseLearningModePage />
-              </AuthGuard>
-            }
-          />
+          {/* Mode choice and enrollment payment now happen on /register; old links still work */}
+          <Route path="/choose-learning-mode" element={<Navigate to="/register" replace />} />
+          <Route path="/checkout" element={<Navigate to="/register" replace />} />
+          <Route path="/payment-success" element={<Navigate to="/register" replace />} />
 
           {/* Online Learning Portal Routes */}
           <Route
@@ -115,11 +94,20 @@ export function App() {
           <Route path="/online/level/0/reading" element={<Navigate to="/online/level/0" replace />} />
           <Route path="/online/level/0/recordings" element={<Navigate to="/online/level/0" replace />} />
           <Route path="/online/level/0/quiz" element={<Navigate to="/online/level/0" replace />} />
+          {/* Full-screen assessment (no portal layout). Active quizzes lock portal navigation (PortalModeGuard). */}
+          <Route
+            path="/online/level/0/quiz/:quizId"
+            element={
+              <PortalModeGuard requiredMode="online">
+                <QuizSessionPage mode="online" />
+              </PortalModeGuard>
+            }
+          />
           <Route
             path="/online/level/1"
             element={
               <PortalModeGuard requiredMode="online">
-                <OnlineLevel1 />
+                <LevelLockGate mode="online" levelId={2}><OnlineLevel1 /></LevelLockGate>
               </PortalModeGuard>
             }
           />
@@ -127,7 +115,7 @@ export function App() {
             path="/online/level/1/reading"
             element={
               <PortalModeGuard requiredMode="online">
-                <ReadingMaterialPage mode="online" />
+                <LevelLockGate mode="online" levelId={2}><ReadingMaterialPage mode="online" /></LevelLockGate>
               </PortalModeGuard>
             }
           />
@@ -135,7 +123,7 @@ export function App() {
             path="/online/level/1/recordings"
             element={
               <PortalModeGuard requiredMode="online">
-                <OnlineRecordings />
+                <LevelLockGate mode="online" levelId={2}><OnlineRecordings /></LevelLockGate>
               </PortalModeGuard>
             }
           />
@@ -143,7 +131,7 @@ export function App() {
             path="/online/level/1/quiz"
             element={
               <PortalModeGuard requiredMode="online">
-                <PracticeQuizPage mode="online" />
+                <LevelLockGate mode="online" levelId={2}><PracticeQuizPage mode="online" /></LevelLockGate>
               </PortalModeGuard>
             }
           />
@@ -223,11 +211,20 @@ export function App() {
           />
           <Route path="/offline/level/0/reading" element={<Navigate to="/offline/level/0" replace />} />
           <Route path="/offline/level/0/quiz" element={<Navigate to="/offline/level/0" replace />} />
+          {/* Full-screen assessment (no portal layout). Active quizzes lock portal navigation (PortalModeGuard). */}
+          <Route
+            path="/offline/level/0/quiz/:quizId"
+            element={
+              <PortalModeGuard requiredMode="offline">
+                <QuizSessionPage mode="offline" />
+              </PortalModeGuard>
+            }
+          />
           <Route
             path="/offline/level/1"
             element={
               <PortalModeGuard requiredMode="offline">
-                <OfflineLevel1 />
+                <LevelLockGate mode="offline" levelId={2}><OfflineLevel1 /></LevelLockGate>
               </PortalModeGuard>
             }
           />
@@ -235,7 +232,7 @@ export function App() {
             path="/offline/level/1/reading"
             element={
               <PortalModeGuard requiredMode="offline">
-                <ReadingMaterialPage mode="offline" />
+                <LevelLockGate mode="offline" levelId={2}><ReadingMaterialPage mode="offline" /></LevelLockGate>
               </PortalModeGuard>
             }
           />
@@ -243,7 +240,7 @@ export function App() {
             path="/offline/level/1/quiz"
             element={
               <PortalModeGuard requiredMode="offline">
-                <PracticeQuizPage mode="offline" />
+                <LevelLockGate mode="offline" levelId={2}><PracticeQuizPage mode="offline" /></LevelLockGate>
               </PortalModeGuard>
             }
           />
