@@ -298,10 +298,10 @@ export const CohortCommunityPage: React.FC<CohortCommunityPageProps> = ({ mode }
         {/* REDDIT-STYLE COHORT FEED */}
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-secondary">
+            <span className="text-xs font-bold uppercase tracking-wider text-gold">
               Recent Fellow Introductions ({safePosts.length})
             </span>
-            <span className="text-xs text-text-muted">Sorted by Community Upvotes</span>
+            <span className="text-xs text-cream/60">Sorted by Community Upvotes</span>
           </div>
 
           {safePosts.map((post) => (

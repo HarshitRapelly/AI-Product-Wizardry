@@ -554,11 +554,11 @@ export const FAQS = [
   },
   {
     question: 'How is the program structured across the 6 months?',
-    answer: 'The program spans 6 months across 12 modules (2 modules a month). Module 0 sets expectations. Every module after it ends with a written assignment, followed by a live jury presentation where you defend your thinking.'
+    answer: 'The program spans 6 months across 12 levels, Level 0 to Level 11 (2 levels a month). Level 0 sets expectations. Every level after it ends with a written assignment, followed by a live jury presentation where you defend your thinking.'
   },
   {
     question: 'What is the difference between the Online and Offline learning modes?',
-    answer: 'Both modes cover the identical 12 modules and assignments. Online students join interactive live webinars, review on-demand video masterclasses, and track attendance digitally. Offline students attend in-person classroom labs, physical whiteboarding sessions, and hallway usability testing at the Innovation Campus.'
+    answer: 'Both modes cover the identical 12 levels (Level 0–Level 11) and assignments. Online students join interactive live webinars, review on-demand video masterclasses, and track attendance digitally. Offline students attend in-person classroom labs, physical whiteboarding sessions, and hallway usability testing at the Innovation Campus.'
   },
   {
     question: 'What are the certificate requirements?',

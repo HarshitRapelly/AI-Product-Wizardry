@@ -29,10 +29,10 @@ export const OfflineLevel1: React.FC = () => {
         <div>
           <Link
             to="/offline/levels"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to All 12 Modules</span>
+            <span>Back to All 12 Levels</span>
           </Link>
         </div>
 

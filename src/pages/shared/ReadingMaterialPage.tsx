@@ -65,7 +65,7 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
         <div className="flex items-center justify-between">
           <Link
             to={backLink}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Level 01 Hub</span>

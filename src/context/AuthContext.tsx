@@ -3,12 +3,16 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { fetchMyProfile, updateMyLearningMode, fillEmptyAvatar, type Profile, type ProfileError } from '../services/profileService';
 import { signOutThisDevice } from '../services/authService';
-import type { LearningMode } from '../types';
+import { loadAccountPayment } from '../services/paymentService';
+import { fetchRegistrationStatus, ensureMyProfile } from '../services/registrationService';
+import type { LearningMode, PaymentDetails } from '../types';
 
 /**
  * loading        – reading the stored session, or loading the profile. Guards must wait.
  * signed_out     – no Supabase session.
- * ready          – signed in AND the student's own profile row is loaded.
+ * ready          – signed in AND the student's own profile row, their payment
+ *                  status (fresh from Supabase) and their registration status
+ *                  are loaded.
  * profile_error  – signed in, but the profile could not be used (see profileError.kind).
  */
 export type AuthStatus = 'loading' | 'signed_out' | 'ready' | 'profile_error';
@@ -20,6 +24,18 @@ interface AuthContextValue {
   session: Session | null;
   userId: string | null;
   profile: Profile | null; // only set when status === 'ready'
+  /** Simulated payment from the Supabase account (user_metadata). Only meaningful when status === 'ready'. */
+  payment: PaymentDetails | null;
+  /** Updates the in-memory payment for the CURRENT student (used after checkout). */
+  setPaymentRecord: (payment: PaymentDetails | null) => void;
+  /**
+   * true = registration form completed; false = must complete it once (/register);
+   * null = unknown (Migration 6 not deployed) → nobody is forced through the form.
+   * Only meaningful when status === 'ready'.
+   */
+  registered: boolean | null;
+  /** Reloads profile, payment and registration status (e.g. after completing registration). */
+  refreshStudent: () => Promise<void>;
   profileError: ProfileError | null;
   retryProfile: () => void;
   signOut: () => Promise<void>;
@@ -28,11 +44,28 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+/**
+ * Loads the student's own profile. If it is MISSING (e.g. an account created
+ * before the profiles table existed), asks the server to recreate it once —
+ * ensure_my_profile() can only create the caller's own row — then reads it again.
+ * Database/RLS/network errors are never "repaired": they are reported as they are.
+ */
+async function loadOwnProfile(uid: string) {
+  const first = await fetchMyProfile(uid);
+  if (first.ok || first.error.kind !== 'missing') return first;
+  const recreated = await ensureMyProfile();
+  return recreated ? fetchMyProfile(uid) : first;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionKnown, setSessionKnown] = useState(!supabase); // no client → immediately "signed out"
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileError, setProfileError] = useState<ProfileError | null>(null);
+  // Payment status of the account, tagged with WHOSE account it is (never mixes students).
+  const [account, setAccount] = useState<{ userId: string; payment: PaymentDetails | null } | null>(null);
+  // Registration status, tagged with whose account it is.
+  const [registration, setRegistration] = useState<{ userId: string; registered: boolean | null } | null>(null);
   const requestId = useRef(0); // ignores late responses for a previous user
 
   // 1. Follow Supabase's auth state. INITIAL_SESSION fires once the stored session
@@ -52,14 +85,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadProfile = useCallback(async (uid: string) => {
     const id = ++requestId.current;
     setProfileError(null);
-    const result = await fetchMyProfile(uid);
+    // Profile, fresh account (payment + one-time carry-over) and registration status
+    // load in parallel. The student only becomes 'ready' when ALL succeeded, so no
+    // route guard can decide on a half-loaded state (e.g. send a paid student to
+    // checkout, or a registered student back to the registration form).
+    const [result, accountResult, regResult] = await Promise.all([
+      loadOwnProfile(uid),
+      loadAccountPayment(uid),
+      fetchRegistrationStatus(uid),
+    ]);
     if (id !== requestId.current) return; // user changed meanwhile
-    if (result.ok) {
-      setProfile(result.profile);
-    } else {
+    if (!result.ok || !accountResult.ok || !regResult.ok) {
       setProfile(null);
-      setProfileError(result.error);
+      setAccount(null);
+      setRegistration(null);
+      const error = !result.ok
+        ? result.error
+        : !accountResult.ok
+          ? accountResult.error
+          : (regResult as { ok: false; error: ProfileError }).error;
+      setProfileError(error);
+      return;
     }
+    setAccount({ userId: uid, payment: accountResult.payment });
+    setRegistration({ userId: uid, registered: regResult.registered });
+    setProfile(result.profile);
   }, []);
 
   // 2. Load the profile whenever the signed-in USER changes (not on token refresh).
@@ -68,6 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!userId) {
       requestId.current++;
       setProfile(null);
+      setAccount(null);
+      setRegistration(null);
       setProfileError(null);
       return;
     }
@@ -105,7 +157,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ? 'loading'
     : !userId
       ? 'signed_out'
-      : profile && profile.id === userId
+      : profile && profile.id === userId && account && account.userId === userId &&
+          registration && registration.userId === userId
         ? 'ready'
         : profileError
           ? 'profile_error'
@@ -115,15 +168,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (userId) void loadProfile(userId);
   }, [userId, loadProfile]);
 
+  const refreshStudent = useCallback(async () => {
+    if (userId) await loadProfile(userId);
+  }, [userId, loadProfile]);
+
   const signOut = useCallback(async () => {
     // Switch the UI to signed-out immediately so /login doesn't see a stale session,
     // then let Supabase remove this device's session.
     requestId.current++;
     setSession(null);
     setProfile(null);
+    setAccount(null);
+    setRegistration(null);
     setProfileError(null);
     await signOutThisDevice();
   }, []);
+
+  const setPaymentRecord = useCallback(
+    (payment: PaymentDetails | null) => {
+      setAccount((a) => (a && userId && a.userId === userId ? { ...a, payment } : a));
+    },
+    [userId],
+  );
 
   const setLearningMode = useCallback(
     async (mode: LearningMode): Promise<SaveModeResult> => {
@@ -150,12 +216,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session,
       userId,
       profile: status === 'ready' ? profile : null,
+      payment: status === 'ready' && account ? account.payment : null,
+      setPaymentRecord,
+      registered: status === 'ready' && registration ? registration.registered : null,
+      refreshStudent,
       profileError: status === 'profile_error' ? profileError : null,
       retryProfile,
       signOut,
       setLearningMode,
     }),
-    [status, session, userId, profile, profileError, retryProfile, signOut, setLearningMode],
+    [status, session, userId, profile, account, registration, profileError, retryProfile, refreshStudent, signOut, setLearningMode, setPaymentRecord],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

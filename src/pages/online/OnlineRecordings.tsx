@@ -35,7 +35,7 @@ export const OnlineRecordings: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link
             to="/online/level/1"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Level 01 Hub</span>
@@ -43,7 +43,7 @@ export const OnlineRecordings: React.FC = () => {
 
           <Link
             to="/online/level/1/quiz"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gold hover:underline"
           >
             <span>Next: Level 01 Quiz</span>
             <ArrowRight className="w-4 h-4" />

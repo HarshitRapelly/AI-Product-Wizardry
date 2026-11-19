@@ -1,23 +1,35 @@
 import React from 'react';
 import { COURSE_LEVELS } from '../../data/mockData';
 import { Check, Sparkles, Lock } from 'lucide-react';
+import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
+import { activeLevelId as activeLevelOf, activeLevelLabel, completedLevelIds as completedOf } from '../../lib/levelStatus';
 
 interface MilestoneProgressChainProps {
-  currentLevelId?: number; // defaults to 2 (Module 1)
+  /** @deprecated ignored — the active level now comes from my_level_progress(). */
+  currentLevelId?: number;
   mode: 'online' | 'offline';
 }
 
-export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({ 
-  currentLevelId = 1,
-  mode 
-}) => {
-  // Level 0 (id: 1) is active. Level 1 (id: 2) and others are locked.
-  const completedLevelIds: number[] = [];
-  const activeLevelId = currentLevelId;
+export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({ mode }) => {
+  // Completed / active levels come ONLY from the server (my_level_progress()).
+  // Until it answers, Level 0 is shown as active and nothing as completed.
+  const { levelProgress } = useAuthAndCourse();
+  const completedLevelIds: number[] = completedOf(levelProgress);
+  const activeLevelId = activeLevelOf(levelProgress);
 
   const totalLevels = COURSE_LEVELS.length; // 12
   const completedCount = completedLevelIds.length;
-  const progressPercent = Math.round((completedCount / totalLevels) * 100);
+  // No percentage here: overall course progress is shown only from the server
+  // (my_course_progress() → "Course Progress" on the dashboards and the sidebar).
+
+  // Display labels only. Levels are numbered from 0: Level 0 … Level 11 (12 in total).
+  const firstLevelNo = 0;
+  const lastLevelNo = totalLevels - 1; // 11
+  const activeIndex = COURSE_LEVELS.findIndex((l) => l.id === activeLevelId);
+  const activeLabel = activeIndex >= 0 ? `Level ${activeIndex}` : null;
+  const upcomingLabel = activeIndex >= 0 && activeIndex < lastLevelNo
+    ? (activeIndex + 1 === lastLevelNo ? `Level ${lastLevelNo}` : `Levels ${activeIndex + 1}–${lastLevelNo}`)
+    : null;
 
   return (
     <div className="bg-surface rounded-3xl border border-border p-6 shadow-subtle text-left space-y-4">
@@ -25,10 +37,10 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted">12 Levels Pathway</span>
+            <span className="text-xs text-text-muted">{totalLevels} Levels · Level {firstLevelNo}–{lastLevelNo}</span>
             <span className="text-slate-300">•</span>
-            <span className="text-[11px] font-semibold text-accent bg-accent-subtle px-2 py-0.5 rounded">
-              Level 0 Active
+            <span className="text-[11px] font-semibold text-accent bg-accent-subtle px-2 py-0.5 rounded" data-testid="chain-active">
+              {activeLevelLabel(levelProgress)}
             </span>
           </div>
           <h3 className="text-base font-extrabold text-primary tracking-tight mt-1">
@@ -38,11 +50,7 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <span className="text-xs font-bold text-primary block">{completedCount} of {totalLevels} Levels Completed</span>
-            <span className="text-[11px] text-accent font-semibold">{progressPercent}% Completed</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-accent-subtle text-accent flex items-center justify-center font-bold text-xs border border-accent-light/60">
-            {progressPercent}%
+            <span className="text-xs font-bold text-primary block">Levels Completed: {completedCount}</span>
           </div>
         </div>
       </div>
@@ -74,6 +82,8 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
                   key={level.id}
                   className="flex flex-col items-center group relative cursor-pointer"
                   title={`${level.levelNumber}: ${level.title}`}
+                  data-level-node={level.id}
+                  data-state={isCompleted ? 'complete' : isActive ? 'active' : 'locked'}
                 >
                   {/* Node Circle "o" */}
                   <div 
@@ -133,11 +143,11 @@ export const MilestoneProgressChain: React.FC<MilestoneProgressChainProps> = ({
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping"></span>
-            <span className="font-semibold text-primary">Active Level (M1)</span>
+            <span className="font-semibold text-primary">Active{activeLabel ? ` (${activeLabel})` : ''}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-            <span>Upcoming (M2–M11)</span>
+            <span>Upcoming{upcomingLabel ? ` (${upcomingLabel})` : ''}</span>
           </span>
         </div>
         <span className="text-[11px] text-secondary font-medium hidden md:inline">

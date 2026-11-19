@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthAndCourse } from '../context/AuthAndCourseContext';
+import { homeFor } from '../lib/onboarding';
+import { BrandLogo } from '../components/brand/BrandLogo';
+import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 import { 
   Sparkles, 
   Menu, 
@@ -20,17 +23,13 @@ interface PublicLayoutProps {
 }
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isPaid, learningMode, logout } = useAuthAndCourse();
+  const { isAuthenticated, isRegistered, isPaid, learningMode, logout } = useAuthAndCourse();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getDashboardLink = () => {
-    if (!isAuthenticated) return '/register';
-    if (!isPaid) return '/checkout';
-    if (!learningMode) return '/choose-learning-mode';
-    return learningMode === 'online' ? '/online/dashboard' : '/offline/dashboard';
-  };
+  // Same destination rule as the route guards (single source of truth).
+  const getDashboardLink = () => (isAuthenticated ? homeFor({ learningMode, isPaid, registered: isRegistered }) : '/register');
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
@@ -47,63 +46,65 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-text selection:bg-accent/15 selection:text-accent font-sans">
+    <div className="min-h-screen flex flex-col bg-canvas bg-[radial-gradient(1100px_520px_at_80%_-10%,rgba(61,142,133,0.22),transparent)] text-text selection:bg-accent/15 selection:text-accent font-sans">
       {/* Top Notification Bar without brochure download link */}
       <div className="bg-primary text-white text-xs py-2 px-4 border-b border-secondary/50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-semibold text-emerald-300">FOR UNDERGRADUATES</span>
+            <span className="inline-block w-2 h-2 rounded-full bg-gold animate-pulse"></span>
+            <span className="font-semibold text-gold">FOR UNDERGRADUATES</span>
             <span className="hidden sm:inline text-slate-400">•</span>
             <span className="font-medium text-slate-300">Batch 1 Applications Now Open</span>
           </div>
           <div className="hidden md:flex items-center gap-4 text-slate-300">
             <span>Powered by NIAT × NxtWave</span>
             <span className="text-slate-600">|</span>
-            <span className="text-slate-400">6 Months · 12 Modules · 3–4 hrs/week</span>
+            <span className="text-slate-400">6 Months · 12 Levels (0–11) · 3–4 hrs/week</span>
           </div>
         </div>
       </div>
 
       {/* Main Navigation Header */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-border shadow-subtle">
+      <header className="sticky top-0 z-40 bg-canvas-deep/85 backdrop-blur-md border-b border-white/10 shadow-subtle">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Brand Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-subtle group-hover:bg-accent transition-colors">
-                <Sparkles className="w-5 h-5 text-amber-300 group-hover:text-white transition-colors" />
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="font-bold text-lg text-primary tracking-tight leading-tight">
-                  AI Product Wizardry
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
-                  Powered by NxtWave
-                </span>
-              </div>
+            <Link to="/" state={SHOW_HOME_STATE} className="flex items-center gap-3 group" aria-label="AI Product Wizardry home page">
+              <BrandLogo imgClassName="h-16" className="transition-transform duration-300 group-hover:scale-[1.03]" />
             </Link>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-secondary">
+            <nav className="hidden md:flex items-center gap-2 text-sm font-medium text-cream/80">
               <Link 
-                to="/" 
-                className={`transition-colors ${location.pathname === '/' ? 'text-primary font-bold' : 'hover:text-accent'}`}
+                to="/" state={SHOW_HOME_STATE}
+                className={`px-4 py-2 rounded-full transition-all duration-300 ${location.pathname === '/' ? 'bg-white/10 text-white font-semibold' : 'hover:text-white hover:bg-white/5'}`}
               >
                 Home
               </Link>
               <button 
                 onClick={() => scrollToSection('overview')} 
-                className="hover:text-accent transition-colors text-left"
+                className="px-4 py-2 rounded-full hover:text-white hover:bg-white/5 transition-all duration-300 text-left"
               >
                 Program Overview
               </button>
               
               
               
+              <button
+                onClick={() => scrollToSection('journey')}
+                className="px-4 py-2 rounded-full hover:text-white hover:bg-white/5 transition-all duration-300 text-left"
+              >
+                Journey
+              </button>
+              <button
+                onClick={() => scrollToSection('curriculum')}
+                className="px-4 py-2 rounded-full hover:text-white hover:bg-white/5 transition-all duration-300 text-left"
+              >
+                Curriculum
+              </button>
               <button 
                 onClick={() => scrollToSection('faqs')} 
-                className="hover:text-accent transition-colors text-left"
+                className="px-4 py-2 rounded-full hover:text-white hover:bg-white/5 transition-all duration-300 text-left"
               >
                 FAQs
               </button>
@@ -115,14 +116,14 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                 <div className="flex items-center gap-3">
                   <Link
                     to={getDashboardLink()}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-slate-800 transition-all shadow-subtle"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ember text-white text-sm font-semibold hover:bg-ember-hover transition-all duration-300 shadow-subtle hover:-translate-y-0.5"
                   >
                     <span>My Learning Hub</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <button
                     onClick={logout}
-                    className="text-xs text-text-muted hover:text-red-600 font-medium px-2 py-1"
+                    className="text-xs text-cream/70 hover:text-white font-medium px-2 py-1"
                   >
                     Sign Out
                   </button>
@@ -131,13 +132,13 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                 <div className="flex items-center gap-3">
                   <Link
                     to="/login"
-                    className="text-xs text-text-muted hover:text-primary font-medium"
+                    className="text-xs text-cream/70 hover:text-white font-medium"
                   >
-                    Already registered? <span className="font-semibold text-secondary hover:underline">Log In</span>
+                    Already registered? <span className="font-semibold text-cream hover:underline">Log In</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-bold hover:bg-accent-hover transition-all shadow-subtle shadow-accent/20"
+                    className="group inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-ember text-white text-sm font-bold hover:bg-ember-hover transition-all duration-300 shadow-elevated hover:-translate-y-0.5"
                   >
                     <span>Register Now</span>
                     <ArrowRight className="w-4 h-4" />
@@ -151,7 +152,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg text-secondary hover:text-primary hover:bg-slate-100 transition-colors"
+                className="p-2 rounded-lg text-cream/80 hover:text-white hover:bg-white/10 transition-colors"
                 aria-label="Toggle navigation"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -162,11 +163,11 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-border bg-surface px-4 pt-3 pb-6 space-y-3">
+          <div className="md:hidden border-b border-white/10 bg-canvas-deep px-4 pt-3 pb-6 space-y-3">
             <Link 
-              to="/" 
+              to="/" state={SHOW_HOME_STATE}
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-slate-50"
+              className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/5"
             >
               Home
             </Link>
@@ -176,16 +177,16 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             
             <button
               onClick={() => scrollToSection('faqs')}
-              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-slate-50"
+              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-cream/80 hover:bg-white/5"
             >
               FAQs
             </button>
-            <div className="pt-4 border-t border-border flex flex-col gap-2">
+            <div className="pt-4 border-t border-white/10 flex flex-col gap-2">
               {isAuthenticated ? (
                 <Link
                   to={getDashboardLink()}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ember text-white text-sm font-semibold"
                 >
                   <span>Go to Dashboard</span>
                   <ArrowRight className="w-4 h-4" />
@@ -195,7 +196,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                   <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent text-white text-sm font-bold"
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-ember text-white text-sm font-bold"
                   >
                     <span>Register</span>
                     <ArrowRight className="w-4 h-4" />
@@ -203,7 +204,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-center text-xs text-text-muted hover:text-primary py-1"
+                    className="text-center text-xs text-cream/70 hover:text-white py-1"
                   >
                     Already have an account? Log In
                   </Link>
@@ -220,19 +221,14 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
       </main>
 
       {/* Corporate Footer */}
-      <footer className="bg-primary text-slate-300 border-t border-slate-800">
+      <footer className="bg-canvas-deep text-slate-300 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 text-left">
             {/* Brand Column */}
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-white tracking-tight">AI Product Wizardry</h3>
-                  <p className="text-xs text-slate-400">Powered by NIAT × NxtWave</p>
-                </div>
+                <BrandLogo imgClassName="h-20" />
+                <p className="text-xs text-slate-400">Powered by NIAT × NxtWave</p>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
                 Six months of stories, building and teamwork to learn the magic behind every app you can't put down. Made for undergraduates who like to make things.
@@ -289,7 +285,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
           <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
             <p>© 2026 AI Product Wizardry • Powered by NIAT × NxtWave. The certificate improves your profile; it does not guarantee a job.</p>
             <div className="flex items-center gap-6">
-              <Link to="/register" className="text-accent hover:underline font-semibold">Register for Batch 1</Link>
+              <Link to="/register" className="text-gold hover:underline font-semibold">Register for Batch 1</Link>
               <Link to="/login" className="hover:text-slate-200">Log In</Link>
             </div>
           </div>

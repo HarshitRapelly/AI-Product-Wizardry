@@ -7,6 +7,7 @@ import {
 import { supabase, supabaseConfigError, supabaseUrl, supabasePublishableKey } from '../lib/supabase';
 import { normalizeEmail } from '../lib/registrationValidation';
 import { savePendingOAuth, clearPendingOAuth } from '../lib/oauthPending';
+import type { RegistrationPayload } from '../lib/registrationDetails';
 
 export const ALREADY_REGISTERED_MESSAGE =
   'This email is already registered. Please log in.';
@@ -30,6 +31,13 @@ export interface SignUpInput {
   password: string;
   // confirmPassword is intentionally NOT part of this type: it is checked in the
   // form and never leaves the browser.
+  /**
+   * Registration details (Migration 6). Sent once, as 'aiw_registration' in the
+   * sign-up metadata: a database trigger copies them into
+   * public.student_registrations and REMOVES them from user_metadata. Never
+   * contains the password.
+   */
+  registration?: RegistrationPayload;
 }
 
 /** Turns any Supabase Auth / network error into a short, student-friendly sentence. */
@@ -95,7 +103,10 @@ export async function signUpWithEmail(input: SignUpInput): Promise<SignUpResult>
       email,
       password: input.password,
       options: {
-        data: { full_name: input.fullName.trim() },
+        data: {
+          full_name: input.fullName.trim(),
+          ...(input.registration ? { aiw_registration: input.registration } : {}),
+        },
         emailRedirectTo: confirmationRedirectUrl(),
       },
     });

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { COURSE_LEVELS } from '../../data/mockData';
+import { courseProgressShort } from '../../services/progressService';
+import { activeLevelLabel } from '../../lib/levelStatus';
+import { fetchMyRegistrationDetails, type MyRegistrationDetailsResult } from '../../services/registrationService';
 import {
   User,
   Mail,
@@ -35,8 +38,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
     user, 
     paymentDetails, 
     selectLearningMode, 
-    courseProgressPercentage, 
-    quizAttempt, 
+    courseProgress,
+    levelProgress,
+    quizAttempt,
     readingCompleted, 
     registeredClassIds, 
     attendancePercentage,
@@ -54,11 +58,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
     navigate(`/${targetMode}/dashboard`);
   };
 
-  const handleReset = () => {
-    if (window.confirm("Are you sure you want to reset your account session? This will return to the welcome page.")) {
-      resetAllDemoData();
-      navigate('/');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  const handleReset = async () => {
+    if (isResetting) return;
+    if (!window.confirm("Are you sure you want to reset your account session? This will return to the welcome page.")) return;
+    setResetError(null);
+    setIsResetting(true);
+    // Supabase payment record first; on failure nothing local is cleared and the student stays signed in.
+    const result = await resetAllDemoData();
+    if (!result.ok) {
+      setIsResetting(false);
+      setResetError(result.message);
+      return;
     }
+    navigate('/');
   };
 
   // Certificate readiness calculations from PDF Page 2 (50% Assignments, 30% Capstone, 20% Content)
@@ -167,7 +182,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
               <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
                 <span className="text-[10px] font-bold text-text-muted uppercase">Program Fellowship</span>
                 <p className="font-bold text-primary mt-1 text-sm truncate">AI Product Wizardry</p>
-                <span className="text-[10px] text-emerald-600 font-semibold">12 Modules · 6 Months</span>
+                <span className="text-[10px] text-emerald-600 font-semibold">12 Levels (0–11) · 6 Months</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
@@ -183,8 +198,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
 
               <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
                 <span className="text-[10px] font-bold text-text-muted uppercase">Curriculum Progress</span>
-                <p className="font-bold text-primary mt-1 text-sm">{courseProgressPercentage}% Complete</p>
-                <span className="text-[10px] text-accent font-semibold">Module 1 Active</span>
+                <p
+                  className="font-bold text-primary mt-1 text-sm"
+                  aria-busy={courseProgress.status === 'loading'}
+                  title={courseProgress.status === 'loading' ? 'Loading course progress…' : undefined}
+                >
+                  {courseProgress.status === 'ready' ? `${courseProgressShort(courseProgress)} Complete` : '—'}
+                </p>
+                <span className="text-[10px] text-accent font-semibold">{activeLevelLabel(levelProgress)}</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
@@ -197,6 +218,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
                 </span>
               </div>
             </div>
+
+            <RegistrationDetailsCard userId={user?.id ?? null} />
 
             {/* Current Module Checklist */}
             <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle space-y-4">
@@ -396,11 +419,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
+                    disabled={isResetting}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-60"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Reset Account Session</span>
                   </button>
+                  {resetError && (
+                    <p role="alert" className="text-[11px] text-rose-700 leading-relaxed">
+                      {resetError}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -423,5 +452,41 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
 
       </div>
     </PortalLayout>
+  );
+};
+
+/** The student's own registration details (Supabase, own row only — RLS). */
+const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }) => {
+  const [state, setState] = useState<MyRegistrationDetailsResult | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    let live = true;
+    void fetchMyRegistrationDetails(userId).then((r) => { if (live) setState(r); });
+    return () => { live = false; };
+  }, [userId]);
+  if (!userId || !state || (state.ok && !state.details)) return null;
+  return (
+    <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle space-y-4" data-testid="registration-details">
+      <h3 className="font-bold text-base text-primary pb-3 border-b border-border">Academic Details</h3>
+      {!state.ok ? (
+        <p role="alert" className="text-sm text-rose-700">{state.message}</p>
+      ) : state.details && (
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          {[
+            ['College / university', state.details.college],
+            ['College ID Number', state.details.collegeIdNumber ?? 'Not provided'],
+            ['Degree', state.details.degree === 'Other' && state.details.degreeOther ? state.details.degreeOther : state.details.degree],
+            ['Branch / specialisation', state.details.branch],
+            ['Year of study', state.details.yearOfStudy],
+            ['Graduation year', String(state.details.graduationYear || '—')],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-[10px] font-bold text-text-muted uppercase">{k}</dt>
+              <dd className="font-semibold text-primary break-words" data-field={k}>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
   );
 };

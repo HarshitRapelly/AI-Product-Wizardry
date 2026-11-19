@@ -4,6 +4,9 @@ import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { UPCOMING_CLASSES } from '../../data/mockData';
 import { MilestoneProgressChain } from '../../components/dashboard/MilestoneProgressChain';
+import { Level0ProgressCard, Level1QuickLink } from '../../components/curriculum/Level0ProgressCard';
+import { activeLevelId, activeLevelLabel, levelNumberOf } from '../../lib/levelStatus';
+import { courseProgressLabel } from '../../services/progressService';
 import {
   Calendar,
   Clock,
@@ -22,7 +25,8 @@ import {
 export const OfflineDashboard: React.FC = () => {
   const { 
     user, 
-    courseProgressPercentage, 
+    courseProgress,
+    levelProgress,
     registeredClassIds,
     registerClass,
     unregisterClass,
@@ -66,7 +70,7 @@ export const OfflineDashboard: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                {getGreeting()}, <span className="text-cerulean">{studentName}</span>
+                {getGreeting()}, <span className="text-accent">{studentName}</span>
               </h1>
               <p className="text-sm text-text-muted max-w-2xl leading-relaxed">
                 Welcome to your campus learning space. Today's focus: complete the handbook reading and prepare for Thursday's in-person whiteboarding lab in Lecture Hall 4B.
@@ -77,11 +81,11 @@ export const OfflineDashboard: React.FC = () => {
             <div className="flex-shrink-0 flex items-center gap-4 bg-background p-4 rounded-2xl border border-border">
               <div>
                 <span className="text-[11px] font-semibold text-text-muted uppercase">Active Curriculum</span>
-                <div className="text-lg font-bold text-primary">Level 0 Active</div>
-                <span className="text-xs text-secondary font-semibold">{courseProgressPercentage}% of 12 Levels Completed</span>
+                <div className="text-lg font-bold text-primary" data-testid="active-level">{activeLevelLabel(levelProgress)}</div>
+                <span className="text-xs text-secondary font-semibold">{courseProgressLabel(courseProgress)}</span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-base shadow-subtle">
-                00
+                {String(levelNumberOf(activeLevelId(levelProgress))).padStart(2, '0')}
               </div>
             </div>
           </div>
@@ -130,82 +134,7 @@ export const OfflineDashboard: React.FC = () => {
           <div className="lg:col-span-8 space-y-8">
             
             {/* LEVEL 0 ACTIVE MODULE CARD */}
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-border gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
-                      Unlocked & Active
-                    </span>
-                    <span className="text-xs font-bold text-secondary">Level 0 of 12</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-primary mt-1">
-                    Orientation & Program Essentials
-                  </h2>
-                </div>
-
-                <Link
-                  to="/offline/level/0"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold shadow-subtle transition-colors"
-                >
-                  <span>Open Level 0 Hub</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-
-              {/* Learning preview */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-5">
-                {/* 1. Orientation Handbook */}
-                <Link
-                  to="/offline/level/0"
-                  className="p-5 rounded-2xl border border-border hover:border-primary bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent-subtle text-accent flex items-center justify-center">
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                      <span className="text-xs text-text-muted">4 Topics</span>
-                    </div>
-                    <h3 className="font-bold text-base text-primary group-hover:text-accent transition-colors">
-                      Orientation Handbook
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Fellowship roadmap, pod charters, and studio toolchain setup.
-                    </p>
-                  </div>
-                  <span className="mt-5 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>Study Materials</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </span>
-                </Link>
-
-                {/* 2. Knowledge Checks */}
-                <Link
-                  to="/offline/level/0"
-                  className="p-5 rounded-2xl border border-border hover:border-primary bg-slate-50/50 hover:bg-surface transition-all group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                        <Award className="w-5 h-5" />
-                      </div>
-                      <span className="text-xs text-text-muted">Knowledge Checks</span>
-                    </div>
-                    <h3 className="font-bold text-base text-primary group-hover:text-accent transition-colors">
-                      Knowledge Checks
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                      Verify grasp of program milestones, pod standups, and Level 1 unlock.
-                    </p>
-                  </div>
-                  <span className="mt-5 text-xs font-semibold text-accent flex items-center gap-1">
-                    <span>Take Checks</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </span>
-                </Link>
-              </div>
-            </div>
+            <Level0ProgressCard mode="offline" />
 
             {/* UPCOMING CLASSROOM SESSIONS */}
             <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle text-left">
@@ -282,16 +211,12 @@ export const OfflineDashboard: React.FC = () => {
                 Campus Navigation
               </h3>
               <div className="mt-4 space-y-2.5">
-                <Link
-                  to="/offline/level/1"
+                <Level1QuickLink
+                  mode="offline"
                   className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-border text-xs font-bold text-primary transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <BookOpen className="w-4 h-4 text-accent" />
-                    <span>Continue Module 1</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-text-muted" />
-                </Link>
+                  icon={<BookOpen className="w-4 h-4 text-accent" />}
+                  chevron={<ChevronRight className="w-4 h-4 text-text-muted" />}
+                />
 
                 <Link
                   to="/offline/levels"
@@ -299,7 +224,7 @@ export const OfflineDashboard: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <Layers className="w-4 h-4 text-accent" />
-                    <span>View All 12 Modules</span>
+                    <span>View All 12 Levels (0–11)</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-text-muted" />
                 </Link>
