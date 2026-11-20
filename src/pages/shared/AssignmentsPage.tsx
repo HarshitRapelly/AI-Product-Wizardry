@@ -22,6 +22,7 @@ import {
 import { COURSE_LEVELS } from '../../data/mockData';
 import { fetchSubtopics } from '../../services/curriculumService';
 import { fetchMyAttempts } from '../../services/quizService';
+import { isLevelReleased } from '../../lib/levelStatus';
 import type { CourseSubtopic, QuizAttemptSummary } from '../../lib/curriculumTypes';
 
 interface AssignmentsPageProps {
@@ -300,14 +301,27 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                     </p>
                   </div>
 
+                  {/* No deadline has been announced, so none is shown (the former "DUE IN 4 DAYS" was fixed text). */}
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0 ${
-                    isSubmitted 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                    isSubmitted
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : 'bg-amber-50 text-amber-800 border border-amber-200'
                   }`}>
-                    {isSubmitted ? '✓ SUBMITTED' : '● DUE IN 4 DAYS'}
+                    {isSubmitted ? '✓ SUBMITTED' : '● DEADLINE NOT ANNOUNCED'}
                   </span>
                 </div>
+
+                {/* The brief below has not been confirmed by the program team yet. */}
+                <p
+                  role="note"
+                  className="flex items-start gap-1.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  data-testid="assignment-brief-provisional"
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    <strong>Provisional brief:</strong> this assignment is pending confirmation from the program team, so its title, prompt and requirements may change.
+                  </span>
+                </p>
 
                 <div className="p-4 rounded-xl bg-slate-50 border border-border text-xs text-secondary leading-relaxed space-y-2">
                   <p className="font-semibold text-primary">Assignment Prompt:</p>
@@ -322,7 +336,20 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                 </div>
               </div>
 
-              {/* Assignment Submission Box */}
+              {/* Assignment Submission Box: only while Module 1 (level_id 2) is released, using the app's
+                  release check (lib/levelStatus; the database enforces the same rule, Migration 13).
+                  When locked, the editor is not shown; the draft/submission state and the browser-stored
+                  work are left exactly as they are. */}
+              {!isLevelReleased(2) ? (
+              <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-card space-y-2" data-testid="assignment-editor-locked">
+                <h3 className="font-bold text-base text-primary flex items-center gap-2">
+                  <span aria-hidden="true">🔒</span> Module 1 is not released yet
+                </h3>
+                <p className="text-xs text-text-muted">
+                  The writing area will be available when this module is released.
+                </p>
+              </div>
+              ) : (
               <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-card space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-border">
                   <h3 className="font-bold text-base text-primary">
@@ -460,6 +487,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                 )}
 
               </div>
+              )}
             </div>
 
             {/* Right Column (4 cols): Evaluation Rubric & Mentor Details */}
@@ -651,8 +679,8 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                   </span>
                   <span className="text-xs text-text-muted font-semibold">No grade recorded</span>
                 </div>
-                <h4 className="font-bold text-base text-primary">Cohort Toolchain Setup & Team Charter</h4>
-                <p className="text-xs text-text-muted">Setup design repository, Figma team workspace, and sprint operating rhythm.</p>
+                {/* No authoritative Module 0 assignment exists yet; the former title and description were unverified. */}
+                <h4 className="font-bold text-base text-primary">Module 0 assignment details will be published when confirmed.</h4>
               </div>
             </div>
 
@@ -669,12 +697,15 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                     </span>
                   ) : (
                     <span className="text-xs text-amber-700 font-bold flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> Due in 4 Days
+                      <Clock className="w-3.5 h-3.5" /> Deadline not announced
                     </span>
                   )}
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded uppercase">
+                    Provisional
+                  </span>
                 </div>
                 <h4 className="font-bold text-base text-primary">Spot a Real User Problem: Need-Discovery Brief</h4>
-                <p className="text-xs text-text-muted">500-word written proposal on observed campus friction and persona interviews.</p>
+                <p className="text-xs text-text-muted">Assignment requirements pending confirmation from the program team.</p>
               </div>
 
               <button
@@ -686,27 +717,16 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
               </button>
             </div>
 
-            {/* Modules 2 - 11 Upcoming */}
-            {[
-              { id: 2, title: '10 User Discovery Interviews Synthesis', desc: 'Synthesize verbatim pain points and identify recurring friction patterns.' },
-              { id: 3, title: 'Value Proposition Canvas & Friction Teardown', desc: 'Map pains, gains, and customer jobs to your initial solution hypothesis.' },
-              { id: 4, title: 'Figma Low-Fi Wireframe Clickable Prototype', desc: 'Create a 5-screen interactive wireframe testing the core single feature.' },
-              { id: 5, title: 'User Usability Testing Lab Report', desc: 'Run think-aloud tests with 5 peers and document failure points.' },
-              { id: 6, title: 'Mid-Program Whiteboard Jury Defense', desc: 'Defend your problem-solution fit in front of industry PM mentors.' },
-              { id: 7, title: 'Product Requirements Document (PRD)', desc: 'Write a comprehensive engineering PRD with user stories and edge cases.' },
-              { id: 8, title: 'Core Metric & North Star Dashboard Design', desc: 'Define retention loops, activation criteria, and measurement metrics.' },
-              { id: 9, title: 'Go-To-Market & First 100 Users Strategy', desc: 'Craft positioning, launch narrative, and grassroots distribution.' },
-              { id: 10, title: 'Beta Product Launch & Feedback Telemetry', desc: 'Ship your working prototype to real cohort users and analyze drop-offs.' },
-              { id: 11, title: 'Capstone Graduation Portfolio & Pitch Defense', desc: 'Final capstone demonstration to the alumni jury and hiring partners.' }
-            ].map((m) => (
-              <div key={m.id} className="p-4 rounded-2xl bg-slate-50/60 border border-border flex items-center justify-between opacity-75">
+            {/* Modules 2 - 11 Upcoming. No confirmed assignment content exists for these modules yet, so
+                none is shown (the former titles and descriptions were placeholders). */}
+            {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((id) => (
+              <div key={id} className="p-4 rounded-2xl bg-slate-50/60 border border-border flex items-center justify-between opacity-75">
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold text-text-muted uppercase">Module {m.id}</span>
-                    <span className="text-[10px] text-text-muted">🔒 Unlocks after Module {m.id - 1}</span>
+                    <span className="text-[10px] font-bold text-text-muted uppercase">Module {id}</span>
+                    <span className="text-[10px] text-text-muted">🔒 Available when this module is released.</span>
                   </div>
-                  <h4 className="font-semibold text-xs text-primary">{m.title}</h4>
-                  <p className="text-[11px] text-text-muted">{m.desc}</p>
+                  <h4 className="font-semibold text-xs text-primary">Assignment details will be published when available.</h4>
                 </div>
                 <span className="text-xs text-text-muted font-medium">Locked</span>
               </div>
