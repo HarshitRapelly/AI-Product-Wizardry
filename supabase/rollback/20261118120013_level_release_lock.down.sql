@@ -7,9 +7,22 @@
 -- Order: my_level_progress is restored FIRST (the Migration 13 version calls
 -- private.level_released), then triggers, policies, helper and table are removed.
 -- No student data is changed.
+-- PREREQUISITE: if 20261120000100_enforce_quiz_level_release.sql is applied, roll it back
+-- FIRST (supabase/rollback/20261120000100_enforce_quiz_level_release.down.sql): its
+-- submit_quiz_attempt calls private.level_released, which this script drops. The guard
+-- below refuses to run otherwise, so quiz submissions can never be broken by accident.
 -- =============================================================================
 
 begin;
+
+do $$
+begin
+  if exists (select 1 from pg_proc
+              where oid = 'public.submit_quiz_attempt(text,jsonb,uuid)'::regprocedure
+                and prosrc like '%level_released%') then
+    raise exception 'Roll back 20261120000100_enforce_quiz_level_release first: submit_quiz_attempt still calls private.level_released';
+  end if;
+end $$;
 
 -- 1. my_level_progress exactly as in Migration 9
 create or replace function public.my_level_progress()

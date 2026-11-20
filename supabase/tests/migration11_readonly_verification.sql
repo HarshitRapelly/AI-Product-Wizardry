@@ -21,7 +21,8 @@ select
   (select count(*) from pg_trigger
     where tgrelid = 'public.lesson_progress'::regclass and tgname = 'lesson_progress_reading_guard'
       and not tgisinternal and tgenabled = 'O') = 1                                              as m11_trigger_ok,
-  coalesce((select p.prosrc like '%private.quiz_reading_confirmed(v_uid, v_sub.id, p_quiz_id)%'
+  -- whitespace-insensitive: 20261120000100 re-creates the function with the call split over lines
+  coalesce((select regexp_replace(p.prosrc, '\s+', '', 'g') like '%private.quiz_reading_confirmed(v_uid,v_sub.id,p_quiz_id)%'
               from pg_proc p where p.oid = 'public.submit_quiz_attempt(text,jsonb,uuid)'::regprocedure), false)
                                                                                                   as m11_submit_gate_ok,
   -- Unchanged security properties (true before AND after)

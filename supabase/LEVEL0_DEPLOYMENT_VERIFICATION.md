@@ -142,3 +142,25 @@ update public.curriculum_level_releases set released = true, updated_at = now() 
 ```
 and add `2` to `RELEASED_LEVEL_IDS` in `src/lib/levelStatus.ts` (then deploy). Both are needed:
 the database enforces, the app displays.
+
+---
+
+# 20261120000100 — quiz release gate (after Migration 13)
+
+File: `supabase/migrations/20261120000100_enforce_quiz_level_release.sql`
+(rollback: `supabase/rollback/20261120000100_enforce_quiz_level_release.down.sql`)
+
+Re-creates `public.submit_quiz_attempt` (Migration 11 logic) with one addition: a quiz of an
+unreleased level is refused **up front** (`level_locked: this level has not been released`),
+before scoring, answer-key validation and the idempotency lookup. Migration 13's
+`quiz_attempts_level_release_guard` trigger stays as a second line of defence. No data change;
+existing grants are kept (`authenticated` only).
+
+- **Order:** apply after Migration 13 (it calls `private.level_released`).
+- **Behaviour change:** retrying an existing submission id for an *unreleased* level is now
+  refused (Migration 13 alone returned the stored attempt). The stored attempt is unchanged and
+  stays readable. Level 0 (released) retries are unaffected.
+- **Verify (read-only):** `migrations_12_13_readonly_verification.sql` → `m13_submit_release_gate_ok`
+  true; `migration11_readonly_verification.sql` → `m11_submit_gate_ok` true (reading gate kept).
+- **Rollback order:** `20261120000100` rollback **first**, then Migration 13, then 11 / 12. The
+  Migration 13 rollback refuses to run while `submit_quiz_attempt` still calls `private.level_released`.

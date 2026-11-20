@@ -89,7 +89,7 @@ end $$;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000013a1","role":"authenticated"}', true);
 do $$
-declare a public.quiz_attempts%rowtype; lvl record;
+declare a public.quiz_attempts%rowtype; lvl record; v_gate boolean;
 begin
   -- Release table: readable, not writable
   if (select count(*) from public.curriculum_level_releases) <> 12 then raise exception 'FAIL: student cannot read releases'; end if;
@@ -156,17 +156,43 @@ begin
     insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (13, 'no-level-12', 'reading', false);
     raise exception 'FAIL: progress for a non-existent Level 12 accepted';
   exception when check_violation or insufficient_privilege then null; end;
+  -- With 20261120000100 applied, submit_quiz_attempt refuses an unreleased level up front
+  -- (before scoring and before the idempotency lookup); without it, the Migration 13 trigger
+  -- refuses when the attempt would be stored.
+  v_gate := exists (select 1 from pg_proc where oid = 'public.submit_quiz_attempt(text,jsonb,uuid)'::regprocedure
+                     and prosrc like '%level_released%');
   begin
     perform public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', gen_random_uuid());
     raise exception 'FAIL: Level 1 quiz accepted while not released';
   exception when insufficient_privilege then
-    if sqlerrm not like 'level_locked: level 1 is not open yet%' then raise exception 'FAIL: wrong quiz error: %', sqlerrm; end if;
+    if sqlerrm not like (case when v_gate then 'level_locked: this level has not been released%' else 'level_locked: level 1 is not open yet%' end) then
+      raise exception 'FAIL: wrong quiz error: %', sqlerrm;
+    end if;
   end;
+  -- invalid answers to a locked quiz: with the up-front gate, nothing about its answer key is revealed
+  if v_gate then
+    begin
+      perform public.submit_quiz_attempt('foundations-practice-quiz', '{"99":0}', gen_random_uuid());
+      raise exception 'FAIL: locked quiz validated answers';
+    exception when insufficient_privilege then null; end;
+  end if;
   if (select count(*) from public.quiz_attempts where level_id = 2) <> 1 then raise exception 'FAIL: a refused Level 1 attempt was stored'; end if;
 
-  -- Retrying an EXISTING submission id still returns the original attempt (idempotent, no insert)
-  a := public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', '13000000-0000-4000-8000-000000000001');
-  if a.attempt_number <> 1 or a.score <> 4 then raise exception 'FAIL: idempotent retry broken: %', row_to_json(a); end if;
+  -- Retrying an EXISTING submission id for an unreleased level:
+  --  * Migration 13 alone: returns the original attempt (idempotent, no insert);
+  --  * with 20261120000100: refused like any submission for that level; the original attempt stays stored and readable.
+  if v_gate then
+    begin
+      a := public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', '13000000-0000-4000-8000-000000000001');
+      raise exception 'FAIL: retry for an unreleased level accepted';
+    exception when insufficient_privilege then null; end;
+    if (select score from public.quiz_attempts where client_submission_id = '13000000-0000-4000-8000-000000000001') <> 4 then
+      raise exception 'FAIL: original attempt changed or unreadable';
+    end if;
+  else
+    a := public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', '13000000-0000-4000-8000-000000000001');
+    if a.attempt_number <> 1 or a.score <> 4 then raise exception 'FAIL: idempotent retry broken: %', row_to_json(a); end if;
+  end if;
 
   -- Level 0 writes still work after completion (e.g. reading position, retake)
   update public.lesson_progress set last_section_id = 'b3' where lesson_id = 'l0-faqs';
