@@ -29,6 +29,9 @@ select
      and policyname in ('Only released levels: course subtopics', 'Only released levels: quiz questions')) = 2 as m13_policies_ok,
   coalesce((select p.prosrc like '%private.level_released(c.lvl)%' from pg_proc p
              where p.oid = 'public.my_level_progress()'::regprocedure), false)                          as m13_level_progress_ok,
+  -- 20261120000100 (applied after Migration 13): submit_quiz_attempt refuses unreleased levels up front
+  coalesce((select regexp_replace(p.prosrc, '\s+', '', 'g') like '%ifnotprivate.level_released(v_quiz.level_id)then%'
+              from pg_proc p where p.oid = 'public.submit_quiz_attempt(text,jsonb,uuid)'::regprocedure), false) as m13_submit_release_gate_ok,
   -- Security properties (true before AND after)
   not has_table_privilege('authenticated', 'public.student_registrations', 'update')
     and not has_table_privilege('anon', 'public.student_registrations', 'select')                     as registrations_private_ok,

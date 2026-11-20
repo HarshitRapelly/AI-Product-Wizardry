@@ -17,33 +17,39 @@ interface GradesPageProps {
   mode: 'online' | 'offline';
 }
 
+/** score / grade / gradedBy / date / feedback are null when no grade has been recorded. */
+interface GradedItem {
+  id: string;
+  module: string;
+  title: string;
+  type: string;
+  weight: string;
+  score: number | null;
+  maxScore: number;
+  grade: string | null;
+  gradedBy: string | null;
+  date: string | null;
+  feedback: string | null;
+}
+
 export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
-  const gradedItems = [
+  // No grading system exists yet (see supabase/migrations/20261114120003_assignment_submissions.sql),
+  // so no score, grade, evaluator, date, feedback or average is shown. Only assessments that exist
+  // in the app are listed; the former hardcoded results were not real.
+  const gradedItems: GradedItem[] = [
     {
+      // No grade is recorded for this deliverable; the former hardcoded 94/100 · Grade A was not real.
       id: 'grd-01',
       module: 'Module 0',
       title: 'Cohort Toolchain Setup & Team Charter',
       type: 'Written Deliverable',
       weight: '5%',
-      score: 94,
+      score: null,
       maxScore: 100,
-      grade: 'A',
-      gradedBy: 'Prof. Vikramaditya (NxtWave)',
-      date: 'Nov 02, 2026',
-      feedback: 'Outstanding team charter. Toolchain integration and constraints are articulated with commendable precision.'
-    },
-    {
-      id: 'grd-02',
-      module: 'Module 0',
-      title: 'Orientation Diagnostic Check: The Three Questions',
-      type: 'Diagnostic Quiz',
-      weight: '5%',
-      score: 96,
-      maxScore: 100,
-      grade: 'A+',
-      gradedBy: 'Automated Evaluation',
-      date: 'Nov 04, 2026',
-      feedback: 'Flawless recall of core product wizardry principles and retention loop fundamentals.'
+      grade: null,
+      gradedBy: null,
+      date: null,
+      feedback: null
     },
     {
       id: 'grd-03',
@@ -51,29 +57,14 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
       title: 'Foundations of Product Management: Knowledge Evaluation',
       type: 'Diagnostic Quiz',
       weight: '5%',
-      score: 90,
+      score: null,
       maxScore: 100,
-      grade: 'A-',
-      gradedBy: 'Automated Evaluation',
-      date: 'Nov 09, 2026',
-      feedback: '9 of 10 scenario questions answered accurately. Solid grasp of distinguishing symptoms from core needs.'
-    },
-    {
-      id: 'grd-04',
-      module: 'Module 1',
-      title: 'Peer Problem Whiteboarding Critique',
-      type: mode === 'online' ? 'Live Masterclass Defense' : 'Campus Whiteboarding Lab',
-      weight: '10%',
-      score: 89,
-      maxScore: 100,
-      grade: 'B+',
-      gradedBy: 'Ananya Roy (Lead PM Mentor)',
-      date: 'Nov 11, 2026',
-      feedback: 'Sharp presentation. Push further into identifying the latent problem users point at rather than what they say.'
+      grade: null,
+      gradedBy: null,
+      date: null,
+      feedback: null
     },
   ];
-
-  const cumulativeScore = 92.2;
 
   return (
     <PortalLayout mode={mode} title="Academic Grades & Transcripts">
@@ -85,7 +76,7 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase bg-accent-subtle text-accent border border-accent-light/60">
-                  Official Academic Transcript
+                  Academic Progress Overview
                 </span>
                 <span className="text-xs text-text-muted">Batch 1 · Winter/Spring 2026</span>
               </div>
@@ -100,8 +91,8 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
             <div className="flex items-center gap-3 bg-background p-4 rounded-2xl border border-border flex-shrink-0">
               <div className="text-left">
                 <span className="text-[11px] font-semibold text-text-muted uppercase">Cumulative Standing</span>
-                <div className="text-2xl font-extrabold text-primary">{cumulativeScore}%</div>
-                <span className="text-xs text-emerald-700 font-semibold">Grade A · Honors Track</span>
+                <div className="text-2xl font-extrabold text-primary">Not available</div>
+                <span className="text-xs text-text-muted font-semibold">No grades recorded yet</span>
               </div>
               <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-base shadow-subtle">
                 <Award className="w-6 h-6" />
@@ -113,13 +104,13 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
             <div className="p-4 rounded-2xl bg-slate-50 border border-border">
               <span className="text-xs font-semibold text-text-muted block">Assignments Weight (50%)</span>
-              <span className="text-xl font-bold text-primary mt-1 block">94.0%</span>
+              <span className="text-xl font-bold text-primary mt-1 block">No grade recorded</span>
               <span className="text-[11px] text-emerald-700 font-semibold">Passing benchmark: 70%</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-border">
               <span className="text-xs font-semibold text-text-muted block">Quizzes & MCQs (20%)</span>
-              <span className="text-xl font-bold text-primary mt-1 block">93.0%</span>
+              <span className="text-xl font-bold text-primary mt-1 block">Not available</span>
               <span className="text-[11px] text-emerald-700 font-semibold">Passing benchmark: 70%</span>
             </div>
 
@@ -143,14 +134,16 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
               </p>
             </div>
 
-            <a
-              href="/assets/ai-product-wizardry-brochure.pdf"
-              download="AI_Product_Wizardry_Transcript.pdf"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-xs font-semibold text-secondary hover:bg-slate-50 transition-colors"
+            {/* Disabled until a real transcript can be generated (it used to download the program brochure). */}
+            <button
+              type="button"
+              disabled
+              title="Transcript export is not available yet"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-xs font-semibold text-secondary opacity-60 cursor-not-allowed"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Official Transcript</span>
-            </a>
+              <span>Transcript export not available yet</span>
+            </button>
           </div>
 
           <div className="space-y-4">
@@ -166,32 +159,44 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
                         {item.module}
                       </span>
                       <span className="text-text-muted font-medium">{item.type}</span>
-                      <span className="text-slate-300">•</span>
-                      <span className="text-text-muted">{item.date}</span>
+                      {item.date !== null && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-text-muted">{item.date}</span>
+                        </>
+                      )}
                     </div>
                     <h4 className="font-bold text-sm text-primary">{item.title}</h4>
-                    <span className="text-[11px] text-text-muted">Evaluated by: {item.gradedBy} · Weight: {item.weight}</span>
+                    <span className="text-[11px] text-text-muted">
+                      {item.gradedBy !== null ? `Evaluated by: ${item.gradedBy} · ` : ''}Weight: {item.weight}
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="text-right">
-                      <span className="text-base font-extrabold text-primary block">{item.score}/100</span>
-                      <span className="text-[10px] text-emerald-700 font-bold">Grade {item.grade}</span>
+                  {item.score !== null && item.grade !== null ? (
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <span className="text-base font-extrabold text-primary block">{item.score}/100</span>
+                        <span className="text-[10px] text-emerald-700 font-bold">Grade {item.grade}</span>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+                        {item.grade}
+                      </div>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
-                      {item.grade}
-                    </div>
-                  </div>
+                  ) : (
+                    <span className="text-xs text-text-muted font-semibold flex-shrink-0">No grade recorded</span>
+                  )}
                 </div>
 
-                <div className="p-3 bg-surface rounded-xl border border-border/80">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent block mb-1">
-                    Evaluator Feedback & Recommendations
-                  </span>
-                  <p className="text-slate-700 leading-relaxed italic">
-                    "{item.feedback}"
-                  </p>
-                </div>
+                {item.feedback !== null && (
+                  <div className="p-3 bg-surface rounded-xl border border-border/80">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-accent block mb-1">
+                      Evaluator Feedback & Recommendations
+                    </span>
+                    <p className="text-slate-700 leading-relaxed italic">
+                      "{item.feedback}"
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -202,9 +207,9 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-6 h-6 text-emerald-700 flex-shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-sm text-emerald-950 block">Certificate Readiness: High</span>
+              <span className="font-bold text-sm text-emerald-950 block">Certificate Readiness: Not available</span>
               <p className="text-emerald-800 mt-0.5 leading-relaxed">
-                Your current average of {cumulativeScore}% comfortably clears the 70% graduation bar. Maintain consistency across your upcoming jury presentations to earn your verified credential upon program completion.
+                No grades have been recorded yet, so certificate readiness cannot be assessed. The graduation bar is 70%.
               </p>
             </div>
           </div>
