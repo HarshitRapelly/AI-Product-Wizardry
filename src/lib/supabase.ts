@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  * Single shared Supabase client for the browser.
  *
  * Uses only the PUBLISHABLE key, which is safe to ship to browsers. Data access
- * is protected by Row Level Security in the database, never by hiding this key.
+ * is protected by Row Module Security in the database, never by hiding this key.
  * A service-role key must never be added to this app.
  */
 const url = import.meta.env.VITE_SUPABASE_URL;

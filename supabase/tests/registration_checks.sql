@@ -1,6 +1,10 @@
 -- =============================================================================
 -- Verification script — run AFTER Migrations 6, 7 and 8 (SQL Editor)
 -- =============================================================================
+-- Updated for 20261121000200 (requires it): every registration payload uses
+-- learning_mode 'offline', and 'online' is checked as an invalid learning_mode.
+-- Offline-only / optional slot+device / mode lock: registration_offline_checks.sql.
+-- =============================================================================
 -- Creates throw-away users inside a transaction, impersonates them like the
 -- Data API does, checks every registration / recovery / security rule, then
 -- ROLLS BACK. Nothing is persisted.
@@ -24,7 +28,7 @@ insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, c
 values
   ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'reg-r@example.test',
-   '{"full_name":"Form Name R","password":"never-store-me","aiw_registration":{"full_name":"Reg Student R","mobile":"98765 43210","date_of_birth":"2004-05-10","city":"Hyderabad","college":"JNTU","degree":"B.Tech","degree_other":"ignored","branch":"CSE","year_of_study":"3rd year","graduation_year":2027,"aspiration":"Build products","learning_mode":"online","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true,"schedule_updates_opt_in":false,"password":"also-never"}}',
+   '{"full_name":"Form Name R","password":"never-store-me","aiw_registration":{"full_name":"Reg Student R","mobile":"98765 43210","date_of_birth":"2004-05-10","city":"Hyderabad","college":"JNTU","degree":"B.Tech","degree_other":"ignored","branch":"CSE","year_of_study":"3rd year","graduation_year":2027,"aspiration":"Build products","learning_mode":"offline","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true,"schedule_updates_opt_in":false,"password":"also-never"}}',
    now(), now()),
   ('00000000-0000-4000-8000-0000000000a2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'reg-i@example.test',
@@ -55,7 +59,7 @@ begin
   -- R: valid email sign-up → registration saved; profile keeps its existing name,
   --    empty phone / mode are filled from the registration; metadata cleaned
   select * into p from public.profiles where id = '00000000-0000-4000-8000-0000000000a1';
-  if p.full_name is distinct from 'Form Name R' or p.phone is distinct from '9876543210' or p.learning_mode is distinct from 'online' then
+  if p.full_name is distinct from 'Form Name R' or p.phone is distinct from '9876543210' or p.learning_mode is distinct from 'offline' then
     raise exception 'FAIL: R profile not updated from registration: %', row_to_json(p);
   end if;
   select * into r from public.student_registrations where user_id = '00000000-0000-4000-8000-0000000000a1';
@@ -72,7 +76,7 @@ begin
     raise exception 'FAIL: R registration columns not all saved: %', row_to_json(r);
   end if;
   -- Migration 7: mobile (normalised from "98765 43210") and mode stored in the registration row
-  if r.mobile_number is distinct from '9876543210' or r.learning_mode is distinct from 'online' then
+  if r.mobile_number is distinct from '9876543210' or r.learning_mode is distinct from 'offline' then
     raise exception 'FAIL: R mobile_number/learning_mode not saved: %', row_to_json(r);
   end if;
   select raw_user_meta_data into m from auth.users where id = '00000000-0000-4000-8000-0000000000a1';
@@ -150,7 +154,7 @@ begin
   select count(*) into n from public.student_registrations;
   if n is distinct from 0 then raise exception 'FAIL: G can see % registration rows (expected 0 before completing)', n; end if;
 
-  res := public.complete_my_registration('{"full_name":"G Certificate Name","mobile":"9123456780","date_of_birth":"2003-01-15","city":"Pune","college":"COEP","degree":"Other","degree_other":"B.Des","branch":"Design","year_of_study":"Graduated","graduation_year":2024,"learning_mode":"online","preferred_slot":"Weekend mornings","main_device":"Desktop","agreed_to_code_of_conduct":true}');
+  res := public.complete_my_registration('{"full_name":"G Certificate Name","mobile":"9123456780","date_of_birth":"2003-01-15","city":"Pune","college":"COEP","degree":"Other","degree_other":"B.Des","branch":"Design","year_of_study":"Graduated","graduation_year":2024,"learning_mode":"offline","preferred_slot":"Weekend mornings","main_device":"Desktop","agreed_to_code_of_conduct":true}');
   if res is distinct from 'saved' then raise exception 'FAIL: G completion returned %', res; end if;
 
   -- second attempt: no overwrite
@@ -165,11 +169,11 @@ begin
   end if;
   -- Migration 7: Google completion stores mobile and mode (second attempt changed nothing)
   if (select mobile_number || '|' || learning_mode from public.student_registrations)
-       is distinct from '9123456780|online' then
+       is distinct from '9123456780|offline' then
     raise exception 'FAIL: G mobile_number/learning_mode wrong: %', (select row_to_json(r) from public.student_registrations r);
   end if;
   if (select full_name || '|' || phone || '|' || learning_mode from public.profiles)
-       is distinct from 'Google G|9123456780|online' then -- existing name kept; empty phone and mode filled
+       is distinct from 'Google G|9123456780|offline' then -- existing name kept; empty phone and mode filled
     raise exception 'FAIL: G profile not updated correctly';
   end if;
 
@@ -233,6 +237,7 @@ begin
       (jsonb_build_object('graduation_year', '20x5'), 'graduation_year'),
       (jsonb_build_object('aspiration', repeat('a', 1001)), 'aspiration'),
       (jsonb_build_object('learning_mode', 'hybrid'), 'learning_mode'),
+      (jsonb_build_object('learning_mode', 'online'), 'learning_mode'),   -- 20261121000200: offline only
       (jsonb_build_object('preferred_slot', 'Night'), 'preferred_slot'),
       (jsonb_build_object('main_device', 'Phone'), 'main_device'),
       (jsonb_build_object('agreed_to_code_of_conduct', false), 'agreed_to_code_of_conduct'),
@@ -277,7 +282,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 
 do $$
 begin
-  if public.complete_my_registration('{"full_name":"Paid P","mobile":"9988776655","date_of_birth":"2002-07-07","city":"Delhi","college":"DU","degree":"B.Com","branch":"Finance","year_of_study":"4th year","graduation_year":2026,"learning_mode":"online","preferred_slot":"Weekday evenings","main_device":"Mobile","agreed_to_code_of_conduct":true}') is distinct from 'saved' then
+  if public.complete_my_registration('{"full_name":"Paid P","mobile":"9988776655","date_of_birth":"2002-07-07","city":"Delhi","college":"DU","degree":"B.Com","branch":"Finance","year_of_study":"4th year","graduation_year":2026,"learning_mode":"offline","preferred_slot":"Weekday evenings","main_device":"Mobile","agreed_to_code_of_conduct":true}') is distinct from 'saved' then
     raise exception 'FAIL: P completion';
   end if;
   if (select learning_mode from public.profiles) is distinct from 'offline' then
@@ -286,10 +291,11 @@ begin
   if (select full_name || '|' || phone from public.profiles) is distinct from 'Paid P|9000000009' then
     raise exception 'FAIL: existing profile name/phone was overwritten: %', (select row_to_json(p) from public.profiles p);
   end if;
-  -- Migration 7: the registration records what was SUBMITTED (online, 9988776655) while the
-  -- profile keeps the student's current values (offline, 9000000009).
+  -- Migration 7: the registration records what was SUBMITTED (offline, 9988776655) while the
+  -- profile keeps the student's current values (offline, 9000000009). (Since 20261121000200
+  -- only 'offline' can be submitted; the existing profile mode is never overwritten.)
   if (select mobile_number || '|' || learning_mode from public.student_registrations)
-       is distinct from '9988776655|online' then
+       is distinct from '9988776655|offline' then
     raise exception 'FAIL: P registration did not record the submitted mobile/mode: %', (select row_to_json(r) from public.student_registrations r);
   end if;
 end $$;

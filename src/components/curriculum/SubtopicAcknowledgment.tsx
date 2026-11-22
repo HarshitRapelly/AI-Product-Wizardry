@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import type { AckState } from '../../hooks/useCurriculumLevel';
+import type { AckState } from '../../hooks/useCurriculumModule';
 
 interface Props {
   subtopicId: string;

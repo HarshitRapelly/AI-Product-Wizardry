@@ -1,4 +1,4 @@
-import { CourseLevel, ReadingMaterial, RecordedSession, QuizQuestion, ClassSession, LeaderboardStudent, AttendanceRecord } from '../types';
+import { CourseModule, ReadingMaterial, RecordedSession, QuizQuestion } from '../types';
 
 export const COURSE_PRICE = {
   original: 11000,
@@ -9,10 +9,10 @@ export const COURSE_PRICE = {
   guaranteeDays: 30
 };
 
-export const COURSE_LEVELS: CourseLevel[] = [
+export const COURSE_MODULES: CourseModule[] = [
   {
     id: 1,
-    levelNumber: 'Level 0',
+    moduleNumber: 'Module 0',
     title: 'Orientation & Program Essentials',
     status: 'unlocked',
     estimatedHours: 4,
@@ -22,7 +22,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 2,
-    levelNumber: 'Level 1',
+    moduleNumber: 'Module 1',
     title: 'Foundations of Product Management',
     status: 'locked',
     estimatedHours: 6,
@@ -32,7 +32,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 3,
-    levelNumber: 'Level 2',
+    moduleNumber: 'Module 2',
     title: 'Market Discovery & Opportunity Assessment',
     status: 'locked',
     estimatedHours: 6,
@@ -42,7 +42,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 4,
-    levelNumber: 'Level 3',
+    moduleNumber: 'Module 3',
     title: 'Problem Framing: Empathize & Define',
     status: 'locked',
     estimatedHours: 8,
@@ -52,7 +52,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 5,
-    levelNumber: 'Level 4',
+    moduleNumber: 'Module 4',
     title: 'User Research: Methods & Synthesis',
     status: 'locked',
     estimatedHours: 8,
@@ -62,7 +62,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 6,
-    levelNumber: 'Level 5',
+    moduleNumber: 'Module 5',
     title: 'Ideation & Concept Validation',
     status: 'locked',
     estimatedHours: 6,
@@ -72,7 +72,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 7,
-    levelNumber: 'Level 6',
+    moduleNumber: 'Module 6',
     title: 'Product Definition: From MVP to Roadmap',
     status: 'locked',
     estimatedHours: 8,
@@ -82,7 +82,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 8,
-    levelNumber: 'Level 7',
+    moduleNumber: 'Module 7',
     title: 'Prototyping & Usability Testing',
     status: 'locked',
     estimatedHours: 8,
@@ -92,7 +92,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 9,
-    levelNumber: 'Level 8',
+    moduleNumber: 'Module 8',
     title: 'Execution: Agile Delivery with Engineering',
     status: 'locked',
     estimatedHours: 8,
@@ -102,7 +102,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 10,
-    levelNumber: 'Level 9',
+    moduleNumber: 'Module 9',
     title: 'Metrics, Analytics & Experimentation',
     status: 'locked',
     estimatedHours: 6,
@@ -112,7 +112,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 11,
-    levelNumber: 'Level 10',
+    moduleNumber: 'Module 10',
     title: 'Go-to-Market & Product Lifecycle',
     status: 'locked',
     estimatedHours: 6,
@@ -122,7 +122,7 @@ export const COURSE_LEVELS: CourseLevel[] = [
   },
   {
     id: 12,
-    levelNumber: 'Level 11',
+    moduleNumber: 'Module 11',
     title: 'Product Sense, Case Studies & Capstone',
     status: 'locked',
     estimatedHours: 12,
@@ -132,8 +132,8 @@ export const COURSE_LEVELS: CourseLevel[] = [
   }
 ];
 
-export const LEVEL_1_READING: ReadingMaterial = {
-  levelId: 1,
+export const MODULE_1_READING: ReadingMaterial = {
+  moduleId: 1,
   title: 'Foundations of Product Management',
   subtitle: 'Great code builds the product. Product thinking decides if anyone keeps it.',
   estimatedMinutes: 15,
@@ -203,10 +203,10 @@ export const LEVEL_1_READING: ReadingMaterial = {
   ]
 };
 
-export const LEVEL_1_RECORDINGS: RecordedSession[] = [
+export const MODULE_1_RECORDINGS: RecordedSession[] = [
   {
     id: 'rec-101',
-    levelId: 1,
+    moduleId: 1,
     title: 'Module 1 Masterclass: The Product Mindset & The 3 Wizard Questions',
     instructor: 'Priya Sharma',
     instructorRole: 'Product Director & Former Early PM at Swiggy',
@@ -219,7 +219,7 @@ export const LEVEL_1_RECORDINGS: RecordedSession[] = [
   },
   {
     id: 'rec-102',
-    levelId: 1,
+    moduleId: 1,
     title: 'Teardown: From a Person\'s Need to a Launch People Love',
     instructor: 'Arjun Mehta',
     instructorRole: 'Founder & Angel Investor, Ex-NxtWave Fellow',
@@ -232,7 +232,7 @@ export const LEVEL_1_RECORDINGS: RecordedSession[] = [
   },
   {
     id: 'rec-103',
-    levelId: 1,
+    moduleId: 1,
     title: 'Guest Lecture: Hear From Makers Who Ship Every Week',
     instructor: 'Ananya Roy',
     instructorRole: 'Staff Product Engineer at Razorpay',
@@ -245,7 +245,7 @@ export const LEVEL_1_RECORDINGS: RecordedSession[] = [
   }
 ];
 
-export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
+export const MODULE_1_QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 1,
     question: 'According to the core philosophy of AI Product Wizardry, what is the fundamental difference between code and product thinking?',
@@ -313,259 +313,6 @@ export const LEVEL_1_QUIZ_QUESTIONS: QuizQuestion[] = [
   }
 ];
 
-export const UPCOMING_CLASSES: ClassSession[] = [
-  {
-    id: 'cls-101',
-    title: 'Interactive Workshop: Finding Real Problems & User Empathy',
-    subtitle: 'Hands-on exercise: dissecting student habits and framing "How Might We" problems',
-    instructor: 'Priya Sharma',
-    instructorRole: 'Product Director & Lead Mentor',
-    instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    date: 'Wednesday, Nov 18, 2026',
-    time: '06:00 PM - 07:30 PM IST',
-    duration: '90 mins',
-    type: 'online',
-    locationOrPlatform: 'Live Interactive Zoom Theater',
-    roomOrUrl: 'https://zoom.us/j/ai-wizardry-room-101',
-    description: 'Learn how to conduct user discovery conversations without biasing the interviewee. We will dissect 3 live student apps, find hidden friction points, and craft actionable problem statements.',
-    prerequisites: 'Module 0 orientation completed',
-    capacity: 120,
-    enrolledCount: 94
-  },
-  {
-    id: 'cls-102',
-    title: 'Guest Lecture: Hear From Makers Who Ship Products Weekly',
-    subtitle: 'Weekend deep dive with founders and senior product managers',
-    instructor: 'Arjun Mehta',
-    instructorRole: 'Founder & Angel Investor, Ex-NxtWave Fellow',
-    instructorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    date: 'Saturday, Nov 21, 2026',
-    time: '11:00 AM - 12:30 PM IST',
-    duration: '90 mins',
-    type: 'online',
-    locationOrPlatform: 'Weekend Stage & Community Stream',
-    roomOrUrl: 'https://meet.google.com/aiw-weekend-makers',
-    description: 'Hear raw, unfiltered stories from founders on how they pivoted their early apps, survived launch failures, and scaled to their first 10,000 paying users.',
-    prerequisites: 'Module 1 Reading completed',
-    capacity: 150,
-    enrolledCount: 118
-  },
-  {
-    id: 'cls-103',
-    title: 'Jury Preparation Clinic: Pitching & Defending Your PRD Live',
-    subtitle: 'How to present your product rationale with poise before industry leaders',
-    instructor: 'Ananya Roy',
-    instructorRole: 'Staff Product Engineer at Razorpay',
-    instructorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
-    date: 'Tuesday, Nov 24, 2026',
-    time: '07:00 PM - 08:30 PM IST',
-    duration: '90 mins',
-    type: 'online',
-    locationOrPlatform: 'Executive Virtual Studio',
-    roomOrUrl: 'https://zoom.us/j/aiw-jury-clinic',
-    description: 'Master the art of defending your product decisions live. Learn how to address skeptic questions from engineering, design, and business jury members.',
-    prerequisites: 'Open to all enrolled students',
-    capacity: 100,
-    enrolledCount: 75
-  },
-  // Offline Classroom Sessions
-  {
-    id: 'cls-201',
-    title: 'Classroom Lab: Story-Led Product Teardown & Whiteboarding',
-    subtitle: 'In-person physical workshop: dissecting iconic consumer mobile apps',
-    instructor: 'Priya Sharma',
-    instructorRole: 'Classroom Lead Faculty',
-    instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    date: 'Thursday, Nov 19, 2026',
-    time: '02:00 PM - 05:00 PM Local Time',
-    duration: '3 hours',
-    type: 'offline',
-    locationOrPlatform: 'Campus Lecture Hall 4B',
-    roomOrUrl: 'Room 4B, Innovation Center Tower',
-    description: 'Work in pairs on physical whiteboards to deconstruct user journeys. Map every tap, emotional friction point, and retention trigger for popular products.',
-    prerequisites: 'Bring laptop and notepad for whiteboard synthesis',
-    capacity: 40,
-    enrolledCount: 32
-  },
-  {
-    id: 'cls-202',
-    title: 'In-Person Team Sprint: Paper Prototyping & Usability Testing',
-    subtitle: 'Build paper prototypes and run live hallway usability tests with real students',
-    instructor: 'Arjun Mehta',
-    instructorRole: 'Campus Workshop Mentor',
-    instructorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    date: 'Monday, Nov 23, 2026',
-    time: '01:30 PM - 04:30 PM Local Time',
-    duration: '3 hours',
-    type: 'offline',
-    locationOrPlatform: 'Design Studio Lab 204',
-    roomOrUrl: 'Lab 204, Creative Arts & Tech Wing',
-    description: 'Create low-fidelity clickable or paper prototypes in under 60 minutes. Step out into the campus commons to conduct rapid 5-minute usability tests with real peers.',
-    prerequisites: 'Module 1 Reading completed',
-    capacity: 35,
-    enrolledCount: 29
-  },
-  {
-    id: 'cls-203',
-    title: 'Faculty 1-on-1 Critique: Defending Your First Assignment',
-    subtitle: 'Direct faculty review of your written problem definition and user insights',
-    instructor: 'Ananya Roy',
-    instructorRole: 'Program Academic Director',
-    instructorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
-    date: 'Friday, Nov 27, 2026',
-    time: '10:00 AM - 01:00 PM Local Time',
-    duration: '3 hours',
-    type: 'offline',
-    locationOrPlatform: 'Executive Seminar Suite A',
-    roomOrUrl: 'Executive Center, Level 6',
-    description: 'Sit down with faculty mentors for detailed feedback on your written product document before submitting it for official grading.',
-    prerequisites: 'Draft document uploaded to student portal',
-    capacity: 30,
-    enrolledCount: 22
-  }
-];
 
-export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
-  {
-    rank: 1,
-    id: 'usr-001',
-    name: 'Kavita Sundaram',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    points: 1250,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 100,
-    badge: 'Product Wizard'
-  },
-  {
-    rank: 2,
-    id: 'usr-002',
-    name: 'Julian Montgomery',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-    points: 1180,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 95,
-    badge: 'Storyteller'
-  },
-  {
-    rank: 3,
-    id: 'usr-003',
-    name: 'Amara Okafor',
-    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=150&q=80',
-    points: 1120,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 92,
-    badge: 'Problem Spotter'
-  },
-  {
-    rank: 4,
-    id: 'usr-004',
-    name: 'David Lindqvist',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    points: 980,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 88,
-    badge: 'Prototyper'
-  },
-  {
-    rank: 5,
-    id: 'usr-005',
-    name: 'Sophia Rodriguez',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-    points: 920,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 85,
-    badge: 'Empathy Champion'
-  },
-  {
-    rank: 6,
-    id: 'usr-006',
-    name: 'Hassan Al-Mansoor',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
-    points: 860,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 84,
-    badge: 'User Researcher'
-  },
-  {
-    rank: 7,
-    id: 'usr-007',
-    name: 'Mei-Ling Zhou',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
-    points: 810,
-    levelsCompleted: 1,
-    quizzesPassed: 1,
-    attendanceRate: 80,
-    badge: 'Maker'
-  }
-];
 
-export const INITIAL_ATTENDANCE_RECORDS: AttendanceRecord[] = [
-  {
-    id: 'att-1',
-    date: 'Nov 02, 2026',
-    sessionTitle: 'Orientation & Team Formation Workshop',
-    status: 'present',
-    time: '06:00 PM - 07:30 PM IST',
-    verificationCode: 'AIW-ONB-782'
-  },
-  {
-    id: 'att-2',
-    date: 'Nov 05, 2026',
-    sessionTitle: 'Module 1 Masterclass: The Product Mindset',
-    status: 'present',
-    time: '06:00 PM - 07:15 PM IST',
-    verificationCode: 'AIW-M11-904'
-  },
-  {
-    id: 'att-3',
-    date: 'Nov 09, 2026',
-    sessionTitle: 'Teardown: From a Person\'s Need to a Launch',
-    status: 'present',
-    time: '06:00 PM - 07:30 PM IST',
-    verificationCode: 'AIW-M12-311'
-  },
-  {
-    id: 'att-4',
-    date: 'Nov 12, 2026',
-    sessionTitle: 'Office Hours & Problem Statement Review with Priya Sharma',
-    status: 'present',
-    time: '05:00 PM - 06:00 PM IST',
-    verificationCode: 'AIW-OH1-445'
-  },
-  {
-    id: 'att-5',
-    date: 'Nov 16, 2026',
-    sessionTitle: 'Module 1 Q&A Clinic & Written Document Guidance',
-    status: 'upcoming',
-    time: '06:00 PM - 07:00 PM IST'
-  }
-];
 
-export const FAQS = [
-  {
-    question: 'Who is AI Product Wizardry designed for?',
-    answer: 'It is built specifically for undergraduate students and aspiring makers who love to build things. It teaches the half of tech that most classrooms skip: choosing the right problem, shaping an idea people want, and carrying it from a sketch to a launch.'
-  },
-  {
-    question: 'How is the program structured across the 6 months?',
-    answer: 'The program spans 6 months across 12 levels, Level 0 to Level 11 (2 levels a month). Level 0 sets expectations. Every level after it ends with a written assignment, followed by a live jury presentation where you defend your thinking.'
-  },
-  {
-    question: 'What is the difference between the Online and Offline learning modes?',
-    answer: 'Both modes cover the identical 12 levels (Level 0–Level 11) and assignments. Online students join interactive live webinars, review on-demand video masterclasses, and track attendance digitally. Offline students attend in-person classroom labs, physical whiteboarding sessions, and hallway usability testing at the Innovation Campus.'
-  },
-  {
-    question: 'What are the certificate requirements?',
-    answer: 'You earn your certificate by scoring above 70% across assignments (50%) and the live capstone jury defense (30%), alongside content and quiz checks (20%). Offline batches also require 80% attendance and 80% MCQ completion.'
-  },
-  {
-    question: 'What is the tuition fee?',
-    answer: 'The program fee is ₹11,000 from Batch 2 onwards. It is 100% free for this batch under the Fellowship initiative.'
-  }
-];

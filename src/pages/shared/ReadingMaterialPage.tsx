@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { LEVEL_1_READING } from '../../data/mockData';
+import { MODULE_1_READING } from '../../data/mockData';
 import {
   BookOpen,
   CheckCircle2,
@@ -24,7 +24,7 @@ interface ReadingMaterialPageProps {
 
 export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }) => {
   const { readingCompleted, toggleReadingCompleted } = useAuthAndCourse();
-  const [activeSectionId, setActiveSectionId] = useState<string>(LEVEL_1_READING.sections[0].id);
+  const [activeSectionId, setActiveSectionId] = useState<string>(MODULE_1_READING.sections[0].id);
   const [justToggled, setJustToggled] = useState(false);
   const navigate = useNavigate();
 
@@ -34,31 +34,31 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
     setTimeout(() => setJustToggled(false), 2500);
   };
 
-  const currentSection = LEVEL_1_READING.sections.find(s => s.id === activeSectionId) || LEVEL_1_READING.sections[0];
-  const currentSectionIndex = LEVEL_1_READING.sections.findIndex(s => s.id === activeSectionId);
-  const hasNext = currentSectionIndex < LEVEL_1_READING.sections.length - 1;
+  const currentSection = MODULE_1_READING.sections.find(s => s.id === activeSectionId) || MODULE_1_READING.sections[0];
+  const currentSectionIndex = MODULE_1_READING.sections.findIndex(s => s.id === activeSectionId);
+  const hasNext = currentSectionIndex < MODULE_1_READING.sections.length - 1;
   const hasPrev = currentSectionIndex > 0;
 
   const nextSection = () => {
     if (hasNext) {
-      setActiveSectionId(LEVEL_1_READING.sections[currentSectionIndex + 1].id);
+      setActiveSectionId(MODULE_1_READING.sections[currentSectionIndex + 1].id);
       window.scrollTo({ top: 180, behavior: 'smooth' });
     }
   };
 
   const prevSection = () => {
     if (hasPrev) {
-      setActiveSectionId(LEVEL_1_READING.sections[currentSectionIndex - 1].id);
+      setActiveSectionId(MODULE_1_READING.sections[currentSectionIndex - 1].id);
       window.scrollTo({ top: 180, behavior: 'smooth' });
     }
   };
 
-  const backLink = mode === 'online' ? '/online/level/1' : '/offline/level/1';
-  const nextModuleLink = mode === 'online' ? '/online/level/1/recordings' : '/offline/level/1/quiz';
+  const backLink = mode === 'online' ? '/online/module/1' : '/offline/module/1';
+  const nextModuleLink = mode === 'online' ? '/online/module/1/recordings' : '/offline/module/1/quiz';
   const nextModuleLabel = mode === 'online' ? 'Proceed to Recorded Sessions' : 'Proceed to Practice Quiz';
 
   return (
-    <PortalLayout mode={mode} title="Level 01 Reading Handbook">
+    <PortalLayout mode={mode} title="Module 01 Reading Handbook">
       <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
         
         {/* Navigation Breadcrumb */}
@@ -68,7 +68,7 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Level 01 Hub</span>
+            <span>Back to Module 01 Hub</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -101,21 +101,21 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent uppercase border border-accent-light/60">
-                  Level 01 Core Reading Material
+                  Module 01 Core Reading Material
                 </span>
                 <span className="text-xs text-text-muted flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
-                  <span>{LEVEL_1_READING.estimatedMinutes} Minutes Reading Time</span>
+                  <span>{MODULE_1_READING.estimatedMinutes} Minutes Reading Time</span>
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-                {LEVEL_1_READING.title}
+                {MODULE_1_READING.title}
               </h1>
               <p className="text-sm font-medium text-secondary">
-                {LEVEL_1_READING.subtitle}
+                {MODULE_1_READING.subtitle}
               </p>
               <p className="text-xs text-text-muted pt-1">
-                Authored by: <span className="font-semibold text-primary">{LEVEL_1_READING.author}</span>
+                Authored by: <span className="font-semibold text-primary">{MODULE_1_READING.author}</span>
               </p>
             </div>
 
@@ -137,7 +137,7 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
 
           {/* Section Navigation Tabs */}
           <div className="pt-4 flex flex-wrap gap-2">
-            {LEVEL_1_READING.sections.map((sec, idx) => (
+            {MODULE_1_READING.sections.map((sec, idx) => (
               <button
                 key={sec.id}
                 onClick={() => setActiveSectionId(sec.id)}
@@ -157,7 +157,7 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
         <div className="bg-surface rounded-2xl border border-border p-6 sm:p-10 shadow-subtle space-y-6">
           <div className="pb-4 border-b border-border">
             <span className="text-xs font-bold text-accent uppercase tracking-wider">
-              Section {currentSectionIndex + 1} of {LEVEL_1_READING.sections.length}
+              Section {currentSectionIndex + 1} of {MODULE_1_READING.sections.length}
             </span>
             <h2 className="text-2xl font-bold text-primary mt-1">
               {currentSection.title}
@@ -251,7 +251,7 @@ export const ReadingMaterialPage: React.FC<ReadingMaterialPageProps> = ({ mode }
               Ready to test your knowledge or explore sessions?
             </h3>
             <p className="text-xs text-slate-400">
-              Continue through your Level 01 syllabus modules.
+              Continue through your Module 01 syllabus modules.
             </p>
           </div>
 

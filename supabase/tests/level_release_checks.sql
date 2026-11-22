@@ -1,6 +1,8 @@
 -- =============================================================================
 -- Migration 13 verification — only released levels are open (Level 0)
 -- Run AFTER Migrations 1–13. Local / staging databases.
+-- HISTORICAL (pre-20261121000600 schema only): after the Level→Module rename use
+-- module_release_checks.sql, which is this script adapted to the module names.
 -- =============================================================================
 -- Creates throw-away users and rows inside a transaction, impersonates them
 -- like the Data API, then ROLLS BACK. Nothing is persisted. Finishing with the
@@ -20,7 +22,7 @@ insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, c
   ('00000000-0000-4000-8000-0000000013a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'level-release-l@example.test', '{"full_name":"Level L"}', now(), now());
 select private.apply_registration('00000000-0000-4000-8000-0000000013a1',
-  '{"full_name":"Level L","mobile":"9000000931","date_of_birth":"2003-03-03","city":"Kochi","college":"CUSAT","degree":"BCA","branch":"Apps","year_of_study":"2nd year","graduation_year":2028,"learning_mode":"online","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
+  '{"full_name":"Level L","mobile":"9000000931","date_of_birth":"2003-03-03","city":"Kochi","college":"CUSAT","degree":"BCA","branch":"Apps","year_of_study":"2nd year","graduation_year":2028,"learning_mode":"offline","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
   'email_signup');
 
 -- Content for Level 1 (level_id 2) so the read guards can be observed: a copy of a

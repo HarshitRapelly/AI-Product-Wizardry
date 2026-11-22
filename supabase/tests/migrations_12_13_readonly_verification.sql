@@ -4,6 +4,8 @@
 -- Run BEFORE and AFTER applying. Before: m12_* / m13_* columns false. After: every
 -- *_ok column true, snapshot_* values unchanged (in a quiet window).
 -- Nothing is written, no role is switched, no user is created.
+-- HISTORICAL: after 20261121000600 (Level→Module rename) the m13_* columns report
+-- false by design; use 20261121000600_rename_level_to_module_readonly_verification.sql.
 -- =============================================================================
 select
   -- Migration 12: College ID Number

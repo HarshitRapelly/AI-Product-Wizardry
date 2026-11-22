@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { LEVEL_1_QUIZ_QUESTIONS } from '../../data/mockData';
+import { MODULE_1_QUIZ_QUESTIONS } from '../../data/mockData';
 import confetti from 'canvas-confetti';
 import {
   Award,
@@ -28,7 +28,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
   });
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const totalQuestions = LEVEL_1_QUIZ_QUESTIONS.length;
+  const totalQuestions = MODULE_1_QUIZ_QUESTIONS.length;
   const isSubmitted = !!quizAttempt;
 
   const handleSelectOption = (questionId: number, optionIndex: number) => {
@@ -52,7 +52,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
 
     // Calculate score
     let correctCount = 0;
-    LEVEL_1_QUIZ_QUESTIONS.forEach((q) => {
+    MODULE_1_QUIZ_QUESTIONS.forEach((q) => {
       if (selectedAnswers[q.id] === q.correctAnswer) {
         correctCount++;
       }
@@ -82,10 +82,10 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const backLink = mode === 'online' ? '/online/level/1' : '/offline/level/1';
+  const backLink = mode === 'online' ? '/online/module/1' : '/offline/module/1';
 
   return (
-    <PortalLayout mode={mode} title="Level 01 Practice Quiz">
+    <PortalLayout mode={mode} title="Module 01 Practice Quiz">
       <div className="space-y-8 font-sans text-left max-w-4xl mx-auto">
         
         {/* Navigation Breadcrumb */}
@@ -95,7 +95,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Level 01 Hub</span>
+            <span>Back to Module 01 Hub</span>
           </Link>
 
           {isSubmitted && (
@@ -131,7 +131,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
                 <p className="text-xs sm:text-sm text-secondary leading-relaxed">
                   {quizAttempt.passed 
                     ? 'You have demonstrated mastery of probabilistic system design, RAG principles, and AI PRD formulation. +500 points logged to leaderboard!'
-                    : 'A passing score of 80% is required for Level 01 certification. Review the explanations below and retake the quiz anytime.'}
+                    : 'A passing score of 80% is required for Module 01 certification. Review the explanations below and retake the quiz anytime.'}
                 </p>
               </div>
 
@@ -166,7 +166,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent uppercase border border-accent-light/60">
-                  Level 01 Knowledge Evaluation
+                  Module 01 Knowledge Evaluation
                 </span>
                 <span className="text-xs text-text-muted">{totalQuestions} Scenario Questions</span>
               </div>
@@ -196,7 +196,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
 
         {/* Questions List */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {LEVEL_1_QUIZ_QUESTIONS.map((question, qIdx) => {
+          {MODULE_1_QUIZ_QUESTIONS.map((question, qIdx) => {
             const userAnswer = selectedAnswers[question.id];
             const isAnswered = userAnswer !== undefined;
             const isCorrect = isSubmitted && userAnswer === question.correctAnswer;
@@ -293,7 +293,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
                 type="submit"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-bold shadow-premium transition-all"
               >
-                <span>Submit Level 01 Evaluation</span>
+                <span>Submit Module 01 Evaluation</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
@@ -311,7 +311,7 @@ export const PracticeQuizPage: React.FC<PracticeQuizPageProps> = ({ mode }) => {
                   to={backLink}
                   className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold transition-colors"
                 >
-                  <span>Return to Level 01 Hub</span>
+                  <span>Return to Module 01 Hub</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

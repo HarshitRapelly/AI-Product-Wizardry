@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { LEVEL_1_RECORDINGS } from '../../data/mockData';
+import { MODULE_1_RECORDINGS } from '../../data/mockData';
 import { RecordedSession } from '../../types';
 import {
   Video,
@@ -28,24 +28,24 @@ export const OnlineRecordings: React.FC = () => {
   };
 
   return (
-    <PortalLayout mode="online" title="Level 01 Recorded Sessions">
+    <PortalLayout mode="online" title="Module 01 Recorded Sessions">
       <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
         
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between">
           <Link
-            to="/online/level/1"
+            to="/online/module/1"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-cream/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Level 01 Hub</span>
+            <span>Back to Module 01 Hub</span>
           </Link>
 
           <Link
-            to="/online/level/1/quiz"
+            to="/online/module/1/quiz"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-gold hover:underline"
           >
-            <span>Next: Level 01 Quiz</span>
+            <span>Next: Module 01 Quiz</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -60,7 +60,7 @@ export const OnlineRecordings: React.FC = () => {
               <span className="text-xs text-text-muted">3 Masterclass Recordings</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-              Level 01 Video Masterclasses
+              Module 01 Video Masterclasses
             </h1>
             <p className="text-sm text-text-muted leading-relaxed">
               Comprehensive teardowns with industry fellows from Anthropic Research and DeepScale AI. Review foundational lectures, model physics, and corporate case studies at your own pace.
@@ -70,7 +70,7 @@ export const OnlineRecordings: React.FC = () => {
 
         {/* Sessions List */}
         <div className="space-y-6">
-          {LEVEL_1_RECORDINGS.map((session) => {
+          {MODULE_1_RECORDINGS.map((session) => {
             const isWatched = watchedSessionIds.includes(session.id);
 
             return (

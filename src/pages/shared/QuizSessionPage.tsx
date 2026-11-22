@@ -5,22 +5,22 @@ import {
   RotateCcw, ShieldCheck, XCircle,
 } from 'lucide-react';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { useCurriculumLevel } from '../../hooks/useCurriculumLevel';
-import { LEVEL0_ID } from '../../components/curriculum/Level0HubPage';
+import { useCurriculumModule } from '../../hooks/useCurriculumModule';
+import { MODULE0_ID } from '../../components/curriculum/Module0HubPage';
 import { BrandHat } from '../../components/brand/BrandLogo';
 import { clearQuizSession, useActiveQuizSession, writeQuizSession, type QuizSession } from '../../lib/quizSession';
-import type { LevelModule } from '../../lib/levelModules';
+import type { Lesson } from '../../lib/moduleLessons';
 import type { QuizAttemptSummary, QuizQuestion, QuizReviewItem } from '../../lib/curriculumTypes';
 import { fetchQuizQuestions, fetchQuizReview, newSubmissionId, submitQuiz } from '../../services/quizService';
 import type { CurriculumError } from '../../services/curriculumService';
 
 const LETTERS = 'ABCDEFGHIJ';
 /** Server refusals after which this quiz cannot be submitted now: the session is closed (never traps the student). */
-const REFUSED = new Set(['order', 'reading_required', 'level_locked', 'registration', 'not_found', 'unavailable']);
+const REFUSED = new Set(['order', 'reading_required', 'module_locked', 'registration', 'not_found', 'unavailable']);
 
 type Questions = { status: 'loading' } | { status: 'ready'; items: QuizQuestion[] } | { status: 'error'; error: CurriculumError };
 
-const hubPath = (mode: string, moduleKey?: string | null) => `/${mode}/level/0${moduleKey ? `?module=${encodeURIComponent(moduleKey)}` : ''}`;
+const hubPath = (mode: string, lessonKey?: string | null) => `/${mode}/module/0${lessonKey ? `?lesson=${encodeURIComponent(lessonKey)}` : ''}`;
 
 /** Browser Fullscreen API available (it may still be refused, e.g. inside some embedded frames). */
 const fullscreenSupported = () =>
@@ -38,10 +38,10 @@ function exitFullscreen() {
 }
 
 /**
- * Dedicated full-screen assessment page: /:mode/level/0/quiz/:quizId.
+ * Dedicated full-screen assessment page: /:mode/module/0/quiz/:quizId.
  *
  *  - No portal sidebar or course navigation (it is not wrapped in PortalLayout).
- *  - Opening it requires the quiz module to be unlocked (all earlier modules done,
+ *  - Opening it requires the quiz lesson to be unlocked (all earlier lessons done,
  *    reading confirmed) — derived from server data; the server additionally refuses
  *    submissions before the earlier subtopics are done.
  *  - "Start" creates the active quiz session (lib/quizSession): from then on every
@@ -69,19 +69,19 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
   const { quizId = '' } = useParams();
   const { user } = useAuthAndCourse();
   const uid = user?.id ?? null;
-  const { state, reload, acknowledge, recordAttempt } = useCurriculumLevel(LEVEL0_ID);
+  const { state, reload, acknowledge, recordAttempt } = useCurriculumModule(MODULE0_ID);
   const session = useActiveQuizSession(uid);
   const mine = session && session.quizId === quizId ? session : null;
   const [result, setResult] = useState<QuizAttemptSummary | null>(null);
   const [closedReason, setClosedReason] = useState<string | null>(null);
 
-  const modules = state.status === 'ready' ? state.modules : [];
-  const quizModule = modules.find((m) => m.kind === 'quiz' && m.status.subtopic.quizId === quizId) ?? null;
+  const lessons = state.status === 'ready' ? state.lessons : [];
+  const quizLesson = lessons.find((m) => m.kind === 'quiz' && m.status.subtopic.quizId === quizId) ?? null;
   const attempts = useMemo(
     () => (state.status === 'ready' ? state.attempts.filter((a) => a.quizId === quizId) : []),
     [state, quizId],
   );
-  const available = !!quizModule && quizModule.state !== 'locked';
+  const available = !!quizLesson && quizLesson.state !== 'locked';
 
   // Questions (prompts + options only — never answers).
   const [questions, setQuestions] = useState<Questions>({ status: 'loading' });
@@ -157,11 +157,11 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
   useEffect(() => { if (!mine) { setAwayWarning(false); setBackWarning(false); } }, [mine]);
 
   const start = () => {
-    if (!uid || !quizModule || !available) return;
+    if (!uid || !quizLesson || !available) return;
     setResult(null);
     setClosedReason(null);
     writeQuizSession(uid, {
-      v: 1, quizId, subtopicId: quizModule.status.subtopic.id, level: '0',
+      v: 1, quizId, subtopicId: quizLesson.status.subtopic.id, module: '0',
       startedAt: new Date().toISOString(), answers: {}, index: 0, submissionId: null,
     });
     enterFullscreen();
@@ -174,8 +174,8 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
     setResult(attempt);
     recordAttempt(attempt);
     // The subtopic acknowledgment the student already gave on the reading is recorded now
-    // (the database requires the quiz first). On failure the hub offers "Finish this module".
-    if (quizModule && quizModule.readingConfirmed && !quizModule.status.acknowledged) await acknowledge(quizModule.status.subtopic);
+    // (the database requires the quiz first). On failure the hub offers "Finish this lesson".
+    if (quizLesson && quizLesson.readingConfirmed && !quizLesson.status.acknowledged) await acknowledge(quizLesson.status.subtopic);
   };
 
   const onRefused = (message: string) => {
@@ -186,8 +186,8 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
   };
 
   // ------------------------------------------------------------------ render
-  const title = quizModule?.quizBlock?.heading ?? 'Quiz';
-  const topicLabel = quizModule ? `Level 0 · Topic ${quizModule.status.subtopic.topicNumber} · ${quizModule.status.subtopic.topicTitle}` : 'Level 0';
+  const title = quizLesson?.quizBlock?.heading ?? 'Quiz';
+  const topicLabel = quizLesson ? `Module 0 · Topic ${quizLesson.status.subtopic.topicNumber} · ${quizLesson.status.subtopic.topicTitle}` : 'Module 0';
 
   let body: React.ReactNode;
   if (state.status === 'loading') {
@@ -202,7 +202,7 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
         </div>
       </Card>
     );
-  } else if (state.status !== 'ready' || !quizModule) {
+  } else if (state.status !== 'ready' || !quizLesson) {
     body = (
       <Card testId="quiz-not-found">
         <p className="text-sm font-semibold text-primary">{closedReason ?? 'This quiz is not available.'}</p>
@@ -216,15 +216,15 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
           <span className="w-10 h-10 rounded-full bg-slate-100 border border-border flex items-center justify-center flex-shrink-0" aria-hidden="true"><Lock className="w-5 h-5 text-slate-400" /></span>
           <div className="space-y-1 text-sm text-secondary">
             <p className="font-semibold text-primary">This quiz is locked.</p>
-            <p>Complete “{quizModule.blockedBy}” first to unlock it.</p>
+            <p>Complete “{quizLesson.blockedBy}” first to unlock it.</p>
             {closedReason && <p className="text-xs text-text-muted">{closedReason}</p>}
           </div>
         </div>
-        <BackToCourse mode={mode} moduleKey={quizModule.blockedBy ? modules.find((m) => m.state === 'available')?.key : null} />
+        <BackToCourse mode={mode} lessonKey={quizLesson.blockedBy ? lessons.find((m) => m.state === 'available')?.key : null} />
       </Card>
     );
   } else if (result) {
-    body = <ResultView mode={mode} module={quizModule} modules={modules} attempt={result} attemptCount={attempts.length} questions={questions} onRetake={start} ackPending={!quizModule.status.acknowledged && quizModule.readingConfirmed} />;
+    body = <ResultView mode={mode} lesson={quizLesson} lessons={lessons} attempt={result} attemptCount={attempts.length} questions={questions} onRetake={start} ackPending={!quizLesson.status.acknowledged && quizLesson.readingConfirmed} />;
   } else if (mine && uid) {
     body = questions.status === 'loading'
       ? <Centered><p role="status" className="flex items-center gap-2 text-sm text-cream/80"><Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />Loading the questions…</p></Centered>
@@ -237,7 +237,7 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
         )
         : <ActiveQuiz uid={uid} session={mine} items={questions.items} mode={mode} onAccepted={onAccepted} onRefused={onRefused} />;
   } else {
-    body = <IntroView mode={mode} module={quizModule} attempts={attempts} questions={questions} onStart={start} closedReason={closedReason} />;
+    body = <IntroView mode={mode} lesson={quizLesson} attempts={attempts} questions={questions} onStart={start} closedReason={closedReason} />;
   }
 
   return (
@@ -277,16 +277,16 @@ const Centered: React.FC<{ children: React.ReactNode }> = ({ children }) => <div
 const Card: React.FC<{ children: React.ReactNode; testId?: string }> = ({ children, testId }) => (
   <div className="bg-surface text-text rounded-2xl border border-border shadow-elevated p-6 sm:p-8 space-y-5" data-testid={testId}>{children}</div>
 );
-const BackToCourse: React.FC<{ mode: string; moduleKey?: string | null; label?: string }> = ({ mode, moduleKey, label = 'Back to the course' }) => (
-  <Link to={hubPath(mode, moduleKey)} data-testid="quiz-back" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
+const BackToCourse: React.FC<{ mode: string; lessonKey?: string | null; label?: string }> = ({ mode, lessonKey, label = 'Back to the course' }) => (
+  <Link to={hubPath(mode, lessonKey)} data-testid="quiz-back" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
     <ArrowLeft className="w-4 h-4" aria-hidden="true" /><span>{label}</span>
   </Link>
 );
 
 const IntroView: React.FC<{
-  mode: 'online' | 'offline'; module: LevelModule; attempts: QuizAttemptSummary[]; questions: Questions; onStart: () => void; closedReason: string | null;
-}> = ({ mode, module, attempts, questions, onStart, closedReason }) => {
-  const block = module.quizBlock;
+  mode: 'online' | 'offline'; lesson: Lesson; attempts: QuizAttemptSummary[]; questions: Questions; onStart: () => void; closedReason: string | null;
+}> = ({ mode, lesson, attempts, questions, onStart, closedReason }) => {
+  const block = lesson.quizBlock;
   const latest = attempts.length ? attempts[attempts.length - 1] : null;
   const [showReview, setShowReview] = useState(false);
   const count = questions.status === 'ready' ? questions.items.length : null;
@@ -295,7 +295,7 @@ const IntroView: React.FC<{
     <div className="space-y-5" data-testid="quiz-intro">
       <Card>
         <div className="space-y-2">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-accent">Module {module.number} · Assessment</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-accent">Lesson {lesson.number} · Assessment</p>
           <h2 className="text-xl sm:text-2xl font-extrabold text-primary tracking-tight">{block?.heading}</h2>
           <p className="text-sm text-secondary">{block?.intro}</p>
         </div>
@@ -310,7 +310,7 @@ const IntroView: React.FC<{
           <button type="button" onClick={onStart} data-testid="quiz-begin" disabled={questions.status !== 'ready'} className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-subtle disabled:opacity-50 ${accent}`}>
             <span>{latest ? 'Retake quiz' : 'Start quiz'}</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
-          <BackToCourse mode={mode} moduleKey={module.key} />
+          <BackToCourse mode={mode} lessonKey={lesson.key} />
         </div>
         {questions.status === 'error' && <p role="alert" className="text-xs text-rose-700">{questions.error.message}</p>}
       </Card>
@@ -365,7 +365,7 @@ const ActiveQuiz: React.FC<{
     setSubmitting(false);
     if (r.ok) { onAccepted(r.value); return; }
     if (REFUSED.has(r.error.kind)) {
-      onRefused(r.error.kind === 'order' ? 'The quiz could not be submitted because an earlier module is not complete. No attempt was recorded.'
+      onRefused(r.error.kind === 'order' ? 'The quiz could not be submitted because an earlier lesson is not complete. No attempt was recorded.'
         : r.error.kind === 'reading_required' ? 'The quiz could not be submitted because the reading is not confirmed yet. Confirm the reading, then start the quiz again. No attempt was recorded.'
         : r.error.message);
       return;
@@ -455,12 +455,12 @@ const ActiveQuiz: React.FC<{
 };
 
 const ResultView: React.FC<{
-  mode: 'online' | 'offline'; module: LevelModule; modules: LevelModule[]; attempt: QuizAttemptSummary; attemptCount: number;
+  mode: 'online' | 'offline'; lesson: Lesson; lessons: Lesson[]; attempt: QuizAttemptSummary; attemptCount: number;
   questions: Questions; onRetake: () => void; ackPending: boolean;
-}> = ({ mode, module, modules, attempt, attemptCount, questions, onRetake, ackPending }) => {
-  const block = module.quizBlock;
-  const idx = modules.findIndex((m) => m.key === module.key);
-  const next = idx >= 0 ? modules[idx + 1] ?? null : null;
+}> = ({ mode, lesson, lessons, attempt, attemptCount, questions, onRetake, ackPending }) => {
+  const block = lesson.quizBlock;
+  const idx = lessons.findIndex((m) => m.key === lesson.key);
+  const next = idx >= 0 ? lessons[idx + 1] ?? null : null;
   const canContinue = !ackPending && !!next && next.state !== 'locked';
   const accent = mode === 'online' ? 'bg-accent hover:bg-accent-hover' : 'bg-primary hover:bg-slate-800';
   const [reviewing, setReviewing] = useState(false);
@@ -483,7 +483,7 @@ const ResultView: React.FC<{
               <span>Continue to {next.number}. {next.title}</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           ) : (
-            <Link to={hubPath(mode, module.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
+            <Link to={hubPath(mode, lesson.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
               <span>Back to the course</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           )}
@@ -575,7 +575,7 @@ const ExamWarnings: React.FC<{ fullscreenLeft: boolean; away: number; back: bool
 };
 
 /** Answers + explanations for ONE submitted attempt of the caller (server: get_my_quiz_review). */
-const ReviewList: React.FC<{ attemptId: number; items: QuizQuestion[]; intro: string }> = ({ attemptId, items, intro }) => {
+export const ReviewList: React.FC<{ attemptId: number; items: QuizQuestion[]; intro: string }> = ({ attemptId, items, intro }) => {
   const [review, setReview] = useState<{ status: 'loading' } | { status: 'ready'; items: QuizReviewItem[] } | { status: 'error'; error: CurriculumError }>({ status: 'loading' });
   const load = useCallback(async () => {
     setReview({ status: 'loading' });

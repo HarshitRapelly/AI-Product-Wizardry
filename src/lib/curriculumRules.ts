@@ -8,7 +8,7 @@ import type { CourseSubtopic, LessonProgressRow, QuizAttemptSummary } from './cu
  *  - A subtopic is DONE when its acknowledgment is completed and, if it has a
  *    quiz, at least one attempt exists (the first submission counts forever).
  *  - Subtopics are completed in order (by position).
- *  - A level is complete when it has subtopics and all of them are done.
+ *  - A module is complete when it has subtopics and all of them are done.
  */
 export type SubtopicState = 'done' | 'available' | 'locked';
 
@@ -57,7 +57,7 @@ export function defaultSubtopicId(statuses: SubtopicStatus[]): string | null {
   return (statuses.find((s) => s.state !== 'done') ?? statuses[statuses.length - 1]).subtopic.id;
 }
 
-export function isLevelComplete(statuses: SubtopicStatus[]): boolean {
+export function isModuleComplete(statuses: SubtopicStatus[]): boolean {
   return statuses.length > 0 && statuses.every((s) => s.state === 'done');
 }
 
