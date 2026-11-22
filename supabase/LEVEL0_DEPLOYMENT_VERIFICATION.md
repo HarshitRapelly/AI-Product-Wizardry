@@ -125,7 +125,7 @@ registrations keep `college_id_number = NULL`; nobody is marked complete).
 2. Deploy the new frontend and smoke-test it.
 3. **Migration 11** (reading prerequisite — see above).
 4. **Migration 13.** The frontend already keeps Levels 1–11 locked on its own
-   (`src/lib/levelStatus.ts`), so Migration 13 can follow at any time; it adds the server-side
+   (`src/lib/moduleStatus.ts`, formerly `levelStatus.ts`), so Migration 13 can follow at any time; it adds the server-side
    enforcement (API writes, quiz submissions, content reads).
 
 ## Verify (read-only, safe on production)
@@ -140,7 +140,7 @@ transaction and roll back — not on production).
 ```sql
 update public.curriculum_level_releases set released = true, updated_at = now() where level_id = 2; -- Level 1
 ```
-and add `2` to `RELEASED_LEVEL_IDS` in `src/lib/levelStatus.ts` (then deploy). Both are needed:
+and add `2` to `RELEASED_MODULE_IDS` in `src/lib/moduleStatus.ts` (after migration 20261121000600 the table is `curriculum_module_releases` / column `module_id`; see `supabase/REDESIGN_RELEASE.md`) (then deploy). Both are needed:
 the database enforces, the app displays.
 
 ---

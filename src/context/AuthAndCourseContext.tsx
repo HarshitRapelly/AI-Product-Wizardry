@@ -1,19 +1,19 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { User, LearningMode, PaymentDetails, QuizAttempt, AttendanceRecord, LeaderboardStudent } from '../types';
-import { INITIAL_ATTENDANCE_RECORDS, INITIAL_LEADERBOARD } from '../data/mockData';
+import { User, LearningMode, PaymentDetails, QuizAttempt } from '../types';
 import { useAuth, type SaveModeResult } from './AuthContext';
 import { userKey, readStored, writeStored, clearUserData } from '../lib/userStorage';
+import { effectiveLearningMode } from '../lib/learningMode';
 import { saveSimulatedPayment, clearSimulatedPayment } from '../services/paymentService';
 import { fetchMyCourseProgress, type CourseProgressState } from '../services/progressService';
-import { fetchMyLevelProgress } from '../services/curriculumService';
-import type { LevelProgressRow } from '../lib/curriculumTypes';
+import { fetchMyModuleProgress } from '../services/curriculumService';
+import type { ModuleProgressRow } from '../lib/curriculumTypes';
 
-export type LevelProgressState =
-  | { status: 'loading'; rows: LevelProgressRow[] }
-  | { status: 'ready'; rows: LevelProgressRow[] }
+export type ModuleProgressState =
+  | { status: 'loading'; rows: ModuleProgressRow[] }
+  | { status: 'ready'; rows: ModuleProgressRow[] }
   /** my_level_progress() not deployed yet (Migration 9 not applied). */
-  | { status: 'unavailable'; rows: LevelProgressRow[] }
-  | { status: 'error'; rows: LevelProgressRow[]; message: string };
+  | { status: 'unavailable'; rows: ModuleProgressRow[] }
+  | { status: 'error'; rows: ModuleProgressRow[]; message: string };
 
 export interface TopicProgressItem {
   videoWatched: boolean;
@@ -22,7 +22,7 @@ export interface TopicProgressItem {
   readingCompleted: boolean;
 }
 
-export type Level1TopicsState = Record<number, TopicProgressItem>;
+export type Module1TopicsState = Record<number, TopicProgressItem>;
 
 interface AuthAndCourseContextType {
   // Identity — from Supabase Auth + profiles (via AuthContext)
@@ -39,10 +39,8 @@ interface AuthAndCourseContextType {
   // Progress & State (per-user localStorage until Stages 4–6 move them to the database)
   readingCompleted: boolean;
   quizAttempt: QuizAttempt | null;
-  registeredClassIds: string[];
-  attendanceRecords: AttendanceRecord[];
   watchedSessionIds: string[];
-  topicProgress: Level1TopicsState;
+  topicProgress: Module1TopicsState;
 
   // Actions
   logout: () => void;
@@ -52,12 +50,9 @@ interface AuthAndCourseContextType {
   toggleReadingCompleted: () => void;
   submitQuizAttempt: (selectedAnswers: Record<number, number>, totalQuestions: number, correctAnswersCount: number) => QuizAttempt;
   retakeQuiz: () => void;
-  registerClass: (classId: string) => void;
-  unregisterClass: (classId: string) => void;
-  markAttendance: (sessionTitle?: string) => void;
   markSessionWatched: (sessionId: string) => void;
 
-  // Topic Level 1 sequential progress
+  // Topic Module 1 sequential progress
   getTopicProgress: (topicId: number) => TopicProgressItem;
   markTopicVideoWatched: (topicId: number) => void;
   markTopicQuizCompleted: (topicId: number, score?: number) => void;
@@ -72,15 +67,11 @@ interface AuthAndCourseContextType {
   courseProgressPercentage: number;
   /** Re-reads the server value (e.g. after progress is recorded). */
   refreshCourseProgress: () => Promise<void>;
-  /** Per-level counts and unlock state from my_level_progress() (level_id 1 = "Level 0"). */
-  levelProgress: LevelProgressState;
-  /** Re-reads overall and per-level progress together (after any successful progress write). */
+  /** Per-module counts and unlock state from my_level_progress() (level_id 1 = "Module 0"). */
+  moduleProgress: ModuleProgressState;
+  /** Re-reads overall and per-module progress together (after any successful progress write). */
   refreshProgress: () => Promise<void>;
 
-  // Computed values
-  totalPoints: number;
-  attendancePercentage: number;
-  getEnrichedLeaderboard: () => LeaderboardStudent[];
 }
 
 export type ActionResult<T> = { ok: true; value: T } | { ok: false; message: string };
@@ -91,19 +82,16 @@ export type ActionResult<T> = { ok: true; value: T } | { ok: false; message: str
 const STORAGE_NAMES = {
   READING_COMPLETED: 'reading_completed',
   QUIZ_ATTEMPT: 'quiz_attempt',
-  REGISTERED_CLASSES: 'registered_classes',
-  ATTENDANCE: 'attendance_records',
   WATCHED_SESSIONS: 'watched_sessions',
   TOPIC_PROGRESS: 'topic_progress',
 };
 
-const DEFAULT_TOPIC_PROGRESS: Level1TopicsState = {
+const DEFAULT_TOPIC_PROGRESS: Module1TopicsState = {
   1: { videoWatched: false, quizCompleted: false, readingCompleted: false },
   2: { videoWatched: false, quizCompleted: false, readingCompleted: false },
   3: { videoWatched: false, quizCompleted: false, readingCompleted: false },
   4: { videoWatched: false, quizCompleted: false, readingCompleted: false }
 };
-const DEFAULT_REGISTERED_CLASSES = ['cls-101', 'cls-201'];
 const DEFAULT_WATCHED_SESSIONS = ['rec-101'];
 
 // Used only when a profile has no avatar (keeps the existing look).
@@ -150,8 +138,9 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     : null;
 
-  // 2. Learning mode — straight from profiles.learning_mode
-  const learningMode: LearningMode | null = profile?.learning_mode ?? null;
+  // 2. Learning mode — from profiles.learning_mode. Online is locked for everyone: a stored
+  //    'online' (historical) is treated as 'offline' for access; the stored value is not changed.
+  const learningMode: LearningMode | null = effectiveLearningMode(profile?.learning_mode);
 
   // 3. Simulated payment — from the student's Supabase account (user_metadata),
   //    loaded fresh before the student becomes 'ready'. Never read from browser
@@ -161,10 +150,8 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   // 4. Per-user, frontend-only demo state
   const [readingCompleted, setReadingCompleted] = useUserStoredState<boolean>(key(STORAGE_NAMES.READING_COMPLETED), false);
   const [quizAttempt, setQuizAttempt] = useUserStoredState<QuizAttempt | null>(key(STORAGE_NAMES.QUIZ_ATTEMPT), null);
-  const [registeredClassIds, setRegisteredClassIds] = useUserStoredState<string[]>(key(STORAGE_NAMES.REGISTERED_CLASSES), DEFAULT_REGISTERED_CLASSES);
-  const [attendanceRecords, setAttendanceRecords] = useUserStoredState<AttendanceRecord[]>(key(STORAGE_NAMES.ATTENDANCE), INITIAL_ATTENDANCE_RECORDS);
   const [watchedSessionIds, setWatchedSessionIds] = useUserStoredState<string[]>(key(STORAGE_NAMES.WATCHED_SESSIONS), DEFAULT_WATCHED_SESSIONS);
-  const [topicProgress, setTopicProgress] = useUserStoredState<Level1TopicsState>(key(STORAGE_NAMES.TOPIC_PROGRESS), DEFAULT_TOPIC_PROGRESS);
+  const [topicProgress, setTopicProgress] = useUserStoredState<Module1TopicsState>(key(STORAGE_NAMES.TOPIC_PROGRESS), DEFAULT_TOPIC_PROGRESS);
 
   // Actions
   const logout = () => {
@@ -223,27 +210,6 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const retakeQuiz = () => {
     setQuizAttempt(null);
-  };
-
-  const registerClass = (classId: string) => {
-    setRegisteredClassIds(prev => prev.includes(classId) ? prev : [...prev, classId]);
-  };
-
-  const unregisterClass = (classId: string) => {
-    setRegisteredClassIds(prev => prev.filter(id => id !== classId));
-  };
-
-  const markAttendance = (sessionTitle: string = 'Interactive Workshop & Teardown') => {
-    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const newRecord: AttendanceRecord = {
-      id: 'att-live-' + Date.now(),
-      date: today,
-      sessionTitle,
-      status: 'present',
-      time: 'Session Verified',
-      verificationCode: 'VERIFIED-' + Math.floor(1000 + Math.random() * 9000)
-    };
-    setAttendanceRecords(prev => [newRecord, ...prev]);
   };
 
   const markSessionWatched = (sessionId: string) => {
@@ -312,29 +278,29 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [uid, loadCourseProgress]);
   const refreshCourseProgress = useCallback(() => loadCourseProgress(uid), [uid, loadCourseProgress]);
 
-  // 6. Per-level progress and unlock state — public.my_level_progress().
+  // 6. Per-module progress and unlock state — public.my_level_progress().
   //    Same rules as above: server only, nothing stored locally, stale replies ignored.
-  const [levelProgress, setLevelProgress] = useState<LevelProgressState>({ status: 'loading', rows: [] });
-  const levelRequest = useRef(0);
-  const loadLevelProgress = useCallback(async (forUid: string | null) => {
-    const req = ++levelRequest.current;
-    if (!forUid) { setLevelProgress({ status: 'loading', rows: [] }); return; }
-    setLevelProgress((prev) => (prev.status === 'ready' ? prev : { status: 'loading', rows: [] }));
-    const r = await fetchMyLevelProgress();
-    if (req !== levelRequest.current) return;
-    if (r.ok) setLevelProgress({ status: 'ready', rows: r.value });
-    else if (r.error.kind === 'unavailable') setLevelProgress({ status: 'unavailable', rows: [] });
-    else setLevelProgress({ status: 'error', rows: [], message: r.error.message });
+  const [moduleProgress, setModuleProgress] = useState<ModuleProgressState>({ status: 'loading', rows: [] });
+  const moduleRequest = useRef(0);
+  const loadModuleProgress = useCallback(async (forUid: string | null) => {
+    const req = ++moduleRequest.current;
+    if (!forUid) { setModuleProgress({ status: 'loading', rows: [] }); return; }
+    setModuleProgress((prev) => (prev.status === 'ready' ? prev : { status: 'loading', rows: [] }));
+    const r = await fetchMyModuleProgress();
+    if (req !== moduleRequest.current) return;
+    if (r.ok) setModuleProgress({ status: 'ready', rows: r.value });
+    else if (r.error.kind === 'unavailable') setModuleProgress({ status: 'unavailable', rows: [] });
+    else setModuleProgress({ status: 'error', rows: [], message: r.error.message });
   }, []);
   useEffect(() => {
-    setLevelProgress({ status: 'loading', rows: [] });
-    void loadLevelProgress(uid);
-    return () => { levelRequest.current++; };
-  }, [uid, loadLevelProgress]);
-  /** Re-reads overall AND per-level progress (call after any successful progress write). */
+    setModuleProgress({ status: 'loading', rows: [] });
+    void loadModuleProgress(uid);
+    return () => { moduleRequest.current++; };
+  }, [uid, loadModuleProgress]);
+  /** Re-reads overall AND per-module progress (call after any successful progress write). */
   const refreshProgress = useCallback(async () => {
-    await Promise.all([loadCourseProgress(uid), loadLevelProgress(uid)]);
-  }, [uid, loadCourseProgress, loadLevelProgress]);
+    await Promise.all([loadCourseProgress(uid), loadModuleProgress(uid)]);
+  }, [uid, loadCourseProgress, loadModuleProgress]);
 
   const resetAllDemoData = async (): Promise<ActionResult<null>> => {
     // Order matters:
@@ -352,47 +318,8 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
     return { ok: true, value: null };
   };
 
-  // Computations
-  const attendedCount = attendanceRecords.filter(r => r.status === 'present').length;
-  const totalAttendanceConsidered = attendanceRecords.filter(r => r.status !== 'upcoming').length || 1;
-  const attendancePercentage = Math.round((attendedCount / totalAttendanceConsidered) * 100);
-
   // Overall course progress: the server value is the only source (no frontend formula).
   const courseProgressPercentage = courseProgress.status === 'ready' ? courseProgress.percentage : 0;
-
-  let points = 250;
-  if (readingCompleted) points += 300;
-  if (quizAttempt) {
-    points += (quizAttempt.score * 100);
-    if (quizAttempt.passed) points += 200;
-  }
-  if (learningMode === 'online') {
-    points += (watchedSessionIds.length * 75);
-    points += (attendedCount * 50);
-  } else {
-    points += (registeredClassIds.length * 80);
-  }
-
-  const totalPoints = points;
-
-  const getEnrichedLeaderboard = (): LeaderboardStudent[] => {
-    const currentStudent: LeaderboardStudent = {
-      rank: 4,
-      id: user?.id || 'current-user',
-      name: user ? `${user.name} (You)` : 'You (Current Fellow)',
-      avatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-      points: totalPoints,
-      levelsCompleted: quizAttempt?.passed && readingCompleted ? 1 : 0,
-      quizzesPassed: quizAttempt?.passed ? 1 : 0,
-      attendanceRate: learningMode === 'online' ? attendancePercentage : undefined,
-      badge: quizAttempt?.passed ? 'Product Wizard' : 'Apprentice',
-      isCurrentUser: true
-    };
-
-    const all = [...INITIAL_LEADERBOARD, currentStudent];
-    all.sort((a, b) => b.points - a.points);
-    return all.map((s, idx) => ({ ...s, rank: idx + 1 }));
-  };
 
   return (
     <AuthAndCourseContext.Provider
@@ -405,8 +332,6 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         learningMode,
         readingCompleted,
         quizAttempt,
-        registeredClassIds,
-        attendanceRecords,
         watchedSessionIds,
         logout,
         processPayment,
@@ -414,9 +339,6 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         toggleReadingCompleted,
         submitQuizAttempt,
         retakeQuiz,
-        registerClass,
-        unregisterClass,
-        markAttendance,
         markSessionWatched,
         topicProgress,
         getTopicProgress,
@@ -427,11 +349,8 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
         courseProgress,
         courseProgressPercentage,
         refreshCourseProgress,
-        levelProgress,
+        moduleProgress,
         refreshProgress,
-        totalPoints,
-        attendancePercentage,
-        getEnrichedLeaderboard,
       }}
     >
       {children}

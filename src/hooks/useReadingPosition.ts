@@ -6,7 +6,7 @@ import type { CourseSubtopic } from '../lib/curriculumTypes';
 export const POSITION_SAVE_INTERVAL_MS = 10_000;
 
 /** Kinds of failure after which this subtopic stops trying (retrying cannot help). */
-const GIVE_UP = new Set(['registration', 'auth', 'level_locked', 'invalid_request', 'unavailable']);
+const GIVE_UP = new Set(['registration', 'auth', 'module_locked', 'invalid_request', 'unavailable']);
 
 interface Options {
   subtopic: CourseSubtopic | null;

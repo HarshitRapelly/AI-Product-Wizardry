@@ -8,7 +8,7 @@
 export interface TextRun { t: string; b?: boolean; i?: boolean }
 
 export type ContentBlock =
-  | { type: 'heading'; level: 3; text: string }
+  | { type: 'heading'; module: 3; text: string }
   | { type: 'paragraph'; runs: TextRun[] }
   | { type: 'list'; ordered: boolean; items: TextRun[][] }
   | { type: 'table'; header: TextRun[][]; rows: TextRun[][][]; emphasizeLastRow?: boolean }
@@ -20,7 +20,7 @@ export type ContentBlock =
 
 export interface CourseSubtopic {
   id: string;
-  levelId: number;
+  moduleId: number;
   topicNumber: number;
   topicTitle: string;
   position: number;
@@ -34,7 +34,7 @@ export interface CourseSubtopic {
 
 export interface LessonProgressRow {
   lessonId: string;
-  levelId: number;
+  moduleId: number;
   isCompleted: boolean;
   completedAt: string | null;
   lastSectionId: string | null;
@@ -69,8 +69,8 @@ export interface QuizReviewItem {
   explanation: string | null;
 }
 
-export interface LevelProgressRow {
-  levelId: number; // 1 = "Level 0"
+export interface ModuleProgressRow {
+  moduleId: number; // 1 = "Module 0"
   totalItems: number;
   completedItems: number;
   completionFraction: number;
@@ -107,7 +107,7 @@ export function parseBlock(v: unknown): ContentBlock {
   if (!isObj(v) || !isStr(v.type)) return { type: 'invalid', reason: 'not a content block' };
   switch (v.type) {
     case 'heading':
-      return isNonEmptyStr(v.text) ? { type: 'heading', level: 3, text: v.text } : { type: 'invalid', reason: 'heading without text' };
+      return isNonEmptyStr(v.text) ? { type: 'heading', module: 3, text: v.text } : { type: 'invalid', reason: 'heading without text' };
     case 'paragraph': {
       const runs = parseRuns(v.runs);
       return runs ? { type: 'paragraph', runs } : { type: 'invalid', reason: 'paragraph runs' };
@@ -144,14 +144,14 @@ export function parseBlock(v: unknown): ContentBlock {
 /** A row from course_subtopics; null when required fields are missing or malformed. */
 export function parseSubtopic(v: unknown): CourseSubtopic | null {
   if (!isObj(v)) return null;
-  const levelId = toInt(v.level_id), topicNumber = toInt(v.topic_number), position = toInt(v.position);
-  if (!isNonEmptyStr(v.id) || levelId === null || topicNumber === null || position === null
+  const moduleId = toInt(v.module_id ?? v.level_id), topicNumber = toInt(v.topic_number), position = toInt(v.position);
+  if (!isNonEmptyStr(v.id) || moduleId === null || topicNumber === null || position === null
       || !isNonEmptyStr(v.topic_title) || !isNonEmptyStr(v.title) || !isNonEmptyStr(v.acknowledgment_text) || !Array.isArray(v.body)) {
     return null;
   }
   return {
     id: v.id,
-    levelId,
+    moduleId,
     topicNumber,
     topicTitle: v.topic_title,
     position,
@@ -166,11 +166,11 @@ export function parseSubtopic(v: unknown): CourseSubtopic | null {
 
 export function parseLessonProgress(v: unknown): LessonProgressRow | null {
   if (!isObj(v) || !isNonEmptyStr(v.lesson_id) || typeof v.is_completed !== 'boolean') return null;
-  const levelId = toInt(v.level_id);
-  if (levelId === null) return null;
+  const moduleId = toInt(v.module_id ?? v.level_id);
+  if (moduleId === null) return null;
   return {
     lessonId: v.lesson_id,
-    levelId,
+    moduleId,
     isCompleted: v.is_completed,
     completedAt: isStr(v.completed_at) ? v.completed_at : null,
     lastSectionId: isStr(v.last_section_id) ? v.last_section_id : null,
@@ -203,11 +203,11 @@ export function parseReviewItem(v: unknown): QuizReviewItem | null {
   return { questionId, position, selectedOption: sel, correctOption: cor, isCorrect: v.is_correct, explanation: isStr(v.explanation) ? v.explanation : null };
 }
 
-export function parseLevelProgress(v: unknown): LevelProgressRow | null {
+export function parseModuleProgress(v: unknown): ModuleProgressRow | null {
   if (!isObj(v)) return null;
-  const levelId = toInt(v.level_id), total = toInt(v.total_items), done = toInt(v.completed_items), frac = toNum(v.completion_fraction);
-  if (levelId === null || total === null || done === null || frac === null || typeof v.is_complete !== 'boolean' || typeof v.is_unlocked !== 'boolean') return null;
-  return { levelId, totalItems: total, completedItems: done, completionFraction: frac, isComplete: v.is_complete, isUnlocked: v.is_unlocked };
+  const moduleId = toInt(v.module_id ?? v.level_id), total = toInt(v.total_items), done = toInt(v.completed_items), frac = toNum(v.completion_fraction);
+  if (moduleId === null || total === null || done === null || frac === null || typeof v.is_complete !== 'boolean' || typeof v.is_unlocked !== 'boolean') return null;
+  return { moduleId, totalItems: total, completedItems: done, completionFraction: frac, isComplete: v.is_complete, isUnlocked: v.is_unlocked };
 }
 
 /** Section anchors used for reading position (≤ 80 chars, see lesson_progress.last_section_id). */

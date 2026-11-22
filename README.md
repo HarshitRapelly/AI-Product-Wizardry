@@ -1,124 +1,78 @@
-# AI Product Wizardry — Professional Academy (Prototype 01)
+# AI Product Wizardry — Learning Portal
 
-> **Executive Concept Prototype 01:** Clean, minimal, premium, professional, and corporate design language for executive EdTech product education.
-
-AI Product Wizardry is an executive education platform engineered specifically for Product Managers, Senior Architects, and Technology Leaders transitioning from deterministic code to probabilistic, AI-native software systems.
-
----
-
-## 1. Technical Stack & Architecture
-
-- **Core Framework:** React 18 with TypeScript
-- **Build Tool:** Vite 5
-- **Styling & Design System:** Tailwind CSS with custom executive slate/cobalt tokens
-- **Routing:** React Router v6 (SPA with full route guards for Auth, Payment, and Cohort Modality)
-- **Icons:** Lucide React
-- **Celebration Effects:** Canvas Confetti (celebratory payment & quiz completion)
-- **Document Generation:** jsPDF (official 2-page curriculum brochure specification)
-- **State Persistence:** LocalStorage API with simulated session management
-- **Deployment Target:** Vercel (includes `vercel.json` SPA rewrite rules)
+AI Product Wizardry is a six-month, 12-module program (Module 0 – Module 11) that adds product
+thinking to the technical skills of undergraduate students. This repository contains the public
+website and the student learning portal.
 
 ---
 
-## 2. Design System & Palette
+## 1. Technical stack
 
-Designed around a corporate, minimal, high-trust executive palette:
+- **Frontend:** React 18 + TypeScript, Vite 5, React Router v6, Tailwind CSS 3
+- **Design system:** `src/styles/wizardry.css` (ported from the approved reference design, scoped
+  under `.aiw`), fonts Source Serif 4 + Inter, icons in `src/components/aiw/Icon.tsx`
+- **Backend:** Supabase (Auth, Postgres with Row Level Security, Storage)
+- **Deployment:** Vercel (`vercel.json` rewrites every route to the SPA)
 
-| Token | Hex Value | Application |
-|---|---|---|
-| **PRIMARY COLOR** | `#0F172A` (Deep Slate / Navy) | Primary branding, headers, executive cards, active badges |
-| **SECONDARY COLOR** | `#334155` (Slate 700) | Secondary text, subtitled descriptions, labels |
-| **ACCENT COLOR** | `#2563EB` (Cobalt Royal) | Primary call-to-actions, progress rings, links, highlights |
-| **BACKGROUND COLOR** | `#F8FAFC` (Canvas Slate 50) | Base page background canvas |
-| **SURFACE COLOR** | `#FFFFFF` (Pure White) | Elevated cards, forms, modals |
-| **TEXT COLOR** | `#0F172A` (Slate 900) | High-contrast readable typography |
-| **MUTED TEXT COLOR** | `#64748B` (Slate 500) | Timestamps, metadata, secondary instructions |
-| **BORDER COLOR** | `#E2E8F0` (Slate 200) | Restrained dividing borders |
-| **TYPOGRAPHY** | `Inter`, `system-ui`, sans-serif | Balanced scale, generous whitespace, accessible contrast |
+Database changes live in `supabase/migrations/` (never edited once applied), their rollbacks in
+`supabase/rollback/`, and read-only verification / behaviour tests in `supabase/tests/`.
+Release procedure: `supabase/REDESIGN_RELEASE.md`.
 
 ---
 
-## 3. Complete Information Architecture & Routes
+## 2. Routes
 
-### Public Pages
-- `/` — Homepage: Executive hero, program overview, interactive telemetry visual, 12-level curriculum highlights, learning journey, brochure download banner, FAQs, and corporate footer.
-- `/login` — Student authentication with demo pre-fill, form validation, show/hide password toggle, simulated Google SSO, and forgot-password modal.
-- `/register` — Account creation with full name, email, password validation, and simulated Google SSO.
-- `/checkout` — Executive checkout ($999 USD tuition), order summary, student identity verification, payment method selector (Card, Corporate PO, Digital Wallet), and trust seals.
-- `/payment-success` — Official transaction confirmation, generated mock reference ID, celebratory confetti, and onward navigation to modality selection.
-- `/choose-learning-mode` — High-impact decision card interface between **Online Learning** and **Offline Learning**.
+### Public
+- `/` — Home page (hero, three questions, six-month journey, why choose the program, certificate, contact and CTA bands)
+- `/explore` — Program details: curriculum, certificate rules, fee, FAQs, brochure, admissions contact
+- `/contact` — Contact form, stored in Supabase (`public.submit_enquiry` → `public.enquiries`)
+- `/login`, `/register`, `/auth/callback`, `/reset-password`
 
-### Online Learning Portal (`/online/*`)
-- `/online/dashboard` — Live dashboard featuring personalized greeting, digital attendance tracker (attendance %, classes attended, interactive "Mark Today's Attendance" demo), Level 01 hub, upcoming Zoom masterclasses, and cohort leaderboard preview.
-- `/online/levels` — 12-level curriculum roadmap (Level 01 unlocked; Levels 02–12 locked with prerequisite guidance).
-- `/online/level/1` — Level 01 hub with direct links to Reading Material, Recorded Sessions, and Practice Quiz.
-- `/online/level/1/reading` — Interactive 4-part reading handbook with executive PRD pro-tips, key takeaways, and an interactive "Mark as Completed" button.
-- `/online/level/1/recordings` — Video masterclass lectures from Anthropic Research & DeepScale AI fellows, with interactive modal video player.
-- `/online/level/1/quiz` — 5 scenario-based MCQs with instant scoring, architectural explanations, pass/fail thresholds, and retake functionality.
-- `/online/classes` — Schedule of upcoming live online Zoom masterclasses with interactive seat reservation toggle.
-- `/online/leaderboard` — Real-time cohort standings table and podium highlighting the current logged-in fellow.
-- `/online/profile` — Student profile, enrollment status, quiz metrics, and prototype demo mode switcher.
+### Portal (`/online/*` for existing online students, `/offline/*` for everyone else)
+- `dashboard` — Journey bar, welcome, Spell of the Day, continue learning (Module 0), upcoming events, cohort card
+- `modules`, `module/0` (lessons + quizzes), `module/0/quiz/:quizId`, `module/1` (locked until released)
+- `calendar` — Published cohort events (`public.cohort_events`)
+- `assignments`, `grades`
+- `cohort` — Cohort profile editor and opt-in directory (`public.cohort_profiles`, `public.list_cohort_profiles()`)
+- `profile` — Account, AI Wizardry Student ID (`public.my_student_code()`), progress, registration details
 
-### Offline Learning Portal (`/offline/*`)
-- `/offline/dashboard` — Campus-based dashboard. **Strictly adheres to requirement: NO attendance tracker, NO attendance percentage, NO Mark Attendance button, and NO recorded sessions.** Displays physical campus lecture coordinates, Level 01 hub, in-person seminars, and campus leaderboard.
-- `/offline/levels` — 12-level roadmap with in-person seminar syllabus.
-- `/offline/level/1` — Campus Level 01 hub featuring **Reading Material and Practice Quiz ONLY** (no recorded sessions).
-- `/offline/level/1/reading` — Pre-reading curriculum handbook for in-person workshops.
-- `/offline/level/1/quiz` — In-classroom scenario evaluation quiz with instant grading and review.
-- `/offline/classes` — Physical campus schedule with room coordinates (Lecture Hall 4B, Lab 204) and interactive seat reservation.
-- `/offline/leaderboard` — Physical cohort leaderboard.
-- `/offline/profile` — Campus profile and prototype switcher.
+Old links keep working: `/:mode/level/...` → `/:mode/module/...`, `/:mode/levels` → `/:mode/modules`,
+`/:mode/classes` → `/:mode/calendar`, `/:mode/leaderboard` → `/:mode/dashboard`.
 
 ---
 
-## 4. Key Behavioral & Architectural Safeguards
+## 3. Key rules
 
-1. **Frontend Route Guards:**
-   - Unauthenticated visitors accessing `/checkout` or any `/online/*` / `/offline/*` routes are redirected to `/login`.
-   - Unpaid users accessing portals or mode selectors are redirected to `/checkout`.
-   - Modality Guard: An online student accessing an offline route (or vice versa) is presented with cohort guidance and redirected to their active dashboard.
-2. **Persistent LocalStorage State:**
-   - Mock credentials, payment status, transaction ID, chosen modality, class registrations, quiz attempts/scores, reading completion, and attendance records persist across page reloads.
-3. **Official PDF Brochure:**
-   - Generated at `/public/assets/ai-product-wizardry-brochure.pdf` and verified in `dist/assets/ai-product-wizardry-brochure.pdf`. Clicking any "Download Brochure" button triggers a direct download of this real document.
-4. **Cohort Switching & Prototype Reset:**
-   - Reviewers can seamlessly switch between Online and Offline modes via the "Switch Cohort" button in the navigation header or profile screen.
-   - A "Reset Prototype Data" button is available in the profile and header to wipe localStorage and restart testing fresh.
+1. **Module release lock.** A module opens only when it is released in `public.curriculum_module_releases`
+   (database, enforced by triggers, restrictive RLS policies and `submit_quiz_attempt`) **and** listed in
+   `RELEASED_MODULE_IDS` (`src/lib/moduleStatus.ts`). Only Module 0 is released.
+2. **Offline-only registration.** New registrations are offline (enforced by `private.normalize_registration`);
+   online mode shows "Unlocking soon". Existing students keep their mode; students cannot change their mode
+   (trigger `private.profiles_learning_mode_guard`).
+3. **No invented data.** Grades, assignments, events and cohort members come only from the database; empty
+   states are shown when nothing exists.
+4. **Cohort privacy.** Cohort profiles are opt-in (hidden by default). The directory returns only the name,
+   headline, bio, product idea and LinkedIn link of students who chose to share.
+5. **Payment is simulated.** The enrollment record is stored in the student's Supabase user metadata; there is
+   no payment gateway, invoice or email service yet.
 
 ---
 
-## 5. Local Setup & Execution Instructions
+## 4. Local setup
 
-### Prerequisites
-- Node.js version 18+ (tested on Node v22.15.0)
-- npm version 9+
-
-### Steps
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Run local development server
-npm run dev
+npm run dev      # http://localhost:3000 (needs VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env.local)
+npm run build    # type-checks (tsc -b) and builds to /dist
 ```
-Navigate to `http://localhost:3000` in your web browser.
 
-### Building for Production
-```bash
-npm run build
-```
-This generates the optimized production bundle in `/dist` with zero TypeScript errors.
+`npm run build` rewrites the committed `tsconfig.tsbuildinfo` cache; restore it with
+`git checkout -- tsconfig.tsbuildinfo` if you did not mean to change it.
 
 ---
 
-## 6. Vercel Deployment Instructions
+## 5. Deployment (Vercel)
 
-1. Push this repository to GitHub or GitLab.
-2. In the [Vercel Dashboard](https://vercel.com), click **Add New** > **Project** and import the repository.
-3. Keep default settings:
-   - **Framework Preset:** Vite
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-   - **Install Command:** `npm install`
-4. The included `vercel.json` ensures all client-side SPA routes (e.g. `/online/dashboard`, `/offline/level/1/quiz`) resolve directly to `/index.html` without 404 errors.
-5. Click **Deploy**. Your EdTech prototype will be live globally.
+Framework preset Vite, build command `npm run build`, output directory `dist`. Set the two `VITE_SUPABASE_*`
+environment variables per environment. Follow `supabase/REDESIGN_RELEASE.md` for the database steps and the
+required deployment order.

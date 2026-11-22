@@ -1,6 +1,9 @@
 -- =============================================================================
 -- Migration 11 verification — reading prerequisite for subtopic quizzes
 -- Run AFTER Migrations 1–11 (SQL Editor / psql). Local / staging databases.
+-- POST-RENAME VERSION (20261121000600): uses module_id / my_module_progress and
+-- registers students as 'offline' (20261121000200). Requires every migration up to
+-- 20261121000600.
 -- =============================================================================
 -- Creates throw-away users inside a transaction, impersonates them like the
 -- Data API (role + JWT claims), then ROLLS BACK. Nothing is persisted.
@@ -35,7 +38,7 @@ begin
     perform private.apply_registration(('00000000-0000-4000-8000-0000000011' || u.n)::uuid,
       jsonb_build_object('full_name', 'Reading ' || u.n, 'mobile', u.mobile, 'date_of_birth', '2003-03-03', 'city', 'Kochi',
         'college', 'CUSAT', 'degree', 'BCA', 'branch', 'Apps', 'year_of_study', '2nd year', 'graduation_year', 2028,
-        'learning_mode', 'online', 'preferred_slot', 'Weekday evenings', 'main_device', 'Laptop', 'agreed_to_code_of_conduct', true),
+        'learning_mode', 'offline', 'preferred_slot', 'Weekday evenings', 'main_device', 'Laptop', 'agreed_to_code_of_conduct', true),
       'email_signup');
   end loop;
 end $$;
@@ -47,14 +50,14 @@ declare uid uuid; id text;
 begin
   foreach uid in array array['00000000-0000-4000-8000-0000000011a2'::uuid, '00000000-0000-4000-8000-0000000011a3'::uuid] loop
     foreach id in array array['l0-program-introduction', 'l0-program-outline', 'l0-completion-requirements', 'l0-faqs'] loop
-      insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed) values (uid, 1, id, 'reading', true);
+      insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed) values (uid, 1, id, 'reading', true);
     end loop;
     -- an attempt recorded before Migration 11 (no reading row existed then)
-    insert into public.quiz_attempts (user_id, quiz_id, level_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
+    insert into public.quiz_attempts (user_id, quiz_id, module_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
     values (uid, 'l0-plagiarism-quiz', 1, 1, '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":0,"10":0}', 7, 10, 70, null, null, gen_random_uuid());
   end loop;
-  insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed) values ('00000000-0000-4000-8000-0000000011a3', 1, 'l0-plagiarism', 'reading', true);
-  insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed) values ('00000000-0000-4000-8000-0000000011a3', 1, 'l0-system-requirements', 'reading', true);
+  insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed) values ('00000000-0000-4000-8000-0000000011a3', 1, 'l0-plagiarism', 'reading', true);
+  insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed) values ('00000000-0000-4000-8000-0000000011a3', 1, 'l0-system-requirements', 'reading', true);
 end $$;
 
 -- ===========================================================================
@@ -105,12 +108,12 @@ do $$
 declare a public.quiz_attempts%rowtype; a2 public.quiz_attempts%rowtype;
 begin
   -- Legacy lesson ids that merely end in '-reading' are not affected by the new guard
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-topic-1-reading', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-topic-1-reading', 'reading', true);
   update public.lesson_progress set is_completed = false where lesson_id = 'l0-topic-1-reading';  -- legacy toggle still allowed
 
   -- Reading confirmation before subtopics 1–4 → refused
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
     raise exception 'FAIL: reading confirmed before subtopics 1–4';
   exception when insufficient_privilege then
     if sqlerrm not like '%acknowledge the previous subtopic first%' then raise exception 'FAIL: wrong error for early reading: %', sqlerrm; end if;
@@ -123,10 +126,10 @@ begin
     if sqlerrm not like '%acknowledge the earlier subtopics before this quiz%' then raise exception 'FAIL: wrong error: %', sqlerrm; end if;
   end;
 
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-completion-requirements', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-faqs', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-completion-requirements', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-faqs', 'reading', true);
 
   -- DIRECT RPC BYPASS: subtopics 1–4 done, reading NOT confirmed → refused, nothing stored
   begin
@@ -141,14 +144,14 @@ begin
     raise exception 'FAIL: invalid answers reached scoring without the reading';
   exception when insufficient_privilege then null; end;
   -- … an unconfirmed (is_completed false) reading row does not count
-  insert into public.lesson_progress (level_id, lesson_id, item_type, last_section_id) values (1, 'l0-plagiarism-reading', 'reading', 'b3');
+  insert into public.lesson_progress (module_id, lesson_id, item_type, last_section_id) values (1, 'l0-plagiarism-reading', 'reading', 'b3');
   begin
     perform public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());
     raise exception 'FAIL: an unconfirmed reading row satisfied the prerequisite';
   exception when insufficient_privilege then null; end;
   -- … the subtopic acknowledgment cannot be used to get around it either (quiz still required first)
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
     raise exception 'FAIL: plagiarism acknowledged before the quiz';
   exception when insufficient_privilege then
     if sqlerrm not like '%submit the quiz before acknowledging%' then raise exception 'FAIL: wrong error: %', sqlerrm; end if;
@@ -159,31 +162,31 @@ begin
 
   -- Reading confirmation: wrong level / wrong item type refused
   begin
-    update public.lesson_progress set level_id = 2 where lesson_id = 'l0-plagiarism-reading';
+    update public.lesson_progress set module_id = 2 where lesson_id = 'l0-plagiarism-reading';
     raise exception 'FAIL: reading row moved to another level';
   exception when insufficient_privilege or check_violation then null; end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'video', true)
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'video', true)
     on conflict (user_id, lesson_id) do update set item_type = excluded.item_type, is_completed = excluded.is_completed;
     raise exception 'FAIL: reading row with item_type video accepted';
   exception when insufficient_privilege or check_violation then null; end;
 
   -- Normal progression: confirm the reading (upsert, as the app does)
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true)
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true)
   on conflict (user_id, lesson_id) do update set is_completed = excluded.is_completed;
   if not exists (select 1 from public.lesson_progress where lesson_id = 'l0-plagiarism-reading' and is_completed and completed_at is not null and last_section_id = 'b3') then
     raise exception 'FAIL: reading confirmation not stored correctly';
   end if;
   -- It is not a subtopic: progress unchanged (4 of 6)
-  if (select completed_items from public.my_level_progress() where level_id = 1) <> 4 or public.my_course_progress() <> 66.7 then
-    raise exception 'FAIL: reading confirmation changed progress (% / %)', (select completed_items from public.my_level_progress() where level_id = 1), public.my_course_progress();
+  if (select completed_items from public.my_module_progress() where module_id = 1) <> 4 or public.my_course_progress() <> 66.7 then
+    raise exception 'FAIL: reading confirmation changed progress (% / %)', (select completed_items from public.my_module_progress() where module_id = 1), public.my_course_progress();
   end if;
   -- One-way, re-confirming is harmless
   begin
     update public.lesson_progress set is_completed = false where lesson_id = 'l0-plagiarism-reading';
     raise exception 'FAIL: reading confirmation undone';
   exception when insufficient_privilege then null; end;
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true)
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true)
   on conflict (user_id, lesson_id) do update set is_completed = excluded.is_completed;
 
   -- Still validated after the gate: 9 answers refused
@@ -214,17 +217,17 @@ begin
   exception when insufficient_privilege then null; end;
 
   -- Final acknowledgment after the quiz (Migration 9 rule unchanged) → subtopic done
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
   -- Level 0 complete (Level 1 unlocking is release-dependent from Migration 13 on and is
-  -- checked in curriculum_checks.sql for 1–11 and level_release_checks.sql for 1–13)
-  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_level_progress() where level_id = 1) then
+  -- checked in curriculum_checks.sql and module_release_checks.sql)
+  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_module_progress() where module_id = 1) then
     raise exception 'FAIL: Level 0 not complete after the full sequence';
   end if;
 
   -- Retake later: new attempt, completion unchanged
   a2 := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":1,"2":1,"3":1,"4":1,"5":1,"6":1,"7":1,"8":1,"9":1,"10":1}', gen_random_uuid());
-  if a2.attempt_number <> 3 or (select completed_items from public.my_level_progress() where level_id = 1) <> 6 then
+  if a2.attempt_number <> 3 or (select completed_items from public.my_module_progress() where module_id = 1) <> 6 then
     raise exception 'FAIL: retake';
   end if;
 end $$;
@@ -245,9 +248,9 @@ begin
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());
   if a.attempt_number <> 2 or a.score <> 10 then raise exception 'FAIL: E retake: %', row_to_json(a); end if;
   -- … and can finish: acknowledgment (attempt exists) and the reading confirmation (the app writes it too)
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
-  if (select completed_items from public.my_level_progress() where level_id = 1) <> 5 then
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
+  if (select completed_items from public.my_module_progress() where module_id = 1) <> 5 then
     raise exception 'FAIL: E plagiarism not complete';
   end if;
 end $$;
@@ -261,7 +264,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 do $$
 declare a public.quiz_attempts%rowtype;
 begin
-  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_level_progress() where level_id = 1) then
+  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_module_progress() where module_id = 1) then
     raise exception 'FAIL: D lost completion after Migration 11';
   end if;
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());
@@ -277,21 +280,21 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000011a4","role":"authenticated"}', true);
 do $$
 begin
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-completion-requirements', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-faqs', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-completion-requirements', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-faqs', 'reading', true);
   begin
     perform public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());
     raise exception 'FAIL: O used another student''s reading confirmation';
   exception when insufficient_privilege then null; end;
   begin
-    insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed)
+    insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed)
     values ('00000000-0000-4000-8000-0000000011a1', 1, 'l0-plagiarism-reading', 'reading', true);
     raise exception 'FAIL: O wrote a row for S';
   exception when insufficient_privilege or unique_violation then null; end;
   -- O's retry after confirming works normally
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
   perform public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());
 end $$;
 reset role;
@@ -304,7 +307,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 do $$
 begin
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
     raise exception 'FAIL: unregistered user confirmed a reading';
   exception when insufficient_privilege then
     if sqlerrm not like 'registration_required%' then raise exception 'FAIL: wrong error for unregistered: %', sqlerrm; end if;
@@ -324,7 +327,7 @@ reset role;
 do $$
 begin
   begin
-    insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed)
+    insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed)
     values ('00000000-0000-4000-8000-0000000011a5', 1, 'l0-plagiarism-reading', 'reading', true);
     raise exception 'FAIL: server-side reading confirmation skipped the order rule';
   exception when insufficient_privilege then null; end;

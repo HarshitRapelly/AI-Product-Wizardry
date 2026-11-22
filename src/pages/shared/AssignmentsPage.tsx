@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PortalLayout } from '../../layouts/PortalLayout';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { userKey } from '../../lib/userStorage';
 
@@ -19,10 +20,10 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-import { COURSE_LEVELS } from '../../data/mockData';
+import { COURSE_MODULES } from '../../data/mockData';
 import { fetchSubtopics } from '../../services/curriculumService';
 import { fetchMyAttempts } from '../../services/quizService';
-import { isLevelReleased } from '../../lib/levelStatus';
+import { isModuleReleased } from '../../lib/moduleStatus';
 import type { CourseSubtopic, QuizAttemptSummary } from '../../lib/curriculumTypes';
 
 interface AssignmentsPageProps {
@@ -40,43 +41,43 @@ interface SubmittedAssignment {
 interface QuizHistoryEntry {
   attempt: QuizAttemptSummary;
   subtopic: CourseSubtopic;
-  levelLabel: string;
+  moduleLabel: string;
 }
 
 type QuizHistoryState =
   | { status: 'idle' }
   | { status: 'loading' }
-  /** failedLevels: levels whose subtopics could not be loaded (their attempts may be missing). */
-  | { status: 'ready'; entries: QuizHistoryEntry[]; failedLevels: string[] }
+  /** failedModules: modules whose subtopics could not be loaded (their attempts may be missing). */
+  | { status: 'ready'; entries: QuizHistoryEntry[]; failedModules: string[] }
   | { status: 'error'; message: string };
 
 /**
  * Loads the signed-in student's quiz attempts (Supabase; RLS returns only their own
  * rows) and matches each one to its curriculum subtopic by quiz id:
- *   1. fetchSubtopics() for every level in COURSE_LEVELS (database level id = COURSE_LEVELS id),
+ *   1. fetchSubtopics() for every module in COURSE_MODULES (database module id = COURSE_MODULES id),
  *   2. unique, non-null quiz ids of those subtopics,
  *   3. fetchMyAttempts(quizIds), newest first.
  * Nothing is computed or invented here: score, total, percentage and passed come from
  * the server attempt. A failed request is reported (never shown as an empty history).
  */
 async function loadQuizHistory(): Promise<QuizHistoryState> {
-  const results = await Promise.all(COURSE_LEVELS.map((level) => fetchSubtopics(level.id)));
+  const results = await Promise.all(COURSE_MODULES.map((module) => fetchSubtopics(module.id)));
   const subtopicsByQuiz = new Map<string, CourseSubtopic>();
-  const failedLevels: string[] = [];
+  const failedModules: string[] = [];
   let firstError: string | null = null;
   results.forEach((r, i) => {
     if (!r.ok) {
-      failedLevels.push(COURSE_LEVELS[i].levelNumber);
+      failedModules.push(COURSE_MODULES[i].moduleNumber);
       firstError = firstError ?? r.error.message;
       return;
     }
     for (const s of r.value) {
-      // The first subtopic (lowest level, then position) owns the quiz if several share it.
+      // The first subtopic (lowest module, then position) owns the quiz if several share it.
       if (s.quizId && !subtopicsByQuiz.has(s.quizId)) subtopicsByQuiz.set(s.quizId, s);
     }
   });
-  // Every level failed: we know nothing, so this is an error, not an empty history.
-  if (failedLevels.length === COURSE_LEVELS.length) {
+  // Every module failed: we know nothing, so this is an error, not an empty history.
+  if (failedModules.length === COURSE_MODULES.length) {
     return { status: 'error', message: firstError ?? 'Could not load your quiz history.' };
   }
 
@@ -88,12 +89,12 @@ async function loadQuizHistory(): Promise<QuizHistoryState> {
   for (const attempt of attempts.value) {
     const subtopic = subtopicsByQuiz.get(attempt.quizId);
     if (!subtopic) continue; // only attempts of curriculum quizzes were requested
-    const level = COURSE_LEVELS.find((l) => l.id === subtopic.levelId);
-    entries.push({ attempt, subtopic, levelLabel: level?.levelNumber ?? `Level ${subtopic.levelId - 1}` });
+    const module = COURSE_MODULES.find((l) => l.id === subtopic.moduleId);
+    entries.push({ attempt, subtopic, moduleLabel: module?.moduleNumber ?? `Module ${subtopic.moduleId - 1}` });
   }
   const time = (iso: string) => { const t = Date.parse(iso); return Number.isNaN(t) ? 0 : t; };
   entries.sort((a, b) => time(b.attempt.submittedAt) - time(a.attempt.submittedAt) || b.attempt.attemptNumber - a.attempt.attemptNumber);
-  return { status: 'ready', entries, failedLevels };
+  return { status: 'ready', entries, failedModules };
 }
 
 /** "Plagiarism" → "Plagiarism Quiz"; a title that already ends with "Quiz" (any case) is kept as is. */
@@ -114,7 +115,11 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
   const { userId } = useAuth();
   const STORAGE_KEY = userKey(userId ?? 'signed-out', 'module1_assignment');
 
-  const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const location = useLocation();
+  // "Back to assignments" from a quiz review returns to the history tab.
+  const [activeTab, setActiveTab] = useState<'current' | 'history'>(
+    (location.state as { tab?: string } | null)?.tab === 'history' ? 'history' : 'current',
+  );
   const [assignmentTitle, setAssignmentTitle] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -337,10 +342,10 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
               </div>
 
               {/* Assignment Submission Box: only while Module 1 (level_id 2) is released, using the app's
-                  release check (lib/levelStatus; the database enforces the same rule, Migration 13).
+                  release check (lib/moduleStatus; the database enforces the same rule, Migration 13).
                   When locked, the editor is not shown; the draft/submission state and the browser-stored
                   work are left exactly as they are. */}
-              {!isLevelReleased(2) ? (
+              {!isModuleReleased(2) ? (
               <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-card space-y-2" data-testid="assignment-editor-locked">
                 <h3 className="font-bold text-base text-primary flex items-center gap-2">
                   <span aria-hidden="true">🔒</span> Module 1 is not released yet
@@ -603,11 +608,11 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
 
               {quizHistory.status === 'ready' && (
                 <>
-                  {quizHistory.failedLevels.length > 0 && (
+                  {quizHistory.failedModules.length > 0 && (
                     <div role="alert" className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2" data-testid="quiz-history-partial">
                       <span className="flex items-center gap-1.5">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>Some levels could not be loaded ({quizHistory.failedLevels.join(', ')}), so this history may be incomplete.</span>
+                        <span>Some modules could not be loaded ({quizHistory.failedModules.join(', ')}), so this history may be incomplete.</span>
                       </span>
                       <button
                         type="button"
@@ -621,13 +626,13 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
 
                   {quizHistory.entries.length === 0 ? (
                     <p className="text-xs text-text-muted" data-testid="quiz-history-empty">
-                      {quizHistory.failedLevels.length > 0
-                        ? 'No quiz attempts found in the levels that loaded.'
+                      {quizHistory.failedModules.length > 0
+                        ? 'No quiz attempts found in the modules that loaded.'
                         : 'You have not submitted any quizzes yet. Your attempts will appear here after you submit a quiz.'}
                     </p>
                   ) : (
                     <ul className="space-y-2" data-testid="quiz-history-list">
-                      {quizHistory.entries.map(({ attempt, subtopic, levelLabel }) => (
+                      {quizHistory.entries.map(({ attempt, subtopic, moduleLabel }) => (
                         <li
                           key={attempt.id}
                           data-attempt={attempt.id}
@@ -636,7 +641,7 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                           <div className="space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-accent-subtle text-accent border border-accent-light/60 uppercase">
-                                {levelLabel}
+                                {moduleLabel}
                               </span>
                               <span className="text-[11px] text-text-muted">Attempt {attempt.attemptNumber}</span>
                               <span className="text-[11px] text-text-muted">· {formatAttemptDate(attempt.submittedAt)}</span>
@@ -661,6 +666,16 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
                                 Score recorded
                               </span>
                             )}
+                            {/* Opens the review of THIS attempt (its own id), not just the latest one. */}
+                            <Link
+                              to={`/${mode}/assignments/quiz/${encodeURIComponent(attempt.quizId)}/attempt/${attempt.id}`}
+                              state={{ quizTitle: quizTitle(subtopic.title), moduleLabel }}
+                              className="font-bold text-white bg-accent hover:bg-accent-hover px-3 py-1 rounded-lg inline-flex items-center gap-1 transition-colors"
+                              data-testid="quiz-history-view-score"
+                              aria-label={`View score and answers for ${quizTitle(subtopic.title)}, attempt ${attempt.attemptNumber}`}
+                            >
+                              View Score <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                            </Link>
                           </div>
                         </li>
                       ))}

@@ -22,8 +22,8 @@ export interface QuizSession {
   quizId: string;
   /** course_subtopics id the quiz belongs to. */
   subtopicId: string;
-  /** Level segment of the route, e.g. "0" for /:mode/level/0/quiz/:quizId. */
-  level: string;
+  /** Module segment of the route, e.g. "0" for /:mode/module/0/quiz/:quizId. */
+  module: string;
   startedAt: string;
   /** {questionId: optionIndex} chosen so far. */
   answers: Record<string, number>;
@@ -40,20 +40,22 @@ const EVENT = 'aiw-quiz-session';
 export const quizSessionKey = (uid: string) => `${PREFIX}${uid}`;
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,79}$/;
 
-export const quizPathFor = (mode: string, s: Pick<QuizSession, 'level' | 'quizId'>) => `/${mode}/level/${s.level}/quiz/${s.quizId}`;
+export const quizPathFor = (mode: string, s: Pick<QuizSession, 'module' | 'quizId'>) => `/${mode}/module/${s.module}/quiz/${s.quizId}`;
 
 function parse(raw: string | null): QuizSession | null {
   if (!raw) return null;
   try {
-    const v = JSON.parse(raw) as Partial<QuizSession>;
+    const v = JSON.parse(raw) as Partial<QuizSession> & { level?: unknown };
+    // Sessions saved before the Level → Module rename stored the segment as `level`.
+    if (v && v.module === undefined && typeof v.level === 'string') v.module = v.level;
     if (!v || v.v !== 1 || typeof v.quizId !== 'string' || !ID_RE.test(v.quizId) || typeof v.subtopicId !== 'string' || !ID_RE.test(v.subtopicId)
-        || typeof v.level !== 'string' || !/^\d{1,2}$/.test(v.level) || typeof v.startedAt !== 'string') return null;
+        || typeof v.module !== 'string' || !/^\d{1,2}$/.test(v.module) || typeof v.startedAt !== 'string') return null;
     const answers: Record<string, number> = {};
     if (v.answers && typeof v.answers === 'object') {
       for (const [k, x] of Object.entries(v.answers)) if (/^\d{1,4}$/.test(k) && Number.isInteger(x) && (x as number) >= 0 && (x as number) < 100) answers[k] = x as number;
     }
     const sid = typeof v.submissionId === 'string' && /^[0-9a-f-]{36}$/i.test(v.submissionId) ? v.submissionId : null;
-    return { v: 1, quizId: v.quizId, subtopicId: v.subtopicId, level: v.level, startedAt: v.startedAt, answers, index: Number.isInteger(v.index) && (v.index as number) >= 0 ? (v.index as number) : 0, submissionId: sid, awayCount: Number.isInteger(v.awayCount) && (v.awayCount as number) >= 0 ? Math.min(v.awayCount as number, 9999) : 0 };
+    return { v: 1, quizId: v.quizId, subtopicId: v.subtopicId, module: v.module, startedAt: v.startedAt, answers, index: Number.isInteger(v.index) && (v.index as number) >= 0 ? (v.index as number) : 0, submissionId: sid, awayCount: Number.isInteger(v.awayCount) && (v.awayCount as number) >= 0 ? Math.min(v.awayCount as number, 9999) : 0 };
   } catch {
     return null;
   }

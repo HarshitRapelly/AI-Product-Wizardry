@@ -1,6 +1,8 @@
 -- =============================================================================
 -- Migration 12 verification — College ID Number on student registrations
 -- Run AFTER Migrations 1–12 (or later). Local / staging databases.
+-- Updated for 20261121000200: the registration payloads use learning_mode 'offline'
+-- (new registrations are offline only).
 -- =============================================================================
 -- Creates throw-away users inside a transaction, impersonates them like the
 -- Data API, then ROLLS BACK. Nothing is persisted. Finishing with the notice
@@ -22,7 +24,7 @@ select ('00000000-0000-4000-8000-0000000012' || n)::uuid, '00000000-0000-0000-00
 create temporary table cid_reg on commit drop as
 select jsonb_build_object('full_name', 'College Student', 'mobile', '9000000901', 'date_of_birth', '2003-03-03', 'city', 'Kochi',
   'college', 'CUSAT', 'degree', 'BCA', 'branch', 'Apps', 'year_of_study', '2nd year', 'graduation_year', 2028,
-  'learning_mode', 'online', 'preferred_slot', 'Weekday evenings', 'main_device', 'Laptop', 'agreed_to_code_of_conduct', true) as base;
+  'learning_mode', 'offline', 'preferred_slot', 'Weekday evenings', 'main_device', 'Laptop', 'agreed_to_code_of_conduct', true) as base;
 
 -- ===========================================================================
 -- A. Schema, constraint, privileges (as postgres)
@@ -126,7 +128,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 do $$
 declare base jsonb := jsonb_build_object('full_name', 'College Student', 'mobile', '9000000901', 'date_of_birth', '2003-03-03', 'city', 'Kochi',
   'college', 'CUSAT', 'degree', 'BCA', 'branch', 'Apps', 'year_of_study', '2nd year', 'graduation_year', 2028,
-  'learning_mode', 'online', 'preferred_slot', 'Weekday evenings', 'main_device', 'Laptop', 'agreed_to_code_of_conduct', true);
+  'learning_mode', 'offline', 'preferred_slot', 'Weekday evenings', 'main_device', 'Laptop', 'agreed_to_code_of_conduct', true);
 begin
   begin
     perform public.complete_my_registration(base || '{"mobile":"9000000902","college_id_number":12345}');

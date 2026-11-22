@@ -20,9 +20,9 @@ export interface PaymentDetails {
   cohort: string;
 }
 
-export interface CourseLevel {
+export interface CourseModule {
   id: number;
-  levelNumber: string;
+  moduleNumber: string;
   title: string;
   status: 'unlocked' | 'locked';
   estimatedHours: number;
@@ -40,7 +40,7 @@ export interface ReadingSection {
 }
 
 export interface ReadingMaterial {
-  levelId: number;
+  moduleId: number;
   title: string;
   subtitle: string;
   estimatedMinutes: number;
@@ -50,7 +50,7 @@ export interface ReadingMaterial {
 
 export interface RecordedSession {
   id: string;
-  levelId: number;
+  moduleId: number;
   title: string;
   instructor: string;
   instructorRole: string;
@@ -80,43 +80,5 @@ export interface QuizAttempt {
   submittedAt: string;
 }
 
-export interface ClassSession {
-  id: string;
-  title: string;
-  subtitle: string;
-  instructor: string;
-  instructorRole: string;
-  instructorAvatar: string;
-  date: string;
-  time: string;
-  duration: string;
-  type: 'online' | 'offline';
-  locationOrPlatform: string;
-  roomOrUrl?: string;
-  description: string;
-  prerequisites: string;
-  capacity: number;
-  enrolledCount: number;
-}
 
-export interface LeaderboardStudent {
-  rank: number;
-  id: string;
-  name: string;
-  avatar: string;
-  points: number;
-  levelsCompleted: number;
-  quizzesPassed: number;
-  attendanceRate?: number;
-  badge: string;
-  isCurrentUser?: boolean;
-}
 
-export interface AttendanceRecord {
-  id: string;
-  date: string;
-  sessionTitle: string;
-  status: 'present' | 'absent' | 'upcoming';
-  time: string;
-  verificationCode?: string;
-}

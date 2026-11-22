@@ -1,6 +1,13 @@
 -- =============================================================================
 -- Curriculum verification — run AFTER Migrations 1–10 (SQL Editor / psql)
 -- =============================================================================
+-- POST-RENAME VERSION (20261121000600): uses module_id / my_module_progress /
+-- module_complete / curriculum_module_releases, registers students as 'offline'
+-- (20261121000200), and releases module_id 2 ("Module 1") inside the transaction
+-- (rolled back) so the Module 1 unlock rules below can be observed despite the
+-- release lock of Migration 13. Requires every migration up to 20261121000600.
+-- (Wording below still says "Level N" = "Module N".)
+-- =============================================================================
 -- Level 0 structure, content, quiz rules, progression, progress API, review,
 -- storage bucket and function security. Creates throw-away users inside a
 -- transaction, impersonates them like the Data API (role + JWT claims), then
@@ -32,11 +39,14 @@ insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, c
    'curriculum-u@example.test', '{"full_name":"Curriculum U"}', now(), now());
 
 select private.apply_registration('00000000-0000-4000-8000-0000000000c1',
-  '{"full_name":"Curriculum S","mobile":"9000000101","date_of_birth":"2003-03-03","city":"Kochi","college":"CUSAT","degree":"BCA","branch":"Apps","year_of_study":"2nd year","graduation_year":2028,"learning_mode":"online","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
+  '{"full_name":"Curriculum S","mobile":"9000000101","date_of_birth":"2003-03-03","city":"Kochi","college":"CUSAT","degree":"BCA","branch":"Apps","year_of_study":"2nd year","graduation_year":2028,"learning_mode":"offline","preferred_slot":"Weekday evenings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
   'email_signup');
 select private.apply_registration('00000000-0000-4000-8000-0000000000c2',
   '{"full_name":"Curriculum O","mobile":"9000000102","date_of_birth":"2003-04-04","city":"Pune","college":"COEP","degree":"BCA","branch":"Apps","year_of_study":"3rd year","graduation_year":2027,"learning_mode":"offline","preferred_slot":"Weekend mornings","main_device":"Laptop","agreed_to_code_of_conduct":true}',
   'email_signup');
+
+-- Module 0 and Module 1 released for this test only (rolled back at the end).
+update public.curriculum_module_releases set released = (module_id in (1, 2));
 
 -- ===========================================================================
 -- A. Structure, grants and security settings (as postgres)
@@ -79,17 +89,17 @@ begin
   -- Every new function: SECURITY DEFINER with an empty search_path
   for r in select p.oid::regprocedure::text sig, p.prosecdef, p.proconfig
              from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-            where (n.nspname, p.proname) in (('private','is_registered'), ('private','subtopic_done'), ('private','prior_subtopics_done'), ('private','level_complete'),
+            where (n.nspname, p.proname) in (('private','is_registered'), ('private','subtopic_done'), ('private','prior_subtopics_done'), ('private','module_complete'),
                                              ('private','lesson_progress_curriculum_guard'), ('public','submit_quiz_attempt'),
-                                             ('public','my_level_progress'), ('public','my_course_progress'), ('public','get_my_quiz_review')) loop
+                                             ('public','my_module_progress'), ('public','my_course_progress'), ('public','get_my_quiz_review')) loop
     if not r.prosecdef or not ('search_path=""' = any(r.proconfig) or 'search_path=' = any(r.proconfig)) then
       raise exception 'FAIL: % is not SECURITY DEFINER with search_path = '''' (%)', r.sig, r.proconfig;
     end if;
   end loop;
   if (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-       where (n.nspname, p.proname) in (('private','is_registered'), ('private','subtopic_done'), ('private','prior_subtopics_done'), ('private','level_complete'),
+       where (n.nspname, p.proname) in (('private','is_registered'), ('private','subtopic_done'), ('private','prior_subtopics_done'), ('private','module_complete'),
                                         ('private','lesson_progress_curriculum_guard'), ('public','submit_quiz_attempt'),
-                                        ('public','my_level_progress'), ('public','my_course_progress'), ('public','get_my_quiz_review'))) <> 9 then
+                                        ('public','my_module_progress'), ('public','my_course_progress'), ('public','get_my_quiz_review'))) <> 9 then
     raise exception 'FAIL: expected exactly 9 curriculum functions (no stray overloads)';
   end if;
 
@@ -98,17 +108,17 @@ begin
      or has_function_privilege('anon', 'private.is_registered(uuid)', 'execute')
      or has_function_privilege('authenticated', 'private.subtopic_done(uuid,text,text)', 'execute')
      or has_function_privilege('authenticated', 'private.prior_subtopics_done(uuid,smallint,smallint)', 'execute')
-     or has_function_privilege('authenticated', 'private.level_complete(uuid,smallint)', 'execute')
-     or has_function_privilege('anon', 'private.level_complete(uuid,smallint)', 'execute') then
+     or has_function_privilege('authenticated', 'private.module_complete(uuid,smallint)', 'execute')
+     or has_function_privilege('anon', 'private.module_complete(uuid,smallint)', 'execute') then
     raise exception 'FAIL: private helpers are executable by API roles';
   end if;
-  if has_function_privilege('anon', 'public.my_level_progress()', 'execute')
+  if has_function_privilege('anon', 'public.my_module_progress()', 'execute')
      or has_function_privilege('anon', 'public.my_course_progress()', 'execute')
      or has_function_privilege('anon', 'public.get_my_quiz_review(bigint)', 'execute')
      or has_function_privilege('anon', 'public.submit_quiz_attempt(text,jsonb,uuid)', 'execute') then
     raise exception 'FAIL: anon can execute a curriculum function';
   end if;
-  if not has_function_privilege('authenticated', 'public.my_level_progress()', 'execute')
+  if not has_function_privilege('authenticated', 'public.my_module_progress()', 'execute')
      or not has_function_privilege('authenticated', 'public.my_course_progress()', 'execute')
      or not has_function_privilege('authenticated', 'public.get_my_quiz_review(bigint)', 'execute')
      or not has_function_privilege('authenticated', 'public.submit_quiz_attempt(text,jsonb,uuid)', 'execute') then
@@ -145,11 +155,11 @@ do $$
 declare v text;
 begin
   if (select string_agg(id || '/' || topic_number || '/' || position || '/' || reading_minutes || '/' || coalesce(quiz_id, '-'), ' ' order by position)
-        from public.course_subtopics where level_id = 1)
+        from public.course_subtopics where module_id = 1)
      is distinct from 'l0-program-introduction/1/1/4/- l0-program-outline/1/2/3/- l0-completion-requirements/1/3/3/- l0-faqs/1/4/4/- l0-plagiarism/2/5/5/l0-plagiarism-quiz l0-system-requirements/2/6/4/-' then
     raise exception 'FAIL: Level 0 subtopic structure wrong';
   end if;
-  if exists (select 1 from public.course_subtopics where level_id <> 1) then
+  if exists (select 1 from public.course_subtopics where module_id <> 1) then
     raise exception 'FAIL: content exists for levels other than Level 0';
   end if;
   if (select string_agg(distinct topic_number || ':' || topic_title, '|') from public.course_subtopics)
@@ -225,7 +235,7 @@ begin
   end if;
 
   -- Quiz: definition without pass mark, 10 questions × 4 options, keys + explanations
-  if not exists (select 1 from private.quiz_definitions where quiz_id = 'l0-plagiarism-quiz' and level_id = 1 and pass_mark is null) then
+  if not exists (select 1 from private.quiz_definitions where quiz_id = 'l0-plagiarism-quiz' and module_id = 1 and pass_mark is null) then
     raise exception 'FAIL: plagiarism quiz definition wrong';
   end if;
   if (select string_agg(question_id::text, ',' order by position) from public.quiz_questions where quiz_id = 'l0-plagiarism-quiz') is distinct from '1,2,3,4,5,6,7,8,9,10'
@@ -262,19 +272,19 @@ end $$;
 do $$
 begin
   begin
-    insert into public.quiz_attempts (user_id, quiz_id, level_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
+    insert into public.quiz_attempts (user_id, quiz_id, module_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
     values ('00000000-0000-4000-8000-0000000000c3', 'l0-topic-1-quiz', 1, 1, '{}', 0, 3, 0, 66, null, gen_random_uuid());
     raise exception 'FAIL: pass mark without passed accepted';
   exception when check_violation then null;
   end;
   begin
-    insert into public.quiz_attempts (user_id, quiz_id, level_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
+    insert into public.quiz_attempts (user_id, quiz_id, module_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
     values ('00000000-0000-4000-8000-0000000000c3', 'l0-plagiarism-quiz', 1, 1, '{}', 10, 10, 100, null, true, gen_random_uuid());
     raise exception 'FAIL: passed without pass mark accepted';
   exception when check_violation then null;
   end;
   begin
-    insert into public.quiz_attempts (user_id, quiz_id, level_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
+    insert into public.quiz_attempts (user_id, quiz_id, module_id, attempt_number, answers, score, total_questions, percentage, pass_mark, passed, client_submission_id)
     values ('00000000-0000-4000-8000-0000000000c3', 'l0-topic-1-quiz', 1, 1, '{}', 0, 3, 0, 66, true, gen_random_uuid());
     raise exception 'FAIL: passed=true at 0%% accepted';
   exception when check_violation then null;
@@ -294,7 +304,7 @@ begin
   exception when insufficient_privilege then null; end;
   begin perform public.my_course_progress(); raise exception 'FAIL: anon read course progress';
   exception when insufficient_privilege then null; end;
-  begin perform * from public.my_level_progress(); raise exception 'FAIL: anon read level progress';
+  begin perform * from public.my_module_progress(); raise exception 'FAIL: anon read level progress';
   exception when insufficient_privilege then null; end;
   begin perform * from public.get_my_quiz_review(1); raise exception 'FAIL: anon read a quiz review';
   exception when insufficient_privilege then null; end;
@@ -332,19 +342,19 @@ begin
     if sqlerrm not like 'registration_required%' then raise exception 'FAIL: wrong rejection for unregistered plagiarism quiz: %', sqlerrm; end if;
   end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-topic-1-reading', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-topic-1-reading', 'reading', true);
     raise exception 'FAIL: unregistered user wrote lesson progress';
   exception when insufficient_privilege then
     if sqlerrm not like 'registration_required%' then raise exception 'FAIL: wrong rejection for unregistered progress: %', sqlerrm; end if;
   end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
     raise exception 'FAIL: unregistered user acknowledged a subtopic';
   exception when insufficient_privilege then
     if sqlerrm not like 'registration_required%' then raise exception 'FAIL: wrong rejection for unregistered acknowledgment: %', sqlerrm; end if;
   end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed, last_section_id) values (1, 'l0-topic-2-reading', 'reading', false, 's1');
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed, last_section_id) values (1, 'l0-topic-2-reading', 'reading', false, 's1');
     raise exception 'FAIL: unregistered user saved a reading position';
   exception when insufficient_privilege then
     if sqlerrm not like 'registration_required%' then raise exception 'FAIL: wrong rejection for unregistered position: %', sqlerrm; end if;
@@ -376,7 +386,11 @@ do $$ begin
     raise exception 'FAIL: student uploaded to course-documents';
   exception when insufficient_privilege then null; end;
   update storage.objects set name = 'renamed.docx' where bucket_id = 'course-documents';
-  delete from storage.objects where bucket_id = 'course-documents';
+  -- Hosted Supabase now refuses direct deletes from storage tables with an error (42501)
+  -- instead of RLS silently affecting 0 rows; either way nothing may be deleted.
+  begin
+    delete from storage.objects where bucket_id = 'course-documents';
+  exception when insufficient_privilege then null; end;
 end $$;
 reset role;
 do $$ begin
@@ -405,27 +419,27 @@ begin
   exception when insufficient_privilege then null; end;
   begin perform 1 from private.quiz_answer_keys; raise exception 'FAIL: student read answer keys';
   exception when insufficient_privilege then null; end;
-  begin perform private.level_complete('00000000-0000-4000-8000-0000000000c1', 1::smallint); raise exception 'FAIL: student called a private helper';
+  begin perform private.module_complete('00000000-0000-4000-8000-0000000000c1', 1::smallint); raise exception 'FAIL: student called a private helper';
   exception when insufficient_privilege then null; end;
 
   -- Fresh progress: 0 %, Level 0 unlocked, everything else locked
   if public.my_course_progress() <> 0 then raise exception 'FAIL: fresh progress is not 0'; end if;
-  select * into p from public.my_level_progress() where level_id = 1;
+  select * into p from public.my_module_progress() where module_id = 1;
   if p.total_items <> 6 or p.completed_items <> 0 or p.completion_fraction <> 0 or p.is_complete or not p.is_unlocked then
     raise exception 'FAIL: fresh Level 0 progress wrong: %', row_to_json(p);
   end if;
-  if (select count(*) from public.my_level_progress()) <> 12
-     or exists (select 1 from public.my_level_progress() where level_id >= 2 and (is_unlocked or is_complete or total_items <> 0 or completion_fraction <> 0)) then
+  if (select count(*) from public.my_module_progress()) <> 12
+     or exists (select 1 from public.my_module_progress() where module_id >= 2 and (is_unlocked or is_complete or total_items <> 0 or completion_fraction <> 0)) then
     raise exception 'FAIL: levels without content must be locked, incomplete and 0';
   end if;
 
   -- Order is enforced
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true);
     raise exception 'FAIL: subtopic 2 acknowledged before subtopic 1';
   exception when insufficient_privilege then null; end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
     raise exception 'FAIL: last subtopic acknowledged first';
   exception when insufficient_privilege then null; end;
   begin
@@ -435,36 +449,43 @@ begin
 
   -- Wrong shape is rejected
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'video', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'video', true);
     raise exception 'FAIL: acknowledgment with item_type video accepted';
   exception when check_violation then null; end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (2, 'l0-program-introduction', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'l0-program-introduction', 'reading', true);
     raise exception 'FAIL: acknowledgment under the wrong level accepted';
   exception when check_violation then null; end;
   begin
-    insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed)
+    insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed)
     values ('00000000-0000-4000-8000-0000000000c2', 1, 'l0-program-introduction', 'reading', true);
     raise exception 'FAIL: S acknowledged for O';
   exception when insufficient_privilege then null; end;
 
   -- An opened-but-not-acknowledged row is allowed (e.g. last_section_id) and does not count
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed, last_section_id)
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed, last_section_id)
   values (1, 'l0-program-outline', 'reading', false, 'intro');
 
   -- 1, 2, 3 in order (2 via the supabase-js upsert shape)
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true)
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-outline', 'reading', true)
   on conflict (user_id, lesson_id) do update
-    set level_id = excluded.level_id, lesson_id = excluded.lesson_id, item_type = excluded.item_type, is_completed = excluded.is_completed;
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-completion-requirements', 'reading', true);
+    set module_id = excluded.module_id, lesson_id = excluded.lesson_id, item_type = excluded.item_type, is_completed = excluded.is_completed;
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-completion-requirements', 'reading', true);
 
   -- Non-curriculum activity (legacy Level 0 lesson rows) never counts towards progress
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values
-    (1, 'l0-topic-1-reading', 'reading', true), (1, 'l0-topic-1-video', 'video', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values
+    (1, 'l0-topic-1-reading', 'reading', true);
+  -- Online is locked (20261121000800): recorded-session (video) progress cannot be written by a student
+  begin
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-topic-1-video', 'video', true);
+    raise exception 'FAIL: student video (recorded-session) progress accepted while Online is locked';
+  exception when insufficient_privilege then
+    if sqlerrm not like 'online_locked:%' then raise exception 'FAIL: wrong error for video progress: %', sqlerrm; end if;
+  end;
 
   -- 3 of 6 → Level 0 = 0.5; course = completed / available subtopics = 3 / 6 = 50 %
-  select * into p from public.my_level_progress() where level_id = 1;
+  select * into p from public.my_module_progress() where module_id = 1;
   if p.completed_items <> 3 or p.completion_fraction <> 0.5 or p.is_complete then
     raise exception 'FAIL: 3/6 progress wrong: %', row_to_json(p);
   end if;
@@ -475,17 +496,17 @@ begin
     update public.lesson_progress set is_completed = false where lesson_id = 'l0-program-introduction';
     raise exception 'FAIL: acknowledgment was undone';
   exception when insufficient_privilege then null; end;
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true)
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-program-introduction', 'reading', true)
   on conflict (user_id, lesson_id) do update set is_completed = excluded.is_completed;
   update public.lesson_progress set last_section_id = 'faq-1' where lesson_id = 'l0-program-introduction';
 
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-faqs', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-faqs', 'reading', true);
   -- Plagiarism reading confirmed (the app's reading module; required for the quiz from Migration 11 on)
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
 
   -- Plagiarism acknowledgment needs the quiz first
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
     raise exception 'FAIL: plagiarism acknowledged before the quiz';
   exception when insufficient_privilege then null; end;
 end $$;
@@ -515,7 +536,7 @@ begin
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0}',
                                   'c1000000-0000-4000-8000-000000000001');
   if a.score <> 2 or a.total_questions <> 10 or a.percentage <> 20 or a.pass_mark is not null or a.passed is not null
-     or a.attempt_number <> 1 or a.level_id <> 1 then
+     or a.attempt_number <> 1 or a.module_id <> 1 then
     raise exception 'FAIL: low-score plagiarism attempt wrong: %', row_to_json(a);
   end if;
 
@@ -554,39 +575,39 @@ begin
   exception when no_data_found then null; end;
 
   -- Quiz submitted but Plagiarism not acknowledged → still 4/6; Level 1 still locked
-  select * into p from public.my_level_progress() where level_id = 1;
+  select * into p from public.my_module_progress() where module_id = 1;
   if p.completed_items <> 4 then raise exception 'FAIL: quiz alone completed the subtopic: %', row_to_json(p); end if;
   begin
     perform public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', gen_random_uuid());
     raise exception 'FAIL: Level 1 quiz accepted with Level 0 incomplete';
   exception when insufficient_privilege then null; end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (2, 'topic-1-reading', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'topic-1-reading', 'reading', true);
     raise exception 'FAIL: Level 1 progress accepted with Level 0 incomplete';
   exception when insufficient_privilege then null; end;
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (2, 'topic-1-video', 'video', false);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'topic-1-video', 'video', false);
     raise exception 'FAIL: Level 1 progress row (not completed) accepted with Level 0 incomplete';
   exception when insufficient_privilege then null; end;
 
   -- System requirements cannot be acknowledged before Plagiarism
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
     raise exception 'FAIL: subtopic 6 before subtopic 5';
   exception when insufficient_privilege then null; end;
 
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
 
   -- Level 0 complete: 6/6 → 100 % of the available content; Level 1 unlocked; Level 2 (no content) still locked
-  select * into p from public.my_level_progress() where level_id = 1;
+  select * into p from public.my_module_progress() where module_id = 1;
   if p.completed_items <> 6 or p.completion_fraction <> 1 or not p.is_complete then
     raise exception 'FAIL: Level 0 not complete: %', row_to_json(p);
   end if;
   if public.my_course_progress() <> 100.0 then raise exception 'FAIL: course progress at 6/6 is %, expected 100.0', public.my_course_progress(); end if;
-  if not (select is_unlocked from public.my_level_progress() where level_id = 2)
-     or (select is_unlocked from public.my_level_progress() where level_id = 3)
-     or (select is_complete from public.my_level_progress() where level_id = 2) then
+  if not (select is_unlocked from public.my_module_progress() where module_id = 2)
+     or (select is_unlocked from public.my_module_progress() where module_id = 3)
+     or (select is_complete from public.my_module_progress() where module_id = 2) then
     raise exception 'FAIL: unlock state after Level 0 wrong';
   end if;
 
@@ -595,9 +616,9 @@ begin
   if a.pass_mark <> 80 or a.percentage <> 80 or not a.passed then raise exception 'FAIL: Level 1 quiz after unlock: %', row_to_json(a); end if;
   a := public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":0,"5":3}', gen_random_uuid());
   if a.percentage <> 60 or a.passed is distinct from false then raise exception 'FAIL: Level 1 fail case: %', row_to_json(a); end if;
-  insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (2, 'topic-1-reading', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'topic-1-reading', 'reading', true);
   begin
-    insert into public.lesson_progress (level_id, lesson_id, item_type, is_completed) values (3, 'topic-2-reading', 'reading', true);
+    insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (3, 'topic-2-reading', 'reading', true);
     raise exception 'FAIL: Level 2 progress accepted (Level 1 has no content, so it can never be complete)';
   exception when insufficient_privilege then null; end;
   -- Level 1 rows/attempts are not curriculum subtopics: overall progress is unchanged
@@ -607,7 +628,7 @@ begin
 
   -- Later attempts do not change completion; the first one satisfied it permanently
   perform public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":1,"2":1,"3":1,"4":1,"5":1,"6":1,"7":1,"8":1,"9":1,"10":1}', gen_random_uuid());
-  if (select completed_items from public.my_level_progress() where level_id = 1) <> 6
+  if (select completed_items from public.my_module_progress() where module_id = 1) <> 6
      or (select count(*) from public.quiz_attempts where quiz_id = 'l0-plagiarism-quiz') <> 3 then
     raise exception 'FAIL: extra attempt changed completion or was not stored';
   end if;
@@ -659,7 +680,7 @@ reset role;
 do $$
 begin
   begin
-    insert into public.lesson_progress (user_id, level_id, lesson_id, item_type, is_completed)
+    insert into public.lesson_progress (user_id, module_id, lesson_id, item_type, is_completed)
     values ('00000000-0000-4000-8000-0000000000c2', 1, 'l0-faqs', 'reading', true);
     raise exception 'FAIL: server-side write skipped the order rule';
   exception when insufficient_privilege then null; end;

@@ -1,459 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { COURSE_LEVELS } from '../../data/mockData';
 import { courseProgressShort } from '../../services/progressService';
-import { activeLevelLabel } from '../../lib/levelStatus';
+import { activeModuleLabel } from '../../lib/moduleStatus';
 import { fetchMyRegistrationDetails, type MyRegistrationDetailsResult } from '../../services/registrationService';
-import {
-  User,
-  Mail,
-  Award,
-  Globe,
-  MapPin,
-  Calendar,
-  CheckCircle2,
-  XCircle,
-  ArrowRightLeft,
-  RefreshCw,
-  LogOut,
-  ShieldCheck,
-  BookOpen,
-  Trophy,
-  Sparkles,
-  Check,
-  Clock,
-  ChevronRight,
-  Flame,
-  FileText
-} from 'lucide-react';
+import { fetchMyCohortProfile, type CohortProfile, type PortalError } from '../../services/portalService';
+import { StudentIdChip, useStudentCode } from '../../components/portal/StudentIdChip';
+import { CohortProfileForm } from '../../components/portal/CohortProfileForm';
+import { Icon } from '../../components/aiw/Icon';
+import { PROGRAM } from '../../config/program';
 
-interface ProfilePageProps {
-  mode: 'online' | 'offline';
-}
+/**
+ * /:mode/profile — the student's own account: identity and permanent AI Wizardry Student ID,
+ * real progress, registration details and cohort profile. Every value comes from the database
+ * or the student's session; nothing is invented (no points, ranks or placeholder identities).
+ */
 
-export const ProfilePage: React.FC<ProfilePageProps> = ({ mode }) => {
-  const { 
-    user, 
-    paymentDetails, 
-    selectLearningMode, 
-    courseProgress,
-    levelProgress,
-    quizAttempt,
-    readingCompleted, 
-    registeredClassIds, 
-    attendancePercentage,
-    totalPoints,
-    resetAllDemoData,
-    logout
-  } = useAuthAndCourse();
+const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
 
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'transcript' | 'settings'>('overview');
-
-  const handleToggleMode = () => {
-    const targetMode = mode === 'online' ? 'offline' : 'online';
-    selectLearningMode(targetMode);
-    navigate(`/${targetMode}/dashboard`);
-  };
-
-  const [isResetting, setIsResetting] = useState(false);
-  const [resetError, setResetError] = useState<string | null>(null);
-
-  const handleReset = async () => {
-    if (isResetting) return;
-    if (!window.confirm("Are you sure you want to reset your account session? This will return to the welcome page.")) return;
-    setResetError(null);
-    setIsResetting(true);
-    // Supabase payment record first; on failure nothing local is cleared and the student stays signed in.
-    const result = await resetAllDemoData();
-    if (!result.ok) {
-      setIsResetting(false);
-      setResetError(result.message);
-      return;
-    }
-    navigate('/');
-  };
-
-  // Certificate readiness calculations from PDF Page 2 (50% Assignments, 30% Capstone, 20% Content)
-  const assignmentsScore = readingCompleted ? 100 : 0;
-  const contentScore = quizAttempt ? quizAttempt.percentage : 0;
-  const capstoneScore = 0; // Capstone defends in Module 11
-  const weightedOverallGrade = Math.round((assignmentsScore * 0.5) + (capstoneScore * 0.3) + (contentScore * 0.2));
-
-  return (
-    <PortalLayout mode={mode} title="Student Profile & Transcript">
-      <div className="space-y-8 font-sans text-left max-w-5xl mx-auto">
-        
-        {/* Student Credential Identity Card */}
-        <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-card relative overflow-hidden">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border">
-            
-            {/* Avatar & Fellow Details */}
-            <div className="flex items-start sm:items-center gap-5">
-              <div className="relative">
-                <img
-                  src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
-                  alt={user?.name || "Student"}
-                  className="w-20 h-20 rounded-2xl border-2 border-border object-cover shadow-subtle"
-                />
-                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-surface flex items-center justify-center text-[10px] text-white font-bold">
-                  ✓
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl font-extrabold text-primary">{user?.name || "Rahul Sharma"}</h1>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-subtle text-accent uppercase border border-accent-light/60">
-                    Batch 1 Fellow
-                  </span>
-                </div>
-                
-                <p className="text-xs text-text-muted flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>{user?.email || "rahul.sharma@university.edu"}</span>
-                </p>
-
-                <div className="flex items-center gap-3 text-[11px] text-secondary font-medium pt-1">
-                  <span>Student ID: <span className="font-mono font-bold text-primary">{paymentDetails?.transactionId || 'AIW-ADM-7829'}</span></span>
-                  <span>•</span>
-                  <span>Enrolled: {paymentDetails?.date || 'November 2026'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Academic Standing & Points Card */}
-            <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-border flex-shrink-0">
-              <div className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center font-extrabold text-lg shadow-subtle">
-                <Trophy className="w-6 h-6 text-amber-300" />
-              </div>
-              <div className="text-xs">
-                <span className="text-text-muted block">Academic Standing</span>
-                <span className="font-extrabold text-base text-primary block">{totalPoints} Points</span>
-                <span className="text-emerald-600 font-semibold text-[11px]">Rank #4 in Cohort</span>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="pt-4 flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'overview'
-                  ? 'bg-primary text-white shadow-subtle'
-                  : 'text-text-muted hover:text-primary hover:bg-slate-100'
-              }`}
-            >
-              Academic Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('transcript')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'transcript'
-                  ? 'bg-primary text-white shadow-subtle'
-                  : 'text-text-muted hover:text-primary hover:bg-slate-100'
-              }`}
-            >
-              Certificate Readiness
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'settings'
-                  ? 'bg-primary text-white shadow-subtle'
-                  : 'text-text-muted hover:text-primary hover:bg-slate-100'
-              }`}
-            >
-              Cohort & Preferences
-            </button>
-          </div>
-        </div>
-
-        {/* TAB 1: ACADEMIC OVERVIEW */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            
-            {/* Quick Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
-                <span className="text-[10px] font-bold text-text-muted uppercase">Program Fellowship</span>
-                <p className="font-bold text-primary mt-1 text-sm truncate">AI Product Wizardry</p>
-                <span className="text-[10px] text-emerald-600 font-semibold">12 Levels (0–11) · 6 Months</span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
-                <span className="text-[10px] font-bold text-text-muted uppercase">Active Modality</span>
-                <p className="font-bold text-primary mt-1 text-sm capitalize flex items-center gap-1.5">
-                  {mode === 'online' ? <Globe className="w-3.5 h-3.5 text-blue-600" /> : <MapPin className="w-3.5 h-3.5 text-emerald-600" />}
-                  <span>{mode} Cohort</span>
-                </p>
-                <button onClick={handleToggleMode} className="text-[10px] text-accent font-semibold hover:underline mt-0.5">
-                  Switch Cohort →
-                </button>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
-                <span className="text-[10px] font-bold text-text-muted uppercase">Curriculum Progress</span>
-                <p
-                  className="font-bold text-primary mt-1 text-sm"
-                  aria-busy={courseProgress.status === 'loading'}
-                  title={courseProgress.status === 'loading' ? 'Loading course progress…' : undefined}
-                >
-                  {courseProgress.status === 'ready' ? `${courseProgressShort(courseProgress)} Complete` : '—'}
-                </p>
-                <span className="text-[10px] text-accent font-semibold">{activeLevelLabel(levelProgress)}</span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-surface border border-border shadow-subtle">
-                <span className="text-[10px] font-bold text-text-muted uppercase">Quiz Grade</span>
-                <p className="font-bold text-primary mt-1 text-sm">
-                  {quizAttempt ? `${quizAttempt.percentage}% Score` : 'Pending'}
-                </p>
-                <span className={`text-[10px] font-semibold ${quizAttempt?.passed ? 'text-emerald-600' : 'text-text-muted'}`}>
-                  {quizAttempt?.passed ? 'Passed (≥80%)' : '5 Questions'}
-                </span>
-              </div>
-            </div>
-
-            <RegistrationDetailsCard userId={user?.id ?? null} />
-
-            {/* Current Module Checklist */}
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <h3 className="font-bold text-base text-primary">Module 1 Deliverables Checklist</h3>
-                  <p className="text-xs text-text-muted">Foundations of Product Management</p>
-                </div>
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-accent-subtle text-accent border border-accent-light/60">
-                  Active Sprint
-                </span>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                {/* Handbook */}
-                <div className="p-4 rounded-2xl border border-border bg-background flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 text-accent" />
-                    <div>
-                      <h4 className="font-bold text-sm text-primary">Reading Handbook: Product Thinking</h4>
-                      <p className="text-text-muted text-[11px]">The 3 Questions Every Product Wizard Learns to Ask</p>
-                    </div>
-                  </div>
-                  <div>
-                    {readingCompleted ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Completed</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-slate-100 text-text-muted font-medium">
-                        <span>Pending</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Practice Quiz */}
-                <div className="p-4 rounded-2xl border border-border bg-background flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Award className="w-5 h-5 text-emerald-600" />
-                    <div>
-                      <h4 className="font-bold text-sm text-primary">Knowledge Evaluation Quiz</h4>
-                      <p className="text-text-muted text-[11px]">
-                        {quizAttempt 
-                          ? `Completed with ${quizAttempt.score} of ${quizAttempt.totalQuestions} correct` 
-                          : '5 scenario questions on problem discovery and user retention'}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    {quizAttempt ? (
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-md font-bold border ${
-                        quizAttempt.passed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                        {quizAttempt.passed ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                        <span>{quizAttempt.percentage}% ({quizAttempt.passed ? 'Passed' : 'Review Required'})</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-slate-100 text-text-muted font-medium">
-                        <span>Not Attempted</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Class Sessions */}
-                <div className="p-4 rounded-2xl border border-border bg-background flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-indigo-600" />
-                    <div>
-                      <h4 className="font-bold text-sm text-primary">Workshop Seat Reservations</h4>
-                      <p className="text-text-muted text-[11px]">Active enrollment in upcoming faculty masterclasses</p>
-                    </div>
-                  </div>
-                  <span className="font-bold text-sm text-primary">
-                    {registeredClassIds.length} Sessions Reserved
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* TAB 2: CERTIFICATE READINESS (From PDF Page 2) */}
-        {activeTab === 'transcript' && (
-          <div className="space-y-6">
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle space-y-6">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-accent bg-accent-subtle px-2.5 py-0.5 rounded border border-accent-light/60">
-                  Graduation Criteria
-                </span>
-                <h3 className="text-xl font-extrabold text-primary mt-2">
-                  How You Earn the Certificate
-                </h3>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Score above 70% in assignments and the capstone. Offline batches also need 80% attendance and 80% of the MCQs.
-                </p>
-              </div>
-
-              {/* 3 Weight Breakdown Bars */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-border space-y-2">
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-bold text-xs text-secondary uppercase">Written Assignments</span>
-                    <span className="font-extrabold text-base text-accent">50% Weight</span>
-                  </div>
-                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                    <div className="bg-accent h-full rounded-full" style={{ width: `${readingCompleted ? '100%' : '0%'}` }}></div>
-                  </div>
-                  <span className="text-[10px] text-text-muted">Module documents & problem specs</span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-border space-y-2">
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-bold text-xs text-secondary uppercase">Capstone Defense</span>
-                    <span className="font-extrabold text-base text-emerald-600">30% Weight</span>
-                  </div>
-                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                    <div className="bg-emerald-500 h-full rounded-full" style={{ width: '0%' }}></div>
-                  </div>
-                  <span className="text-[10px] text-text-muted">Live jury pitch in Module 11</span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-border space-y-2">
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-bold text-xs text-secondary uppercase">Content & Quizzes</span>
-                    <span className="font-extrabold text-base text-amber-500">20% Weight</span>
-                  </div>
-                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                    <div className="bg-amber-400 h-full rounded-full" style={{ width: `${quizAttempt ? quizAttempt.percentage : 0}%` }}></div>
-                  </div>
-                  <span className="text-[10px] text-text-muted">Weekly knowledge evaluations</span>
-                </div>
-              </div>
-
-              {/* Offline Attendance Requirement Check (if offline) */}
-              {mode === 'offline' && (
-                <div className="p-4 rounded-2xl bg-slate-100 border border-slate-300 text-xs text-secondary space-y-1">
-                  <span className="font-bold text-primary block">Campus Attendance Requirement</span>
-                  <p className="leading-relaxed">
-                    Offline batch students must maintain at least 80% attendance in physical classroom seminars to qualify for alumni recommendations.
-                  </p>
-                </div>
-              )}
-
-              <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
-                <span className="font-bold flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-accent" />
-                  <span>Portfolio Credential</span>
-                </span>
-                <p className="text-blue-800 leading-relaxed">
-                  Upon graduation, you will receive an official verifiable digital credential and portfolio showcasing your written PRDs and working product prototypes.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: COHORT SETTINGS & PREFERENCES */}
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle space-y-6">
-              <div>
-                <h3 className="font-bold text-base text-primary">Cohort Preferences & Controls</h3>
-                <p className="text-xs text-text-muted mt-1">Manage your active learning modality and account settings.</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Switch Modality */}
-                <div className="p-5 rounded-2xl bg-slate-50 border border-border space-y-3">
-                  <div>
-                    <h4 className="font-bold text-xs text-primary">Switch Learning Modality</h4>
-                    <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
-                      Seamlessly toggle between the Online Virtual Cohort and the Campus Batch.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleToggleMode}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs font-bold transition-colors"
-                  >
-                    <ArrowRightLeft className="w-3.5 h-3.5 text-blue-300" />
-                    <span>Switch to {mode === 'online' ? 'Campus Batch' : 'Online Cohort'}</span>
-                  </button>
-                </div>
-
-                {/* Reset Session Data */}
-                <div className="p-5 rounded-2xl bg-rose-50/50 border border-rose-200 space-y-3">
-                  <div>
-                    <h4 className="font-bold text-xs text-rose-900">Reset Account Session</h4>
-                    <p className="text-[11px] text-rose-700/80 mt-0.5 leading-relaxed">
-                      Clears local student cache and returns to the program welcome page.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    disabled={isResetting}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-60"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Reset Account Session</span>
-                  </button>
-                  {resetError && (
-                    <p role="alert" className="text-[11px] text-rose-700 leading-relaxed">
-                      {resetError}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout();
-                    navigate('/login');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-xs font-semibold text-text-muted hover:text-rose-600 transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out of Academy</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </PortalLayout>
-  );
-};
+type Load<T> = { status: 'loading' } | { status: 'ready'; value: T } | { status: 'error'; error: PortalError };
 
 /** The student's own registration details (Supabase, own row only — RLS). */
 const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }) => {
@@ -466,12 +32,12 @@ const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }
   }, [userId]);
   if (!userId || !state || (state.ok && !state.details)) return null;
   return (
-    <div className="bg-surface rounded-3xl border border-border p-6 sm:p-7 shadow-subtle space-y-4" data-testid="registration-details">
-      <h3 className="font-bold text-base text-primary pb-3 border-b border-border">Academic Details</h3>
+    <section className="panel" data-testid="registration-details" aria-labelledby="acad-title">
+      <div className="phead"><h2 id="acad-title">Academic details</h2></div>
       {!state.ok ? (
-        <p role="alert" className="text-sm text-rose-700">{state.message}</p>
+        <div className="note err" role="alert"><Icon name="alert" size={18} /><span>{state.message}</span></div>
       ) : state.details && (
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <dl className="kv">
           {[
             ['College / university', state.details.college],
             ['College ID Number', state.details.collegeIdNumber ?? 'Not provided'],
@@ -480,13 +46,114 @@ const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }
             ['Year of study', state.details.yearOfStudy],
             ['Graduation year', String(state.details.graduationYear || '—')],
           ].map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-[10px] font-bold text-text-muted uppercase">{k}</dt>
-              <dd className="font-semibold text-primary break-words" data-field={k}>{v}</dd>
-            </div>
+            <React.Fragment key={k}>
+              <dt>{k}</dt>
+              <dd data-field={k}>{v}</dd>
+            </React.Fragment>
           ))}
         </dl>
       )}
-    </div>
+    </section>
   );
 };
+
+export const ProfilePage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
+  const { user, paymentDetails, learningMode, courseProgress, moduleProgress, resetAllDemoData, logout } = useAuthAndCourse();
+  const navigate = useNavigate();
+  const code = useStudentCode();
+  const [cohort, setCohort] = useState<Load<CohortProfile | null>>({ status: 'loading' });
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let c = false;
+    fetchMyCohortProfile().then((r) => { if (!c) setCohort(r.ok ? { status: 'ready', value: r.value } : { status: 'error', error: r.error }); });
+    return () => { c = true; };
+  }, [user?.id]);
+
+  const handleReset = async () => {
+    if (isResetting) return;
+    if (!window.confirm('Are you sure you want to reset your account session? This will return to the welcome page.')) return;
+    setResetError(null);
+    setIsResetting(true);
+    // Supabase payment record first; on failure nothing local is cleared and the student stays signed in.
+    const result = await resetAllDemoData();
+    if (!result.ok) { setIsResetting(false); setResetError(result.message); return; }
+    navigate('/');
+  };
+
+  const activeMode = learningMode ?? mode;
+  const name = user?.name || 'Student';
+
+  return (
+    <PortalLayout mode={mode} title="Profile">
+      <div className="ttl">
+        <p className="eyebrow gold">Profile</p>
+        <h1>Your account</h1>
+      </div>
+
+      <section className="panel" style={{ marginBottom: 22 }} aria-labelledby="id-title">
+        <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className="avatar" style={{ width: 72, height: 72, fontSize: 24 }} aria-hidden="true">{initials(name)}</span>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h2 id="id-title" style={{ fontSize: 26 }}>{name}</h2>
+            <p className="muted" style={{ fontSize: 14, display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}><Icon name="msg" size={14} /> {user?.email}</p>
+            <p style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span className="tag lesson">{PROGRAM.batchName}</span>
+              <span className="tag live">{activeMode === 'offline' ? 'Offline · in person' : 'Online'}</span>
+            </p>
+          </div>
+          <div style={{ minWidth: 220 }}>
+            <p className="eyebrow" style={{ marginBottom: 6 }}>Student ID</p>
+            <StudentIdChip state={code} />
+            {paymentDetails?.date && <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>Enrolled {paymentDetails.date}</p>}
+          </div>
+        </div>
+      </section>
+
+      <div className="lgrid">
+        <div className="stack">
+          <section className="panel" aria-labelledby="cp-heading">
+            <div className="phead"><h2 id="cp-heading">Cohort profile</h2><Link className="more" to={`/${activeMode}/cohort`}>Open cohort →</Link></div>
+            {cohort.status === 'loading' && <div className="empty" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>}
+            {cohort.status === 'error' && <div className="note info" role="status"><Icon name="alert" size={18} /><span>{cohort.error.kind === 'unavailable' ? 'Cohort profiles are not available yet.' : cohort.error.message}</span></div>}
+            {cohort.status === 'ready' && user && (
+              <CohortProfileForm userId={user.id} initial={cohort.value} onSaved={(p) => setCohort({ status: 'ready', value: p })} />
+            )}
+          </section>
+          <RegistrationDetailsCard userId={user?.id ?? null} />
+        </div>
+        <div className="stack">
+          <section className="panel" aria-labelledby="prog-title">
+            <div className="phead"><h2 id="prog-title">Progress</h2></div>
+            <dl className="kv">
+              <dt>Course progress</dt><dd>{courseProgress.status === 'ready' ? courseProgressShort(courseProgress) : courseProgress.status === 'loading' ? 'Loading…' : 'Not available yet'}</dd>
+              <dt>Current module</dt><dd>{activeModuleLabel(moduleProgress)}</dd>
+            </dl>
+            <Link className="btn btn-line btn-sm" style={{ marginTop: 14 }} to={`/${activeMode}/modules`}><Icon name="book" size={14} /> All modules</Link>
+          </section>
+          <section className="panel" aria-labelledby="mode-title">
+            <div className="phead"><h2 id="mode-title">Learning mode</h2></div>
+            <p style={{ fontSize: 14, color: 'var(--ink2)' }}>
+              You are registered for the <b>{activeMode === 'offline' ? 'offline (in person)' : 'online'}</b> mode. To ask about a change of mode,
+              write to the program team.
+            </p>
+            <Link className="btn btn-line btn-sm" style={{ marginTop: 12 }} to="/contact"><Icon name="msg" size={14} /> Contact the program team</Link>
+          </section>
+          <section className="panel" aria-labelledby="acct-title">
+            <div className="phead"><h2 id="acct-title">Account</h2></div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-line btn-sm" onClick={() => { logout(); navigate('/login'); }}><Icon name="logout" size={14} /> Sign out</button>
+              <button type="button" className="btn btn-line btn-sm" onClick={handleReset} disabled={isResetting} style={{ color: '#9b2c12' }}>
+                {isResetting ? 'Resetting…' : 'Reset account session'}
+              </button>
+            </div>
+            {resetError && <div className="note err" role="alert" style={{ marginTop: 10 }}><Icon name="alert" size={18} /><span>{resetError}</span></div>}
+          </section>
+        </div>
+      </div>
+    </PortalLayout>
+  );
+};
+
+export default ProfilePage;

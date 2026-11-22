@@ -6,12 +6,10 @@ import { completeMyRegistration, isEmailRegistered } from '../services/registrat
 import { useAuth } from '../context/AuthContext';
 import {
   DEGREE_OPTIONS,
-  DEVICE_OPTIONS,
   EMPTY_REGISTRATION_FORM,
   FIELD_STEP,
   GRADUATION_YEAR_OPTIONS,
   ONLINE_FEE_LABEL,
-  SLOT_OPTIONS,
   STEPS,
   YEAR_OF_STUDY_OPTIONS,
   dateOfBirthBounds,
@@ -29,6 +27,7 @@ import { PASSWORD_MIN_LENGTH } from '../lib/registrationValidation';
 import { EnrollmentConfirmed, EnrollmentPanel } from '../components/auth/EnrollmentPanel';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
+import { effectiveLearningMode } from '../lib/learningMode';
 
 /** What /register shows (decided by RegisterRoute). */
 type RegisterView = RegistrationMode | 'enroll' | 'enrolled';
@@ -122,8 +121,9 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
   // Enrollment (mode choice if needed + simulated payment) and its confirmation.
   const enrolling = view === 'enroll' || view === 'enrolled';
   const signedInEmail = session?.user.email ?? profile?.email ?? '';
-  // Completing (e.g. first Google login): an existing learning mode is kept as it is.
-  const existingMode = completing ? profile?.learning_mode ?? null : null;
+  // Completing (e.g. first Google login): an existing learning mode is kept as it is. Online is
+  // locked for everyone, so a stored 'online' counts as 'offline' here (nothing is rewritten).
+  const existingMode = completing ? effectiveLearningMode(profile?.learning_mode) : null;
 
   // Completing: values already saved on the profile are shown read-only (the server keeps
   // existing name/phone anyway). Blank or missing values stay editable.
@@ -140,7 +140,8 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
       fullName: savedName,
       email: session?.user.email ?? profile?.email ?? '',
       mobile: savedPhone ?? '',
-      learningMode: profile?.learning_mode ?? '',
+      // New registrations are offline only (Online learning is closed).
+      learningMode: 'offline',
     };
     // Prefill once, when the form opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -325,17 +326,20 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
   );
 
   const modeCard = (value: 'online' | 'offline') => {
-    const selected = form.learningMode === value;
-    const locked = !!existingMode && existingMode !== value;
     const online = value === 'online';
+    // Online is closed for everyone ("Online mode — Closed"); the database enforces the same rule.
+    const locked = online || (!!existingMode && existingMode !== value);
+    const selected = !locked && form.learningMode === value;
     return (
       <button
         type="button"
         id={`reg-mode-${value}`}
         role="radio"
         aria-checked={selected}
+        aria-disabled={locked}
         disabled={locked}
-        onClick={() => set('learningMode')(value)}
+        aria-describedby={online ? 'reg-mode-online-note' : undefined}
+        onClick={() => { if (!locked) set('learningMode')(value); }}
         className={`relative text-left rounded-[1.75rem] border-2 p-6 sm:p-7 transition-all ${
           selected
             ? 'border-accent bg-accent-subtle ring-4 ring-accent/10'
@@ -350,8 +354,13 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
         >
           <Check className="w-4 h-4" />
         </span>
+        {online && (
+          <span id="reg-mode-online-note" className="absolute top-6 left-6 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-sand text-mustard-dark">
+            <Lock className="w-3.5 h-3.5" aria-hidden="true" /> Online mode — Closed
+          </span>
+        )}
         {online ? (
-          <Globe className="w-9 h-9 text-cerulean-dark mt-2" />
+          <Globe className="w-9 h-9 text-cerulean-dark mt-8" />
         ) : (
           <span className="inline-flex w-14 h-14 rounded-2xl bg-accent-subtle items-center justify-center">
             <MapPin className="w-6 h-6 text-accent" />
@@ -638,32 +647,10 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                     {modeCard('online')}
                     {modeCard('offline')}
                   </div>
-                  {existingMode && (
-                    <p className="mt-3 text-xs text-text-muted">
-                      You&apos;re already enrolled in the {existingMode} mode. You can switch later with the Switch button in the portal.
-                    </p>
-                  )}
+                  <p className="mt-3 text-xs text-text-muted">
+                    All learning is offline (in person). Online learning is currently unavailable.
+                  </p>
                   {errors.learningMode && <p className="mt-3 text-xs text-rose-600">{errors.learningMode}</p>}
-                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
-                    <Field id="reg-slot" label="Preferred live slot" error={errors.preferredSlot}>
-                      <div className="relative">
-                        <select id="reg-slot" value={form.preferredSlot} onChange={(e) => set('preferredSlot')(e.target.value)}
-                          className={`${inputClass(!!errors.preferredSlot)} appearance-none pr-10`}>
-                          {SLOT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <SelectChevron />
-                      </div>
-                    </Field>
-                    <Field id="reg-device" label="Main device" error={errors.mainDevice}>
-                      <div className="relative">
-                        <select id="reg-device" value={form.mainDevice} onChange={(e) => set('mainDevice')(e.target.value)}
-                          className={`${inputClass(!!errors.mainDevice)} appearance-none pr-10`}>
-                          {DEVICE_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                        <SelectChevron />
-                      </div>
-                    </Field>
-                  </div>
                 </section>
               )}
 
@@ -694,8 +681,7 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                       ['College ID Number', form.collegeIdNumber.trim()],
                       ['Degree', `${degreeLabel}, ${form.branch.trim()}`],
                       ['Year', form.yearOfStudy === 'Graduated' ? `Graduated · ${form.graduationYear}` : `${form.yearOfStudy} · graduating ${form.graduationYear}`],
-                      ['Mode', `${modeLabel} · ${form.preferredSlot}`],
-                      ['Device', form.mainDevice],
+                      ['Mode', modeLabel],
                       ['Fee', feeLabel],
                     ].map(([label, value]) => (
                       <React.Fragment key={label}>

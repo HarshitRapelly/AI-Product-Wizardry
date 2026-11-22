@@ -5,7 +5,7 @@ import { supabase, supabaseConfigError } from '../lib/supabase';
  * public.my_course_progress() (Migration 9):
  *   completed curriculum subtopics / all curriculum subtopics that exist × 100,
  *   rounded to one decimal, for the signed-in student (auth.uid()).
- * Levels without published content are not counted, so they never reduce it.
+ * Modules without published content are not counted, so they never reduce it.
  * The frontend never computes progress itself; it only displays this value.
  */
 

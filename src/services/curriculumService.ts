@@ -1,19 +1,21 @@
 import { supabase, supabaseConfigError } from '../lib/supabase';
+import { createNameFallback, MODULE_NAMES, type SchemaNames } from '../lib/schemaNameFallback';
 import {
-  parseLessonProgress, parseLevelProgress, parseSubtopic,
-  type CourseSubtopic, type LessonProgressRow, type LevelProgressRow,
+  parseLessonProgress, parseModuleProgress, parseSubtopic,
+  type CourseSubtopic, type LessonProgressRow, type ModuleProgressRow,
 } from '../lib/curriculumTypes';
 
 /**
- * Level content and progress (Migration 9 / 10).
+ * Module content and progress (Migration 9 / 10).
  *
  *  - course_subtopics       readable by registered students (RLS); no writes.
  *  - lesson_progress        own rows only; one row per acknowledged subtopic
  *                           (lesson_id = subtopic id, item_type = 'reading').
- *  - my_level_progress()    per-level counts and unlock state for the caller.
+ *  - my_module_progress()   per-module counts and unlock state for the caller
+ *                           (my_level_progress() before the Level → Module rename).
  *
  * The database enforces order, the quiz-before-acknowledgment rule, one-way
- * completion, registration and the Level 1 lock. The browser never sends a
+ * completion, registration and the Module 1 lock. The browser never sends a
  * user id: user_id is filled from the session (auth.uid()).
  */
 
@@ -21,7 +23,7 @@ export type CurriculumErrorKind =
   | 'unavailable'      // migration not applied yet (table / function unknown)
   | 'auth'             // session missing or expired
   | 'registration'     // signed in but not registered
-  | 'level_locked'     // previous level not complete
+  | 'module_locked'    // module not released, or previous module not complete
   | 'order'            // an earlier subtopic is not done yet
   | 'quiz_required'    // Plagiarism: submit the quiz before acknowledging
   | 'reading_required' // Migration 11: confirm the reading before the quiz
@@ -39,7 +41,7 @@ const MESSAGES: Record<CurriculumErrorKind, string> = {
   unavailable: 'This course content is not available yet. Please check back later.',
   auth: 'Your session has expired. Please sign in again.',
   registration: 'Please complete your registration to continue.',
-  level_locked: 'This level is locked. Complete the previous level first.',
+  module_locked: 'This module is locked. Complete the previous module first.',
   order: 'Please finish the previous subtopic first.',
   quiz_required: 'Please submit the quiz before confirming this subtopic.',
   reading_required: 'Please finish and confirm the reading before taking the quiz.',
@@ -63,9 +65,11 @@ export function mapCurriculumError(err: unknown): CurriculumError {
   if (code === 'PGRST205' || code === 'PGRST202' || code === '42P01' || code === '42883'
       || /could not find the (table|function)|does not exist|schema cache/i.test(msg)) return errorOf('unavailable');
   if (/registration_required/.test(msg)) return errorOf('registration');
-  // Unreleased level: write guards (Migration 13) and the quiz release gate (20261120000100)
-  if (/level_locked: (level \d+ is not open yet|this level has not been released)/.test(msg)) return errorOf('level_locked', 'This level is not open yet. Only Level 0 is available right now.');
-  if (/level_locked/.test(msg)) return errorOf('level_locked');
+  // Unreleased module: write guards (Migration 13) and the quiz release gate (20261120000100).
+  // Matches the database text before ("level_locked: level 1 …") and after ("module_locked: module 1 …")
+  // the internal Level → Module rename (migration 20261121000600).
+  if (/(level|module)_locked: ((level|module) \d+ is not open yet|this (level|module) has not been released)/.test(msg)) return errorOf('module_locked', 'This module is not open yet. Only Module 0 is available right now.');
+  if (/(level|module)_locked/.test(msg)) return errorOf('module_locked');
   if (/submit the quiz before/.test(msg)) return errorOf('quiz_required');
   if (/confirm the reading before/.test(msg)) return errorOf('reading_required');
   if (/acknowledge the (previous|earlier) subtopic/.test(msg)) return errorOf('order');
@@ -83,15 +87,23 @@ async function run<T>(fn: () => Promise<Result<T>>): Promise<Result<T>> {
   try { return await fn(); } catch (err) { return { ok: false, error: mapCurriculumError(err) }; }
 }
 
-const SUBTOPIC_COLUMNS = 'id, level_id, topic_number, topic_title, position, title, summary, reading_minutes, body, acknowledgment_text, quiz_id';
-const PROGRESS_COLUMNS = 'lesson_id, level_id, is_completed, completed_at, last_section_id';
+/*
+ * Level → Module rename compatibility (migration 20261121000600): see src/lib/schemaNameFallback.ts.
+ * One shared fallback for every curriculum request, so the remembered choice is shared; each request
+ * retries with the opposite of the names IT used (safe when requests run concurrently).
+ */
+const nameFallback = createNameFallback(MODULE_NAMES);
+const withNames = <R extends { error: unknown }>(op: (n: SchemaNames) => PromiseLike<R>): Promise<R> => nameFallback.run(op);
 
-/** All subtopics of a level, in order. Any malformed row makes the whole result invalid (never show partial content silently). */
-export async function fetchSubtopics(levelId: number): Promise<Result<CourseSubtopic[]>> {
+const subtopicColumns = (n: SchemaNames) => `id, ${n.col}, topic_number, topic_title, position, title, summary, reading_minutes, body, acknowledgment_text, quiz_id`;
+const progressColumns = (n: SchemaNames) => `lesson_id, ${n.col}, is_completed, completed_at, last_section_id`;
+
+/** All subtopics of a module, in order. Any malformed row makes the whole result invalid (never show partial content silently). */
+export async function fetchSubtopics(moduleId: number): Promise<Result<CourseSubtopic[]>> {
   if (!supabase) return notConfigured();
   const client = supabase;
   return run(async () => {
-    const { data, error } = await client.from('course_subtopics').select(SUBTOPIC_COLUMNS).eq('level_id', levelId).order('position', { ascending: true });
+    const { data, error } = await withNames((n) => client.from('course_subtopics').select(subtopicColumns(n)).eq(n.col, moduleId).order('position', { ascending: true }));
     if (error) return { ok: false, error: mapCurriculumError(error) };
     if (!Array.isArray(data)) return { ok: false, error: errorOf('invalid_data') };
     const rows = data.map(parseSubtopic);
@@ -100,12 +112,12 @@ export async function fetchSubtopics(levelId: number): Promise<Result<CourseSubt
   });
 }
 
-/** The signed-in student's progress rows for a level (RLS returns only their own rows). */
-export async function fetchMyLessonProgress(levelId: number): Promise<Result<LessonProgressRow[]>> {
+/** The signed-in student's progress rows for a module (RLS returns only their own rows). */
+export async function fetchMyLessonProgress(moduleId: number): Promise<Result<LessonProgressRow[]>> {
   if (!supabase) return notConfigured();
   const client = supabase;
   return run(async () => {
-    const { data, error } = await client.from('lesson_progress').select(PROGRESS_COLUMNS).eq('level_id', levelId);
+    const { data, error } = await withNames((n) => client.from('lesson_progress').select(progressColumns(n)).eq(n.col, moduleId));
     if (error) return { ok: false, error: mapCurriculumError(error) };
     if (!Array.isArray(data)) return { ok: false, error: errorOf('invalid_data') };
     return { ok: true, value: data.map(parseLessonProgress).filter((r): r is LessonProgressRow => r !== null) };
@@ -114,16 +126,16 @@ export async function fetchMyLessonProgress(levelId: number): Promise<Result<Les
 
 /**
  * Confirms a subtopic. Upsert on (user_id, lesson_id): re-confirming is harmless.
- * The database decides whether it is allowed (order, quiz, registration, level).
+ * The database decides whether it is allowed (order, quiz, registration, module).
  */
-export async function acknowledgeSubtopic(s: Pick<CourseSubtopic, 'id' | 'levelId'>): Promise<Result<LessonProgressRow>> {
+export async function acknowledgeSubtopic(s: Pick<CourseSubtopic, 'id' | 'moduleId'>): Promise<Result<LessonProgressRow>> {
   if (!supabase) return notConfigured();
   const client = supabase;
   return run(async () => {
-    const { data, error } = await client
+    const { data, error } = await withNames((n) => client
       .from('lesson_progress')
-      .upsert({ level_id: s.levelId, lesson_id: s.id, item_type: 'reading', is_completed: true }, { onConflict: 'user_id,lesson_id' })
-      .select(PROGRESS_COLUMNS);
+      .upsert({ [n.col]: s.moduleId, lesson_id: s.id, item_type: 'reading', is_completed: true }, { onConflict: 'user_id,lesson_id' })
+      .select(progressColumns(n)));
     if (error) return { ok: false, error: mapCurriculumError(error) };
     const row = Array.isArray(data) ? parseLessonProgress(data[0]) : null;
     if (!row || !row.isCompleted) return { ok: false, error: errorOf('invalid_data') };
@@ -135,18 +147,18 @@ export async function acknowledgeSubtopic(s: Pick<CourseSubtopic, 'id' | 'levelI
  * Confirms the READING part of a subtopic that has a quiz (the reading module).
  * Stored as its own lesson_progress row, lesson_id `<subtopic id>-reading`
  * (item_type 'reading', is_completed true). It is not a course_subtopics row, so it
- * never counts towards level or course progress, and the subtopic's own rules
+ * never counts towards module or course progress, and the subtopic's own rules
  * (quiz before acknowledgment, order) are unchanged. Upsert: retrying is harmless.
  */
-export async function confirmReadingModule(levelId: number, readingLessonId: string): Promise<Result<LessonProgressRow>> {
+export async function confirmReadingModule(moduleId: number, readingLessonId: string): Promise<Result<LessonProgressRow>> {
   if (!/^[a-z0-9][a-z0-9-]{1,79}$/.test(readingLessonId)) return { ok: false, error: errorOf('invalid_request') };
   if (!supabase) return notConfigured();
   const client = supabase;
   return run(async () => {
-    const { data, error } = await client
+    const { data, error } = await withNames((n) => client
       .from('lesson_progress')
-      .upsert({ level_id: levelId, lesson_id: readingLessonId, item_type: 'reading', is_completed: true }, { onConflict: 'user_id,lesson_id' })
-      .select(PROGRESS_COLUMNS);
+      .upsert({ [n.col]: moduleId, lesson_id: readingLessonId, item_type: 'reading', is_completed: true }, { onConflict: 'user_id,lesson_id' })
+      .select(progressColumns(n)));
     if (error) return { ok: false, error: mapCurriculumError(error) };
     const row = Array.isArray(data) ? parseLessonProgress(data[0]) : null;
     if (!row || !row.isCompleted) return { ok: false, error: errorOf('invalid_data') };
@@ -161,29 +173,29 @@ const SECTION_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
  * never reset an acknowledgment (new rows default to not completed; existing
  * rows keep their completion).
  */
-export async function saveReadingPosition(s: Pick<CourseSubtopic, 'id' | 'levelId'>, sectionId: string): Promise<Result<null>> {
+export async function saveReadingPosition(s: Pick<CourseSubtopic, 'id' | 'moduleId'>, sectionId: string): Promise<Result<null>> {
   if (!SECTION_ID_RE.test(sectionId)) return { ok: false, error: errorOf('invalid_request') };
   if (!supabase) return notConfigured();
   const client = supabase;
   return run(async () => {
-    const { error } = await client
+    const { error } = await withNames((n) => client
       .from('lesson_progress')
-      .upsert({ level_id: s.levelId, lesson_id: s.id, item_type: 'reading', last_section_id: sectionId }, { onConflict: 'user_id,lesson_id' });
+      .upsert({ [n.col]: s.moduleId, lesson_id: s.id, item_type: 'reading', last_section_id: sectionId }, { onConflict: 'user_id,lesson_id' }));
     if (error) return { ok: false, error: mapCurriculumError(error) };
     return { ok: true, value: null };
   });
 }
 
-/** my_level_progress(): 12 rows (level_id 1 = "Level 0"). */
-export async function fetchMyLevelProgress(): Promise<Result<LevelProgressRow[]>> {
+/** my_module_progress(): 12 rows (module_id 1 = "Module 0"). */
+export async function fetchMyModuleProgress(): Promise<Result<ModuleProgressRow[]>> {
   if (!supabase) return notConfigured();
   const client = supabase;
   return run(async () => {
-    const { data, error } = await client.rpc('my_level_progress');
+    const { data, error } = await withNames((n) => client.rpc(n.progressRpc));
     if (error) return { ok: false, error: mapCurriculumError(error) };
     if (!Array.isArray(data)) return { ok: false, error: errorOf('invalid_data') };
-    const rows = data.map(parseLevelProgress);
+    const rows = data.map(parseModuleProgress);
     if (rows.some((r) => r === null)) return { ok: false, error: errorOf('invalid_data') };
-    return { ok: true, value: (rows as LevelProgressRow[]).sort((a, b) => a.levelId - b.levelId) };
+    return { ok: true, value: (rows as ModuleProgressRow[]).sort((a, b) => a.moduleId - b.moduleId) };
   });
 }

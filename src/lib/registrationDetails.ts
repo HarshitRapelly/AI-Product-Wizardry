@@ -13,8 +13,8 @@ import { FULL_NAME_MAX_LENGTH, FULL_NAME_MIN_LENGTH, isValidEmail, validateNewPa
 export const DEGREE_OPTIONS = ['B.E.', 'B.Tech', 'B.Sc', 'BCA', 'B.Com', 'BBA', 'B.A.', 'M.Tech', 'M.Sc', 'MCA', 'MBA', 'Other'] as const;
 export const YEAR_OF_STUDY_OPTIONS = ['1st year', '2nd year', '3rd year', '4th year', '5th year', 'Graduated'] as const;
 export const GRADUATION_YEAR_OPTIONS = ['2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031'] as const;
-export const SLOT_OPTIONS = ['Weekday evenings', 'Weekend mornings', 'Weekend afternoons'] as const;
-export const DEVICE_OPTIONS = ['Laptop', 'Desktop', 'Tablet', 'Mobile'] as const;
+/** New registrations are offline only (enforced by the database, migration 20261121000200). Online learning is closed for everyone. */
+export const NEW_REGISTRATION_MODE: LearningMode = 'offline';
 
 export const MIN_AGE = 14;
 export const MAX_AGE = 80;
@@ -62,8 +62,6 @@ export interface RegistrationForm {
   graduationYear: string;
   aspiration: string;
   learningMode: LearningMode | '';
-  preferredSlot: string;
-  mainDevice: string;
   agreedToCodeOfConduct: boolean;
   scheduleUpdatesOptIn: boolean;
 }
@@ -87,9 +85,7 @@ export const EMPTY_REGISTRATION_FORM: RegistrationForm = {
   yearOfStudy: '',
   graduationYear: '',
   aspiration: '',
-  learningMode: '',
-  preferredSlot: 'Weekday evenings',
-  mainDevice: 'Laptop',
+  learningMode: 'offline',
   agreedToCodeOfConduct: false,
   scheduleUpdatesOptIn: true,
 };
@@ -98,7 +94,7 @@ export const EMPTY_REGISTRATION_FORM: RegistrationForm = {
 export const FIELD_STEP: Record<RegistrationField, StepIndex> = {
   fullName: 0, email: 0, mobile: 0, dateOfBirth: 0, city: 0, password: 0, confirmPassword: 0,
   college: 1, collegeIdNumber: 1, degree: 1, degreeOther: 1, branch: 1, yearOfStudy: 1, graduationYear: 1, aspiration: 1,
-  learningMode: 2, preferredSlot: 2, mainDevice: 2,
+  learningMode: 2,
   agreedToCodeOfConduct: 3, scheduleUpdatesOptIn: 3,
 };
 
@@ -185,9 +181,7 @@ export function validateRegistrationStep(
   }
 
   if (step === 2) {
-    if (form.learningMode !== 'online' && form.learningMode !== 'offline') e.learningMode = 'Choose online or offline';
-    if (!(SLOT_OPTIONS as readonly string[]).includes(form.preferredSlot)) e.preferredSlot = 'Select a preferred slot';
-    if (!(DEVICE_OPTIONS as readonly string[]).includes(form.mainDevice)) e.mainDevice = 'Select your main device';
+    if (form.learningMode !== NEW_REGISTRATION_MODE) e.learningMode = 'Online learning is currently unavailable. Please choose the offline mode.';
   }
 
   if (step === 3) {
@@ -227,8 +221,6 @@ export interface RegistrationPayload {
   graduation_year: number;
   aspiration?: string;
   learning_mode: LearningMode;
-  preferred_slot: string;
-  main_device: string;
   agreed_to_code_of_conduct: true;
   schedule_updates_opt_in: boolean;
 }
@@ -248,9 +240,7 @@ export function toRegistrationPayload(form: RegistrationForm): RegistrationPaylo
     year_of_study: form.yearOfStudy,
     graduation_year: Number(form.graduationYear),
     ...(aspiration ? { aspiration } : {}),
-    learning_mode: form.learningMode as LearningMode,
-    preferred_slot: form.preferredSlot,
-    main_device: form.mainDevice,
+    learning_mode: NEW_REGISTRATION_MODE,
     agreed_to_code_of_conduct: true,
     schedule_updates_opt_in: form.scheduleUpdatesOptIn,
   };
@@ -261,7 +251,7 @@ const SERVER_FIELD: Record<string, RegistrationField> = {
   full_name: 'fullName', mobile: 'mobile', date_of_birth: 'dateOfBirth', city: 'city', college: 'college', college_id_number: 'collegeIdNumber',
   degree: 'degree', degree_other: 'degreeOther', branch: 'branch', year_of_study: 'yearOfStudy',
   graduation_year: 'graduationYear', aspiration: 'aspiration', learning_mode: 'learningMode',
-  preferred_slot: 'preferredSlot', main_device: 'mainDevice', agreed_to_code_of_conduct: 'agreedToCodeOfConduct',
+  agreed_to_code_of_conduct: 'agreedToCodeOfConduct',
   schedule_updates_opt_in: 'scheduleUpdatesOptIn',
 };
 export function fieldFromServerError(message: string): RegistrationField | null {

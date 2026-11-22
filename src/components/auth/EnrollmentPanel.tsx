@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, CreditCard, Globe, Landmark, MapPin, QrCode, Receipt, ShieldCheck } from 'lucide-react';
+import { Check, ChevronRight, CreditCard, Globe, Landmark, Lock, MapPin, QrCode, Receipt, ShieldCheck } from 'lucide-react';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { ONLINE_FEE_LABEL } from '../../lib/registrationDetails';
 import type { LearningMode } from '../../types';
+import { fetchMyStudentCode } from '../../services/portalService';
 
 /**
  * Enrollment inside /register (replaces the old /choose-learning-mode, /checkout
@@ -20,19 +21,28 @@ const ModeChoice: React.FC<{
   value: LearningMode;
   selected: boolean;
   onSelect: () => void;
-}> = ({ value, selected, onSelect }) => {
+  /** Locked choices are shown but cannot be selected (Online: "Closed"). */
+  locked?: boolean;
+}> = ({ value, selected, onSelect, locked = false }) => {
   const online = value === 'online';
   return (
     <button
       type="button"
       id={`enroll-mode-${value}`}
       role="radio"
-      aria-checked={selected}
-      onClick={onSelect}
+      aria-checked={selected && !locked}
+      aria-disabled={locked}
+      disabled={locked}
+      onClick={() => { if (!locked) onSelect(); }}
       className={`relative text-left rounded-[1.75rem] border-2 p-6 transition-all ${
-        selected ? 'border-accent bg-accent-subtle ring-4 ring-accent/10' : 'border-border bg-background hover:border-border-strong'
-      }`}
+        selected && !locked ? 'border-accent bg-accent-subtle ring-4 ring-accent/10' : 'border-border bg-background hover:border-border-strong'
+      } ${locked ? 'opacity-60 cursor-not-allowed' : ''}`}
     >
+      {locked && (
+        <span className="inline-flex items-center gap-1.5 mb-3 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-sand text-mustard-dark">
+          <Lock className="w-3.5 h-3.5" aria-hidden="true" /> Online mode — Closed
+        </span>
+      )}
       <span
         className={`absolute top-5 right-5 w-7 h-7 rounded-full flex items-center justify-center ${
           selected ? 'bg-accent text-white' : 'border-2 border-border text-transparent'
@@ -63,7 +73,8 @@ const primaryButton =
 export const EnrollmentPanel: React.FC = () => {
   const { learningMode, selectLearningMode, processPayment } = useAuthAndCourse();
   const navigate = useNavigate();
-  const [chosen, setChosen] = useState<LearningMode | null>(null);
+  // New registrations are offline only; Online is closed for everyone and enforced by the database.
+  const [chosen, setChosen] = useState<LearningMode | null>('offline');
   const [method, setMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +82,7 @@ export const EnrollmentPanel: React.FC = () => {
   if (!learningMode) {
     const saveMode = async () => {
       if (!chosen || busy) {
-        if (!chosen) setError('Choose online or offline');
+        if (!chosen) setError('Choose the offline mode to continue');
         return;
       }
       setBusy(true);
@@ -85,7 +96,7 @@ export const EnrollmentPanel: React.FC = () => {
         <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-text">Choose how you learn</h2>
         <p className="mt-2 text-base text-text-muted">Each mode has its own journey in the portal.</p>
         <div role="radiogroup" aria-label="Learning mode" className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <ModeChoice value="online" selected={chosen === 'online'} onSelect={() => { setChosen('online'); setError(null); }} />
+          <ModeChoice value="online" locked selected={false} onSelect={() => undefined} />
           <ModeChoice value="offline" selected={chosen === 'offline'} onSelect={() => { setChosen('offline'); setError(null); }} />
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-rose-600">{error}</p>}
@@ -196,14 +207,28 @@ export const EnrollmentPanel: React.FC = () => {
   );
 };
 
-/** Confirmation shown on /register right after a successful (simulated) payment. */
+/**
+ * Confirmation shown on /register right after enrollment. Payment is SIMULATED (no gateway):
+ * the reference below is created by the app, not by a payment provider, so this is an
+ * enrollment summary — never presented as a verified payment receipt, and no receipt email is
+ * sent. The Student ID comes from the database (public.my_student_code()).
+ */
 export const EnrollmentConfirmed: React.FC = () => {
   const { paymentDetails, learningMode } = useAuthAndCourse();
   const navigate = useNavigate();
+  const [studentId, setStudentId] = useState<string>('Loading…');
+  useEffect(() => {
+    let c = false;
+    fetchMyStudentCode().then((r) => {
+      if (!c) setStudentId(r.ok && r.value ? r.value : 'Shown on your dashboard once assigned');
+    });
+    return () => { c = true; };
+  }, []);
   const rows: Array<[string, string]> = [
-    ['Transaction ID', paymentDetails?.transactionId ?? '—'],
+    ['Student ID', studentId],
+    ['Enrollment reference', paymentDetails?.transactionId ?? '—'],
     ['Programme', paymentDetails?.programName ?? '—'],
-    ['Amount', paymentDetails && paymentDetails.amount > 0 ? `₹${paymentDetails.amount.toLocaleString('en-IN')} (Paid)` : '₹0 (100% Waived)'],
+    ['Amount', paymentDetails && paymentDetails.amount > 0 ? `₹${paymentDetails.amount.toLocaleString('en-IN')} (simulated — no money was charged)` : '₹0 (100% Waived)'],
     ['Method', paymentDetails?.method ?? '—'],
     ['Date', paymentDetails?.date ?? '—'],
     ['Cohort', paymentDetails?.cohort ?? '—'],
@@ -219,7 +244,7 @@ export const EnrollmentConfirmed: React.FC = () => {
       </p>
       <div className="mt-8 text-left rounded-[1.5rem] border border-border bg-background p-6">
         <p className="flex items-center gap-2 text-sm font-semibold text-secondary mb-4">
-          <Receipt className="w-4 h-4 text-accent" /> Admission receipt
+          <Receipt className="w-4 h-4 text-accent" /> Enrollment summary
         </p>
         <dl className="grid grid-cols-[minmax(7rem,1fr)_2fr] gap-x-6 gap-y-3 text-[15px]">
           {rows.map(([label, value]) => (
@@ -229,6 +254,10 @@ export const EnrollmentConfirmed: React.FC = () => {
             </React.Fragment>
           ))}
         </dl>
+        <p className="mt-4 text-xs text-text-muted">
+          This is an enrollment summary, not a payment receipt: no online payment was processed and no email receipt is sent.
+          Your Student ID is always shown on your dashboard and profile.
+        </p>
       </div>
       <button type="button" onClick={() => navigate('/dashboard', { replace: true })} className={`mt-8 ${primaryButton}`}>
         Go to dashboard <ChevronRight className="w-4 h-4" />
