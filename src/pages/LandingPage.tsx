@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PublicSite } from '../components/site/SiteChrome';
+import { ExploreLink, PublicSite } from '../components/site/SiteChrome';
 import { Icon, Spark, iconMarkup, type IconName } from '../components/aiw/Icon';
 import { CareersArt, HeroArt, MailArt, ProblemArt, ReturnArt, RocketArt, Starfield, WantArt, Wave } from '../components/aiw/Art';
 import { PROGRAM, batchStartDate, batchStartLine } from '../config/program';
+import { BrochureButton } from '../components/site/BrochureDialog';
 
 /**
- * Public home page — a faithful build of the approved reference design. Program details that
- * the reference leaves out (fee, grading, curriculum, FAQs, admissions contact) live on /explore.
+ * Public home page — a faithful build of the approved reference design. "Explore" links scroll to
+ * the #explore section (the six-month journey); the former /explore page was removed.
  */
 
 const QUESTIONS: { tone: 't' | 'o' | 'g'; Art: React.FC; title: string; text: string }[] = [
@@ -47,7 +48,7 @@ export const LandingPage: React.FC = () => (
           <p className="lead">Six hands-on months of AI product thinking: for those heading into product management, and for builders who want to build better.</p>
           <div className="ctas">
             <Link to="/register" className="btn btn-primary"><Icon name="wand" size={18} /> Register now</Link>
-            <Link to="/explore" className="btn btn-ghost">Explore <Icon name="right" size={16} /></Link>
+            <ExploreLink className="btn btn-ghost">Explore <Icon name="right" size={16} /></ExploreLink>
           </div>
           <div className="hstats">
             <span><b>{PROGRAM.months}</b> months</span>
@@ -76,7 +77,7 @@ export const LandingPage: React.FC = () => (
 
     {/* Journey */}
     <div className="band">
-      <section className="sec" aria-labelledby="journey-title">
+      <section className="sec" id="explore" aria-labelledby="journey-title" style={{ scrollMarginTop: 80 }}>
         <p className="eyebrow gold reveal" style={{ textAlign: 'center' }}>Your six-month journey</p>
         <h2 id="journey-title" className="reveal" style={{ textAlign: 'center' }}>From spark to launch.</h2>
         <svg className="jpath reveal" viewBox="0 0 1010 230" aria-hidden="true" focusable="false">
@@ -161,9 +162,8 @@ export const LandingPage: React.FC = () => (
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <Link to="/register" className="btn btn-primary">Register</Link>
-          <a href="/assets/ai-product-wizardry-brochure.pdf" download="AI_Product_Wizardry_Brochure.pdf" className="btn btn-ghost">
-            <Icon name="down" size={16} /> Brochure
-          </a>
+          {/* Download starts after name, email and contact number are saved (brochure_download_user_details). */}
+          <BrochureButton />
         </div>
       </div>
     </section>

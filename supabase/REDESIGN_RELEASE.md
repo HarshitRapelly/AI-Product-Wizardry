@@ -29,6 +29,27 @@ Rules: never `supabase db push` to production; production has no migration-histo
 one at a time (SQL Editor, or `npx supabase db query --remote=onnibnneaxlzlyewhrnf --yes -f <file>`);
 stop at the first error. Each file is a single transaction.
 
+## Production status (23 Nov 2026)
+
+The redesign release is **live**: migrations 0100 → 0300 → 0700 → 0400 → 0500 → 0200 → 0800 were applied to production
+on 22 Nov 2026 (each verified; integrity unchanged; student-ID mapping exported) and PR #3 was merged into `main`
+(Vercel production deploy). **0600 is still pending** (separate approval). The production smoke test after the merge
+has not been recorded yet.
+
+## Follow-up release (round 2, branch `feature/portal-ui-round2`) — not yet in production
+
+| Change | Notes |
+|---|---|
+| `20261123000900_brochure_download_user_details` | New table `public.brochure_download_user_details` (name, email, contact number, user_id, created_at) + RPC `public.submit_brochure_request` (anon + authenticated; honeypot; 5/hour per email, 300/hour overall). RLS on, no policies, no table grants: readable only in the dashboard. Depends only on Migrations 1–14. **Staging: applied and tested** (verification 6/6, `brochure_request_checks.sql` passed, re-run idempotent, negative control failed as expected). **Production: not applied** — apply it **before** merging the round-2 PR (the brochure form needs it). Rollback: `supabase/rollback/20261123000900_brochure_download_user_details.down.sql` (keeps the table if it has rows unless the data-loss override is set) |
+| Frontend | Brochure button opens a details form; download starts after the details are saved. `/explore` page removed (links scroll to `/#explore`; `/explore` redirects). Dashboard: Student ID removed (still on Profile), "Your cohort" card replaced by "AI news". Assignments: reference layout, upload / jury summary locked until Module 1 is released (unchanged behaviour), quiz history moved to Grades. New "Live sessions" page + sidebar tab. Profile: Settings card (learning mode: Online unavailable; notification switches shown, not functional yet). Quiz: unanswered questions are highlighted and opened when Submit is pressed. Safari: `-webkit-backdrop-filter`, explicit `transform-box` for pixel-origin SVG animations |
+| Placeholders | AI-news sample headlines only (placeholder events and the placeholder due date were removed 23 Nov; the calendar shows the real programme schedule): **on by default in the local dev server, off in every build** (Production, Preview) unless `VITE_SHOW_DEMO_EVENTS=true`; `false` turns them off locally. Set `VITE_SHOW_DEMO_EVENTS=true` for **Vercel Preview only**. Verified: the production bundle contains none of the placeholder text |
+| Round 3 | `/modules`: Module 0 lesson list removed. Lesson view: full-screen reading button (Fullscreen API; full-window mode where unsupported, e.g. iPhone Safari). Explore links always scroll to `#explore` on the home page (also on repeated clicks). More placeholder sessions and sample news |
+
+Production steps for round 2 (each needs explicit approval): read-only
+`20261123000900_brochure_download_user_details_readonly_verification.sql` (all false) → apply 0900 → the same file
+(6/6 true, 0 rows) → merge the round-2 PR → smoke test (brochure form saves and downloads; Explore scrolls; Live
+sessions shows "Sessions will appear here…"; no placeholder content).
+
 ## Online is closed for everyone
 
 Policy: **Offline is the only learning mode, for new and existing students, until the program team
@@ -203,7 +224,7 @@ Why this order:
   old Online pages. Keep this gap to minutes.
 - 0600 only after the new frontend is stable; the new frontend works before and after it (rehearsed both).
 
-**Smoke test after step 8** (team account): home, Explore (FAQ: Online unavailable), Contact (one test enquiry, then
+**Smoke test after step 8** (team account): home, Explore (round 2: scrolls to the journey section), Contact (one test enquiry, then
 mark it `closed`), sign in, dashboard (Student ID `APW…`), modules, Module 0 (content loads; confirm a lesson; reload),
 calendar (no placeholder events unless approved), cohort, assignments → View Score → Back, profile;
 `/online/dashboard` → `/offline/dashboard`; `/online/module/1/recordings` → "Online learning is closed".
@@ -254,12 +275,17 @@ Database rollbacks that exist (all need approval; data-loss guards refuse unless
 Last resort: the encrypted pre-redesign backup (RESTORE.txt) — only into a new project or by separate decision; it
 would discard everything written after the backup.
 
-## Temporary demo calendar events
+## Programme calendar (real events) and the demo flag
 
-`src/data/demoEvents.ts` holds a clearly marked placeholder schedule (frontend only, never stored in the
-database). It is **off by default** and compiled in only when the build sets `VITE_SHOW_DEMO_EVENTS=true`
-(any other value or no value = off; rule tested in `tests/releaseConfig.test.ts`). Production must never set
-it; Preview deployments and local `.env` files may opt in.
+Placeholder calendar events were **removed** (23 Nov 2026). The calendar, dashboard Upcoming, calendar
+dropdown and Live sessions now show only the published Product Management Programme learning calendar
+(`src/config/programSchedule.ts`, tested in `tests/programSchedule.test.ts`): orientation 13 Nov 2026, and for
+Modules 1–11 the first class, last class and assignment due date (all-day entries), plus any rows in
+`public.cohort_events`. The Assignments page shows the real Module 1 due date (Tue 15 Dec 2026) in every
+environment. To change a date, edit `programSchedule.ts` and redeploy.
+
+`VITE_SHOW_DEMO_EVENTS` (in `src/data/demoEvents.ts`) now controls **only the sample AI news headlines**:
+on in the local dev server, off in builds unless set to exactly `true`. Production must never set it.
 
 ## Routine operations (program team, SQL Editor)
 

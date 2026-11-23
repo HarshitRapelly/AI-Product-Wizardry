@@ -2,7 +2,7 @@
 // Run: npm run test:unit
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isFlagOn } from '../src/lib/featureFlags.ts';
+import { demoContentEnabled, isFlagOn } from '../src/lib/featureFlags.ts';
 import { PROGRAM, batchStartDate, batchStartLine } from '../src/config/program.ts';
 
 test('demo events flag: off unless exactly "true"', () => {
@@ -11,6 +11,15 @@ test('demo events flag: off unless exactly "true"', () => {
   assert.equal(isFlagOn(''), false);
   for (const v of ['false', 'TRUE', 'True', '1', 'yes', 'on', ' true', 'true ']) assert.equal(isFlagOn(v), false, v);
   assert.equal(isFlagOn('true'), true);
+});
+
+test('placeholder content: on in the local dev server, off in every build unless explicitly enabled', () => {
+  assert.equal(demoContentEnabled(undefined, false), false, 'Production / Preview build without the flag must be off');
+  assert.equal(demoContentEnabled('', false), false);
+  assert.equal(demoContentEnabled('TRUE', false), false);
+  assert.equal(demoContentEnabled('true', false), true, 'Preview opts in with exactly "true"');
+  assert.equal(demoContentEnabled(undefined, true), true, 'local dev server shows placeholders by default');
+  assert.equal(demoContentEnabled('false', true), false, 'local dev server can turn them off');
 });
 
 test('batch start is not confirmed: no date is configured', () => {

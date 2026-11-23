@@ -337,7 +337,10 @@ const ActiveQuiz: React.FC<{
 }> = ({ uid, session, items, mode, onAccepted, onRefused }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<CurriculumError | null>(null);
+  /** Set when "Submit" is pressed with unanswered questions: they are highlighted until answered. */
+  const [showMissing, setShowMissing] = useState(false);
   const inFlight = useRef(false);
+  const missingRef = useRef<HTMLParagraphElement>(null);
   const index = Math.min(session.index, items.length - 1);
   const q = items[index];
   const answers = session.answers;
@@ -350,9 +353,19 @@ const ActiveQuiz: React.FC<{
   const save = (patch: Partial<QuizSession>) => writeQuizSession(uid, { ...session, ...patch });
   const choose = (opt: number) => { if (!frozen && !submitting) save({ answers: { ...answers, [String(q.questionId)]: opt } }); };
   const go = (i: number) => save({ index: Math.max(0, Math.min(items.length - 1, i)) });
+  /** 1-based numbers of the questions that still have no answer. */
+  const missing = items.map((x, i) => (answers[String(x.questionId)] === undefined ? i : -1)).filter((i) => i >= 0);
 
   const submit = async () => {
-    if (!complete || inFlight.current) return;
+    if (inFlight.current) return;
+    if (!complete) {
+      // Not submittable yet (unchanged rule): highlight every unanswered question and take the
+      // student to the first one. Nothing is sent to the server.
+      setShowMissing(true);
+      if (missing.length) go(missing[0]);
+      requestAnimationFrame(() => missingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+      return;
+    }
     inFlight.current = true;
     setSubmitting(true);
     setError(null);
@@ -387,6 +400,7 @@ const ActiveQuiz: React.FC<{
         <nav aria-label="Questions" className="flex flex-wrap gap-1.5 pt-1">
           {items.map((x, i) => {
             const done = answers[String(x.questionId)] !== undefined;
+            const flagged = showMissing && !done;
             return (
               <button
                 key={x.questionId}
@@ -394,8 +408,9 @@ const ActiveQuiz: React.FC<{
                 onClick={() => go(i)}
                 data-testid="quiz-jump"
                 aria-current={i === index ? 'step' : undefined}
-                aria-label={`Question ${i + 1}${done ? ', answered' : ''}`}
-                className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${i === index ? 'bg-gold text-ink' : done ? 'bg-white/20 text-white' : 'bg-white/5 text-cream/70 hover:bg-white/10'}`}
+                aria-label={`Question ${i + 1}${done ? ', answered' : flagged ? ', not answered' : ''}`}
+                data-unanswered={flagged ? 'true' : undefined}
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${flagged ? 'ring-2 ring-orange-400 ' : ''}${i === index ? 'bg-gold text-ink' : done ? 'bg-white/20 text-white' : flagged ? 'bg-orange-500/25 text-white' : 'bg-white/5 text-cream/70 hover:bg-white/10'}`}
               >{i + 1}</button>
             );
           })}
@@ -434,7 +449,7 @@ const ActiveQuiz: React.FC<{
             <button
               type="submit"
               data-testid="quiz-submit"
-              disabled={!complete || submitting}
+              disabled={submitting}
               aria-busy={submitting}
               className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed ${accent}`}
             >
@@ -442,7 +457,16 @@ const ActiveQuiz: React.FC<{
               <span>{submitting ? 'Submitting…' : error ? 'Try again' : 'Submit answers'}</span>
             </button>
           </div>
-          {!complete && <p className="text-xs text-text-muted">Answer all {items.length} questions to submit.</p>}
+          {!complete && !showMissing && <p className="text-xs text-text-muted">Answer all {items.length} questions to submit.</p>}
+          {!complete && showMissing && (
+            <p ref={missingRef} role="alert" data-testid="quiz-missing" className="flex items-start gap-1.5 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2 text-xs font-semibold text-orange-800">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+              <span>
+                {missing.length === 1 ? `Question ${missing[0] + 1} is not answered yet.` : `Questions ${missing.map((i) => i + 1).join(', ')} are not answered yet.`}
+                {' '}Answer {missing.length === 1 ? 'it' : 'them'} to submit ({missing.length === 1 ? 'it is' : 'they are'} highlighted above).
+              </span>
+            </p>
+          )}
           {error && (
             <p role="alert" className="flex items-start gap-1.5 text-xs text-rose-700">
               <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" /><span>{error.message}</span>

@@ -4,13 +4,12 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthAndCourseProvider, useAuthAndCourse } from './context/AuthAndCourseContext';
 
 // Route Guards
-import { GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RegisterRoute } from './components/guards/RouteGuards';
+import { GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RegisterRoute, SHOW_HOME_STATE } from './components/guards/RouteGuards';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 // Public Pages
 import { LandingPage } from './pages/LandingPage';
-import { ExplorePage } from './pages/ExplorePage';
 import { ContactPage } from './pages/ContactPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -34,6 +33,7 @@ import { DashboardPage } from './pages/shared/DashboardPage';
 import { CalendarPage } from './pages/shared/CalendarPage';
 import { CohortPage } from './pages/shared/CohortPage';
 import { QuizReviewPage } from './pages/shared/QuizReviewPage';
+import { LiveSessionsPage } from './pages/shared/LiveSessionsPage';
 import { OnlineClosedPage } from './pages/OnlineClosedPage';
 import { offlinePathForOnline } from './lib/learningMode';
 
@@ -66,7 +66,8 @@ export function App() {
           {/* Signed-in students are sent to their next step instead of the public landing page */}
           <Route path="/" element={<HomeRoute><LandingPage /></HomeRoute>} />
           {/* Public program pages: open to everyone, signed in or not */}
-          <Route path="/explore" element={<ExplorePage />} />
+          {/* The former /explore page was removed: old links go to the Explore section of the home page. */}
+          <Route path="/explore" element={<Navigate to={{ pathname: '/', hash: '#explore' }} state={SHOW_HOME_STATE} replace />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<GuestOnlyGuard><LoginPage /></GuestOnlyGuard>} />
           {/* Signed out: create an account. Signed in without a registration: complete it once. */}
@@ -147,6 +148,14 @@ export function App() {
             }
           />
           <Route
+            path="/offline/live-sessions"
+            element={
+              <PortalModeGuard requiredMode="offline">
+                <LiveSessionsPage mode="offline" />
+              </PortalModeGuard>
+            }
+          />
+          <Route
             path="/offline/calendar"
             element={
               <PortalModeGuard requiredMode="offline">
@@ -210,6 +219,7 @@ export function App() {
           <Route path="/assignments" element={<PaidGuard><ModeRedirect subpath="assignments" /></PaidGuard>} />
           <Route path="/grades" element={<PaidGuard><ModeRedirect subpath="grades" /></PaidGuard>} />
           <Route path="/calendar" element={<PaidGuard><ModeRedirect subpath="calendar" /></PaidGuard>} />
+          <Route path="/live-sessions" element={<PaidGuard><ModeRedirect subpath="live-sessions" /></PaidGuard>} />
           <Route path="/classes" element={<PaidGuard><ModeRedirect subpath="calendar" /></PaidGuard>} />
           <Route path="/leaderboard" element={<PaidGuard><ModeRedirect subpath="dashboard" /></PaidGuard>} />
           <Route path="/levels" element={<PaidGuard><ModeRedirect subpath="modules" /></PaidGuard>} />

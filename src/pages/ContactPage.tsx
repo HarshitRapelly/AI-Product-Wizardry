@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 import { PublicSite } from '../components/site/SiteChrome';
 import { Icon } from '../components/aiw/Icon';
 import { MailArt, Starfield, Wave } from '../components/aiw/Art';
@@ -78,7 +79,7 @@ export const ContactPage: React.FC = () => {
             <li>We only use your details to answer your question.</li>
           </ul>
           <p style={{ marginTop: 16, fontSize: 14 }}>
-            Looking for program details? <Link to="/explore" style={{ color: 'var(--t500)', fontWeight: 600 }}>Explore the program</Link>.
+            Looking for program details? <Link to={{ pathname: '/', hash: '#explore' }} state={SHOW_HOME_STATE} style={{ color: 'var(--t500)', fontWeight: 600 }}>Explore the program</Link>.
           </p>
         </aside>
 

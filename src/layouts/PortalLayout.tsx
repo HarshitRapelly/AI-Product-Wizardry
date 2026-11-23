@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useLiveSessions } from '../components/portal/liveSessions';
 import { useAuthAndCourse } from '../context/AuthAndCourseContext';
 import { BRAND } from '../components/brand/BrandLogo';
 import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
@@ -15,7 +16,7 @@ interface PortalLayoutProps {
   title?: string;
 }
 
-interface NavItem { name: string; path: string; icon: IconName; end?: boolean }
+interface NavItem { name: string; path: string; icon: IconName; end?: boolean; badge?: number }
 
 const initialsOf = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || 'AW';
@@ -71,7 +72,8 @@ const SearchPalette: React.FC<{ items: { label: string; path: string; icon: Icon
   const results = items.filter((i) => (i.label + ' ' + i.hint).toLowerCase().includes(q.trim().toLowerCase()));
   useEffect(() => { input.current?.focus(); }, []);
   useEffect(() => { setActive(0); }, [q]);
-  const go = (path: string) => { onClose(); navigate(path); };
+  // Website links (e.g. /#explore) pass SHOW_HOME_STATE so signed-in students can see the public home page.
+  const go = (path: string) => { onClose(); navigate(path, path.startsWith('/#') ? { state: SHOW_HOME_STATE } : undefined); };
   return (
     <div className="pal" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="box" role="dialog" aria-modal="true" aria-label="Search pages">
@@ -116,6 +118,8 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
   const activeMode = learningMode || mode;
   const prefix = `/${activeMode}`;
   const name = user?.name || 'Student';
+  // Badge on "Live sessions": confirmed upcoming sessions (same data as the Live sessions page).
+  const sessions = useLiveSessions();
 
   const nav: NavItem[] = [
     { name: 'Home', path: `${prefix}/dashboard`, icon: 'home', end: true },
@@ -123,13 +127,14 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
     { name: 'Calendar', path: `${prefix}/calendar`, icon: 'cal' },
     { name: 'Assignments', path: `${prefix}/assignments`, icon: 'clip' },
     { name: 'Grades', path: `${prefix}/grades`, icon: 'chart' },
+    { name: 'Live sessions', path: `${prefix}/live-sessions`, icon: 'video', badge: sessions.confirmedUpcoming },
     { name: 'Cohort', path: `${prefix}/cohort`, icon: 'users' },
     { name: 'Profile', path: `${prefix}/profile`, icon: 'gear' },
   ];
   const searchItems = [
     ...nav.map((n) => ({ label: n.name, path: n.path, icon: n.icon, hint: 'Portal' })),
     { label: 'Module 0 · Orientation & Program Essentials', path: `${prefix}/module/0`, icon: 'book' as IconName, hint: 'Lessons' },
-    { label: 'Explore the program', path: '/explore', icon: 'globe' as IconName, hint: 'Website' },
+    { label: 'Explore the program', path: '/#explore', icon: 'globe' as IconName, hint: 'Website' },
     { label: 'Contact the program team', path: '/contact', icon: 'msg' as IconName, hint: 'Website' },
   ];
 
@@ -168,6 +173,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
             {nav.map((n) => (
               <NavLink key={n.path} to={n.path} end={n.end} className={({ isActive }) => (isActive || (n.icon === 'book' && /\/module\//.test(location.pathname)) ? 'on' : undefined)}>
                 <Icon name={n.icon} /> {n.name}
+                {!!n.badge && <span className="badge" aria-label={`${n.badge} upcoming`}>{n.badge}</span>}
               </NavLink>
             ))}
             <span style={{ flex: 1 }} />

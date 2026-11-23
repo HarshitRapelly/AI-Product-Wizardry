@@ -5,12 +5,13 @@ import {
   EVENT_CATEGORY_LABEL, EVENT_CATEGORY_TAG, fetchEvents,
   type CohortEvent, type EventCategory, type PortalError,
 } from '../../services/portalService';
-import { DEMO_EVENTS, SHOW_DEMO_EVENTS } from '../../data/demoEvents';
+import { SCHEDULE_EVENTS } from './scheduleEvents';
+import { moduleOnDay } from '../../config/programSchedule';
 
 /**
  * Calendar building blocks (month grid, event row, event loader), styled after the approved
  * reference design. Events come from public.cohort_events (published rows, read-only for
- * students) plus — while SHOW_DEMO_EVENTS is on — the clearly marked temporary demo events.
+ * students) plus the published programme calendar (src/config/programSchedule.ts). No placeholder events.
  * All dates and times are shown in India Standard Time.
  */
 
@@ -47,13 +48,12 @@ export function useEvents(from: Date, to: Date): EventsState & { reload: () => v
   useEffect(() => {
     let cancelled = false;
     setState({ status: 'loading' });
-    const demo = SHOW_DEMO_EVENTS
-      ? DEMO_EVENTS.filter((e) => e.startAt.getTime() >= fromMs && e.startAt.getTime() <= toMs && (!e.learningMode || !learningMode || e.learningMode === learningMode))
-      : [];
+    // The published programme calendar (always shown; not a placeholder).
+    const schedule = SCHEDULE_EVENTS.filter((e) => e.startAt.getTime() >= fromMs && e.startAt.getTime() <= toMs);
     fetchEvents(new Date(fromMs), new Date(toMs), learningMode).then((r) => {
       if (cancelled) return;
-      if (!r.ok && !demo.length) { setState({ status: 'error', error: r.error }); return; }
-      const merged = [...(r.ok ? r.value : []), ...demo].sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+      if (!r.ok && !schedule.length) { setState({ status: 'error', error: r.error }); return; }
+      const merged = [...(r.ok ? r.value : []), ...schedule].sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
       setState({ status: 'ready', events: merged });
     });
     return () => { cancelled = true; };
@@ -65,6 +65,7 @@ export function useEvents(from: Date, to: Date): EventsState & { reload: () => v
 function eventLine(e: CohortEvent): string {
   if (!e.confirmed) return `${e.title} · date and details coming soon`;
   const parts = [fmtDate(e.startAt)];
+  if (e.allDay) { parts.push(e.category === 'assignment_due' ? 'Due date' : e.moduleNumber ? 'Class day · in person' : 'All day'); return parts.join(' · '); }
   if (e.selfPacedMinutes) parts.push('Self-paced', `~${e.selfPacedMinutes} min`);
   else if (e.category === 'assignment_due') parts.push(`by ${fmtTime(e.startAt)}`);
   else parts.push(e.endAt ? `${fmtTime(e.startAt)} – ${fmtTime(e.endAt)}` : fmtTime(e.startAt));
@@ -151,13 +152,16 @@ export const MonthGrid: React.FC<{
           const day = i + 1;
           const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const evs = byDay.get(key) ?? [];
+          const mod = moduleOnDay(key);
           return (
             <button
               key={key}
               type="button"
-              className={`d${key === todayKey ? ' today' : ''}${selected === key ? ' sel' : ''}`}
+              title={mod ? `Module ${mod.n} · ${mod.title}` : undefined}
+              data-module={mod?.n}
+              className={`d${key === todayKey ? ' today' : ''}${selected === key ? ' sel' : ''}${mod ? ` inmod tone${mod.n % 4}${key === mod.firstClass ? ' mstart' : ''}${key === mod.lastClass ? ' mend' : ''}` : ''}`}
               onClick={() => onSelect(selected === key ? null : key)}
-              aria-label={`${day} ${label}${evs.length ? `, ${evs.length} event${evs.length > 1 ? 's' : ''}` : ''}`}
+              aria-label={`${day} ${label}${mod ? `, Module ${mod.n} class period` : ''}${evs.length ? `, ${evs.length} event${evs.length > 1 ? 's' : ''}` : ''}`}
               aria-pressed={selected === key}
             >
               {day}

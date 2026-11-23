@@ -84,6 +84,10 @@ export interface CohortEvent {
   confirmed: boolean;
   /** Self-paced item: shown as "Self-paced · ~N min" instead of a time range. */
   selfPacedMinutes: number | null;
+  /** Date-only entry (no time), e.g. the published programme calendar. */
+  allDay?: boolean;
+  /** Module the entry belongs to (programme calendar entries). */
+  moduleNumber?: number;
   /** Temporary placeholder (src/data/demoEvents.ts), never a database row. */
   demo?: boolean;
 }

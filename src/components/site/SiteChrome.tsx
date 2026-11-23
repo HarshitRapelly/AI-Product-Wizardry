@@ -3,12 +3,34 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { BRAND } from '../brand/BrandLogo';
 import { Icon } from '../aiw/Icon';
+import { SHOW_HOME_STATE } from '../guards/RouteGuards';
 import { useReveal } from '../aiw/useReveal';
 
-/** Sticky top navigation of the public site (Home · Explore · Contact · Sign in · Register). */
+/**
+ * "Explore": the #explore section (six-month journey) of the home page. On the home page it always
+ * scrolls there smoothly (also when the address already ends in #explore); elsewhere it navigates
+ * to /#explore and PublicSite scrolls after the page renders.
+ */
+export const ExploreLink: React.FC<{ className?: string; children: React.ReactNode }> = ({ className, children }) => {
+  const { pathname } = useLocation();
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== '/' || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    const target = document.getElementById('explore');
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.location.hash !== '#explore') window.history.replaceState(window.history.state, '', '/#explore');
+  };
+  return (
+    <Link to={{ pathname: '/', hash: '#explore' }} state={SHOW_HOME_STATE} className={className} onClick={onClick} data-testid="explore-link">
+      {children}
+    </Link>
+  );
+};
+
+/** Sticky top navigation of the public site (Home · Explore · Contact · Sign in · Register). Explore = the #explore section of home. */
 export const SiteNav: React.FC = () => {
   const { isAuthenticated, isPaid } = useAuthAndCourse();
-  const cls = ({ isActive }: { isActive: boolean }) => (isActive ? 'on' : undefined);
   return (
     <header className="nav">
       <Link className="brand" to="/" aria-label={`${BRAND.name} home`}>
@@ -16,7 +38,7 @@ export const SiteNav: React.FC = () => {
       </Link>
       <nav className="nav-links" aria-label="Main">
         <NavLink to="/" end className={({ isActive }) => `hide-sm${isActive ? ' on' : ''}`}>Home</NavLink>
-        <NavLink to="/explore" className={cls}>Explore</NavLink>
+        <ExploreLink>Explore</ExploreLink>
         <NavLink to="/contact" className={({ isActive }) => `hide-sm${isActive ? ' on' : ''}`}>Contact</NavLink>
         {isAuthenticated && isPaid ? (
           <Link to="/dashboard" className="btn btn-primary btn-sm"><Icon name="wand" size={16} /> Go to my portal</Link>
@@ -43,7 +65,7 @@ export const SiteFooter: React.FC = () => (
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <Link className="btn btn-ghost btn-sm" to="/contact"><Icon name="msg" size={14} /> Get in touch</Link>
-        <Link className="btn btn-ghost btn-sm" to="/explore">Explore</Link>
+        <ExploreLink className="btn btn-ghost btn-sm">Explore</ExploreLink>
         <Link className="btn btn-primary btn-sm" to="/register">Register</Link>
       </div>
     </div>
