@@ -45,14 +45,15 @@ export const QuizReviewPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode 
     return () => { c = true; };
   }, [quizId, id, tick]);
 
-  const back = `/${mode}/assignments`;
+  // Quiz history lives on the Grades page.
+  const back = `/${mode}/grades`;
   const title = nav.quizTitle ?? 'Quiz';
   const submitted = state.status === 'ready' ? new Date(state.attempt.submittedAt) : null;
 
   return (
     <PortalLayout mode={mode} title={`${title} · Score`}>
       <div className="ttl">
-        <Link to={back} className="back" state={{ tab: 'history' }}><Icon name="left" size={16} /> Back to assignments</Link>
+        <Link to={back} className="back"><Icon name="left" size={16} /> Back to grades</Link>
         <p className="eyebrow gold">{nav.moduleLabel ? `${nav.moduleLabel} · ` : ''}Quiz score</p>
         <h1>{title}</h1>
       </div>

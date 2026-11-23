@@ -10,13 +10,15 @@ import { HatArt, Starfield } from '../../components/aiw/Art';
 import { SpellOfTheDay } from '../../components/portal/SpellOfTheDay';
 import { CohortProfilePrompt } from '../../components/portal/CohortProfilePrompt';
 import { EventItem, EventsStatus, TZ, useEvents } from '../../components/portal/Calendar';
-import { fetchMyCohortProfile, type CohortProfile } from '../../services/portalService';
-import { StudentIdChip, useStudentCode } from '../../components/portal/StudentIdChip';
+import { AI_NEWS_CATEGORIES, AI_NEWS_PLACEHOLDERS, type AiNewsCategory } from '../../data/aiNews';
+import { SHOW_DEMO_EVENTS } from '../../data/demoEvents';
+import { ProgrammeCalendar } from '../../components/portal/ProgrammeCalendar';
 
 /**
  * Portal home (both learning modes). Layout from the approved reference design; every number
  * shown here comes from the database (my_module_progress, my_course_progress, Module 0 lessons,
- * cohort_events, cohort_profiles). Nothing is simulated: no streaks, points, rankings or news.
+ * cohort_events). Nothing is simulated: no streaks, points or rankings. The AI news card shows
+ * placeholder headlines only in demo builds (VITE_SHOW_DEMO_EVENTS=true).
  */
 
 const MODULE0_ID = 1;
@@ -133,31 +135,50 @@ const Upcoming: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   );
 };
 
-const CohortCard: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
-  const [p, setP] = useState<{ status: 'loading' } | { status: 'ready'; profile: CohortProfile | null } | { status: 'unavailable' }>({ status: 'loading' });
-  useEffect(() => {
-    let c = false;
-    fetchMyCohortProfile().then((r) => { if (!c) setP(r.ok ? { status: 'ready', profile: r.value } : { status: 'unavailable' }); });
-    return () => { c = true; };
-  }, []);
+/** Colours of the category tags (AI Product World card). */
+const NEWS_TONE: Record<AiNewsCategory, string> = { Models: 't', Products: 'g', India: 'o', Policy: 'n', Careers: 'v' };
+
+/**
+ * AI Product World — placeholder stories with category filters (dev / Preview only). Production
+ * shows a neutral "coming soon" note: no made-up news is ever shown to students.
+ */
+const AiNewsCard: React.FC = () => {
+  const [filter, setFilter] = useState<'All' | AiNewsCategory>('All');
+  // Referenced only behind the flag, so production bundles drop the placeholder stories entirely.
+  const stories = SHOW_DEMO_EVENTS ? AI_NEWS_PLACEHOLDERS : [];
+  const items = stories.filter((n) => filter === 'All' || n.category === filter);
   return (
-    <section className="panel dark" aria-labelledby="cohort-card">
-      <div className="ico" style={{ margin: '0 0 10px', width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,.08)', color: 'var(--sun)' }}><Icon name="users" size={24} /></div>
-      <h2 id="cohort-card">Your cohort</h2>
-      <p style={{ fontSize: 13.5, color: 'rgba(250,247,242,.75)', margin: '6px 0 14px' }}>
-        {p.status === 'ready' && p.profile
-          ? p.profile.isVisible ? 'Your profile is visible to your cohort.' : 'Your profile is saved but hidden. Share it to appear in the directory.'
-          : p.status === 'ready' ? 'Add a short profile so classmates can discover you and connect.'
-          : p.status === 'loading' ? 'Loading…' : 'Cohort profiles are not available yet.'}
-      </p>
-      <Link className="btn btn-primary btn-sm" to={`/${mode}/cohort`}><Icon name="users" size={14} /> {p.status === 'ready' && !p.profile ? 'Create my profile' : 'Open cohort'}</Link>
+    <section className="panel newsbox" aria-labelledby="ainews-card" data-testid="ai-news">
+      <p className="eyebrow">AI Product World</p>
+      <h2 id="ainews-card" className="news-title">What&apos;s shipping in AI</h2>
+      {SHOW_DEMO_EVENTS ? (
+        <>
+          <div className="news-chips" role="group" aria-label="Filter news by topic">
+            {(['All', ...AI_NEWS_CATEGORIES] as const).map((c) => (
+              <button key={c} type="button" className={filter === c ? 'on' : undefined} aria-pressed={filter === c} onClick={() => setFilter(c)}>{c}</button>
+            ))}
+          </div>
+          <ul className="news-list" data-testid="ai-news-list">
+            {items.map((n) => (
+              <li key={n.id} className="news-item">
+                <span className={`news-tag ${NEWS_TONE[n.category]}`}>{n.category}</span>
+                <h3>{n.title}</h3>
+                <p>{n.category} · {n.minutes} min read</p>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="muted" style={{ fontSize: 14, marginTop: 10 }} data-testid="ai-news-soon">
+          Curated news from the AI product world will appear here soon.
+        </p>
+      )}
     </section>
   );
 };
 
 export const DashboardPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   const { user, courseProgress } = useAuthAndCourse();
-  const studentCode = useStudentCode();
   const now = new Date();
   const first = (user?.name || 'Wizard').split(/\s+/)[0];
   // No confirmed batch date (PROGRAM.batchStart null): no countdown and no "Week N of 26".
@@ -189,10 +210,6 @@ export const DashboardPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
                 ? `${openText.list} open early. Finish orientation before the first live session and you’ll start ahead.`
                 : `${openText.list} open. Later modules open when the program team releases them.`}
             </p>
-            <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span className="eyebrow gold" style={{ fontSize: 11 }}>Student ID</span>
-              <StudentIdChip state={studentCode} compact />
-            </div>
             <div className="rankbar">
               <div className="lbl"><span><Spark size={11} color="#F2B33D" /> Your progress</span><span>{pct === null ? (courseProgress.status === 'loading' ? 'Loading…' : 'Not available yet') : `${pct}% of open content`}</span></div>
               <div className="prog" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? 0} aria-label="Course progress">
@@ -208,9 +225,10 @@ export const DashboardPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
         <div className="stack">
           <ContinueLearning mode={mode} />
           <Upcoming mode={mode} />
+          <ProgrammeCalendar compact />
         </div>
         <div className="stack">
-          <CohortCard mode={mode} />
+          <AiNewsCard />
           <section className="panel" aria-labelledby="next-title">
             <div className="phead"><h2 id="next-title">Modules</h2><Link className="more" to={`/${mode}/modules`}>All 12 →</Link></div>
             <div className="lockcard" style={{ background: 'var(--tTint)', color: 'var(--t600)' }}>

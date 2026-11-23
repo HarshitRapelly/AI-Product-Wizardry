@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle, ArrowRight, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock,
-  FileText, HelpCircle, Layers, Loader2, Lock, Maximize2, PanelLeftClose, PanelLeftOpen, RotateCcw, ShieldCheck,
+  FileText, HelpCircle, Layers, Loader2, Lock, Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen, RotateCcw, ShieldCheck,
 } from 'lucide-react';
 import { useCurriculumModule } from '../../hooks/useCurriculumModule';
 import { useReadingPosition } from '../../hooks/useReadingPosition';
@@ -75,6 +75,43 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
   const [collapsedTopics, setCollapsedTopics] = useState<number[]>([]);
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Full-screen reading. Uses the browser's Fullscreen API on the whole lesson card; where it is
+   * not available for page elements (iPhone Safari), a full-window reading mode is used instead.
+   * Esc or the button leaves it. View only: nothing is saved.
+   */
+  const hubRef = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState<'off' | 'native' | 'window'>('off');
+  useEffect(() => {
+    const onChange = () => {
+      const d = document as Document & { webkitFullscreenElement?: Element | null };
+      const el = document.fullscreenElement ?? d.webkitFullscreenElement ?? null;
+      setFullscreen((f) => (el && el === hubRef.current ? 'native' : f === 'native' ? 'off' : f));
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    document.addEventListener('webkitfullscreenchange', onChange);
+    return () => { document.removeEventListener('fullscreenchange', onChange); document.removeEventListener('webkitfullscreenchange', onChange); };
+  }, []);
+  useEffect(() => {
+    if (fullscreen !== 'window') return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen('off'); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prevOverflow; };
+  }, [fullscreen]);
+  const toggleFullscreen = async () => {
+    const el = hubRef.current as (HTMLDivElement & { webkitRequestFullscreen?: () => Promise<void> | void }) | null;
+    const d = document as Document & { webkitExitFullscreen?: () => Promise<void> | void };
+    if (fullscreen === 'native') { try { await (document.exitFullscreen?.() ?? d.webkitExitFullscreen?.()); } catch { /* already left */ } setFullscreen('off'); return; }
+    if (fullscreen === 'window') { setFullscreen('off'); return; }
+    try {
+      if (el?.requestFullscreen) { await el.requestFullscreen(); setFullscreen('native'); return; }
+      if (el?.webkitRequestFullscreen) { await el.webkitRequestFullscreen(); setFullscreen('native'); return; }
+    } catch { /* not allowed here: fall back below */ }
+    setFullscreen('window');
+  };
   const online = mode === 'online';
   const accentText = online ? 'text-accent' : 'text-primary';
   const accentSoft = online ? 'bg-accent-subtle' : 'bg-slate-100';
@@ -168,9 +205,11 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
 
   return (
     <div
+      ref={hubRef}
       data-testid="curriculum-hub"
       data-mode={mode}
-      className="bg-surface rounded-2xl border border-border shadow-subtle overflow-hidden flex flex-col lg:flex-row lg:h-[calc(100vh-9.5rem)] lg:min-h-[560px]"
+      data-fullscreen={fullscreen}
+      className={`aiw-hub bg-surface border-border shadow-subtle overflow-hidden flex flex-col lg:flex-row ${fullscreen === 'off' ? 'rounded-2xl border lg:h-[calc(100vh-9.5rem)] lg:min-h-[560px]' : 'aiw-hub-full'}`}
     >
       {/* ---------------------------------------------------------------- Outline (left) */}
       {phase !== 'closed' && (
@@ -333,6 +372,10 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
               <span data-testid="subtopic-counter">Lesson {selected.number} of {statuses.length}</span>
             </div>
             <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button type="button" className={iconBtn} onClick={() => { void toggleFullscreen(); }} data-testid="reading-fullscreen"
+                aria-pressed={fullscreen !== 'off'} aria-label={fullscreen === 'off' ? 'Read in full screen' : 'Exit full screen'} title={fullscreen === 'off' ? 'Full screen' : 'Exit full screen (Esc)'}>
+                {fullscreen === 'off' ? <Maximize2 className="w-[18px] h-[18px]" aria-hidden="true" /> : <Minimize2 className="w-[18px] h-[18px]" aria-hidden="true" />}
+              </button>
               <button type="button" className={iconBtn} disabled={!prev} onClick={() => prev && setSelectedId(prev.key)} aria-label={prev ? `Previous: ${prev.title}` : 'No previous lesson'} title={prev ? `Previous: ${prev.title}` : undefined}>
                 <ChevronLeft className="w-5 h-5" aria-hidden="true" />
               </button>

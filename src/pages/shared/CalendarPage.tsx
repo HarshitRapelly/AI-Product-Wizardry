@@ -5,6 +5,7 @@ import {
   CalendarLegend, EventItem, EventsStatus, MonthGrid, currentMonth, istKey, monthRange, useEvents,
 } from '../../components/portal/Calendar';
 import { EVENT_CATEGORY_LABEL, type EventCategory } from '../../services/portalService';
+import { ProgrammeCalendar } from '../../components/portal/ProgrammeCalendar';
 
 /** /:mode/calendar — published cohort events (read-only). Replaces the former mock class schedule. */
 export const CalendarPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
@@ -20,13 +21,20 @@ export const CalendarPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode })
     setYm(({ year: y, month: m }) => { const n = m + k; return n < 0 ? { year: y - 1, month: 11 } : n > 11 ? { year: y + 1, month: 0 } : { year: y, month: n }; });
   };
   const thisMonth = currentMonth();
+  // "Coming up next": the following events after this month, so a quiet month is not an empty card.
+  const nextRange = useMemo(() => ({ from: new Date(to.getTime() + 1), to: new Date(to.getTime() + 75 * 86_400_000) }), [to]);
+  const nextState = useEvents(nextRange.from, nextRange.to);
+  const todayMs = Date.now();
+  const nextUp = !selected && nextState.status === 'ready'
+    ? nextState.events.filter((e) => (cat === 'all' || e.category === cat) && e.startAt.getTime() >= todayMs).slice(0, Math.max(4, 8 - shown.length))
+    : [];
 
   return (
     <PortalLayout mode={mode} title="Calendar">
       <div className="ttl">
         <p className="eyebrow gold">Calendar</p>
         <h1>Upcoming cohort events</h1>
-        <p>Live sessions, study sprints, guest lectures, jury dates and deadlines. All times are in IST.</p>
+        <p>Module classes, assignment deadlines and programme events. All times are in IST.</p>
       </div>
       <div className="lgrid">
         <section className="panel" aria-labelledby="ev-title">
@@ -49,6 +57,12 @@ export const CalendarPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode })
               empty={selected ? 'Nothing scheduled on this day.' : 'No events published for this month yet. They will appear here as soon as the program team schedules them.'}
             />
           )}
+          {nextUp.length > 0 && (
+            <div className="evnext" data-testid="coming-up-next">
+              <p className="evnext-h">Coming up next</p>
+              <div className="evlist wide">{nextUp.map((e) => <EventItem key={e.id} e={e} />)}</div>
+            </div>
+          )}
         </section>
         <section className="panel" aria-label="Month view">
           <div className="phead" style={{ marginBottom: 8 }}>
@@ -65,6 +79,7 @@ export const CalendarPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode })
           <CalendarLegend />
         </section>
       </div>
+      <div style={{ marginTop: 22 }}><ProgrammeCalendar /></div>
     </PortalLayout>
   );
 };

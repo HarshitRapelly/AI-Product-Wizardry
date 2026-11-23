@@ -2,47 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { activeModuleLabel, isModuleReleased, lockReasonOf, moduleNumberOf, moduleStateOf, rowsOf } from '../../lib/moduleStatus';
-import { useCurriculumModule } from '../../hooks/useCurriculumModule';
+import { activeModuleLabel, lockReasonOf, moduleNumberOf, moduleStateOf, rowsOf } from '../../lib/moduleStatus';
 import { MODULE_TITLES } from '../../config/program';
 import { Icon } from '../aiw/Icon';
 
-/** module_id of "Module 0" (1-based in the database: module_id = number + 1). */
-const MODULE0 = 1;
-
-/** The real Module 0 lessons (reading + quiz) with the student's state (from Supabase). */
-const Module0Lessons: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
-  const { state } = useCurriculumModule(MODULE0);
-  if (state.status === 'loading') return <div className="empty" role="status"><span className="spinner" aria-hidden="true" /> Loading Module 0 lessons…</div>;
-  if (state.status !== 'ready') return <div className="empty">{state.status === 'error' ? state.message : 'Module 0 content is not available yet.'}</div>;
-  return (
-    <ol className="lessons" data-testid="modules-l0-subtopics" style={{ listStyle: 'none' }}>
-      {state.lessons.map((st) => (
-        <li key={st.key} data-lesson={st.key} data-kind={st.kind} data-state={st.state}>
-          <Link
-            to={`/${mode}/module/0?lesson=${encodeURIComponent(st.key)}`}
-            data-testid="modules-subtopic-link"
-            className={`lsn${st.state === 'done' ? ' dn' : st.state === 'locked' ? ' lk' : ''}`}
-            style={{ textDecoration: 'none' }}
-          >
-            <span className="lic" aria-hidden="true"><Icon name={st.state === 'done' ? 'check' : st.kind === 'quiz' ? 'quiz' : 'doc'} size={20} /></span>
-            <span>
-              <h4>{st.number}. {st.title}{st.kind === 'quiz' ? ` · ${st.status.subtopic.title}` : ''}</h4>
-              <p>Topic {st.status.subtopic.topicNumber} · {st.status.subtopic.topicTitle}</p>
-            </span>
-            <span className={`tag ${st.state === 'done' ? 'ok' : st.state === 'locked' ? 'lock' : 'live'}`}>
-              {st.state === 'done' ? 'Completed' : st.state === 'locked' ? 'Locked' : 'Up next'}
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ol>
-  );
-};
-
 /**
  * The 12-module roadmap for both portals. Lock / complete states come from
- * my_module_progress() and the release lock only; Module 0 lists its real lessons.
+ * my_module_progress() and the release lock only. (The separate Module 0 lesson list was removed;
+ * each module card opens its lessons.)
  */
 export const ModulesRoadmap: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   const { moduleProgress } = useAuthAndCourse();
@@ -110,15 +77,6 @@ export const ModulesRoadmap: React.FC<{ mode: 'online' | 'offline' }> = ({ mode 
       </ol>
       {loading && <p className="muted" role="status" style={{ marginTop: 12, color: 'rgba(250,247,242,.7)' }}>Loading your progress…</p>}
 
-      {isModuleReleased(MODULE0) && (
-        <section className="panel" style={{ marginTop: 22 }} aria-labelledby="m0-title">
-          <div className="phead">
-            <h2 id="m0-title">Module 0 lessons</h2>
-            <Link className="more" to={`/${mode}/module/0`}>Open Module 0 →</Link>
-          </div>
-          <Module0Lessons mode={mode} />
-        </section>
-      )}
     </PortalLayout>
   );
 };

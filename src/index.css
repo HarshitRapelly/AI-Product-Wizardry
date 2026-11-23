@@ -50,3 +50,9 @@
   .animate-aiw-float, .animate-aiw-twinkle, .animate-aiw-fade-up, .animate-pulse, .animate-ping, .animate-bounce { animation: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* Module lesson card in full screen (Fullscreen API) or full-window reading mode (iPhone Safari fallback). */
+.aiw-hub.aiw-hub-full { position: fixed; inset: 0; z-index: 120; height: 100vh; height: 100dvh; width: 100vw; border-radius: 0; }
+.aiw-hub:fullscreen { height: 100vh; width: 100vw; border-radius: 0; }
+.aiw-hub:-webkit-full-screen { height: 100vh; width: 100vw; border-radius: 0; }
+.aiw-hub.aiw-hub-full [data-testid="lesson-scroll"] { overflow-y: auto; }

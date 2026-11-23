@@ -1,5 +1,6 @@
 import React from 'react';
 import { PortalLayout } from '../../layouts/PortalLayout';
+import { QuizHistory } from '../../components/portal/QuizHistory';
 import { 
   Award, 
   CheckCircle2, 
@@ -121,6 +122,15 @@ export const GradesPage: React.FC<GradesPageProps> = ({ mode }) => {
             </div>
           </div>
         </div>
+
+        {/* Quiz history: every submitted quiz attempt (moved here from the Assignments page) */}
+        <section aria-labelledby="quiz-history-title" className="space-y-3">
+          <div>
+            <h2 id="quiz-history-title" className="text-base font-bold text-primary">Quiz history</h2>
+            <p className="text-xs text-text-muted mt-0.5">Every quiz you have submitted, newest first. Open any attempt to see your answers.</p>
+          </div>
+          <QuizHistory mode={mode} />
+        </section>
 
         {/* Graded Deliverables Table */}
         <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-card space-y-6">

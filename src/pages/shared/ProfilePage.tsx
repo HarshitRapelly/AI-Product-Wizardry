@@ -57,6 +57,39 @@ const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }
   );
 };
 
+const NOTIFICATIONS: { title: string; text: string }[] = [
+  { title: 'Email', text: 'Schedule changes and grades' },
+  { title: 'WhatsApp', text: 'Reminders 1 hour before live sessions' },
+  { title: 'Session confirmations', text: 'When a locked session gets a date' },
+  { title: 'AI Product World digest', text: 'A weekly round-up every Monday' },
+];
+
+/**
+ * Settings: learning mode (Online is closed for everyone; no switch request) and notification
+ * preferences. Notifications are not sent yet, so the switches are shown but cannot be changed.
+ */
+const SettingsCard: React.FC = () => (
+  <section className="panel" aria-labelledby="settings-title" data-testid="settings">
+    <div className="phead"><h2 id="settings-title">Settings</h2></div>
+    <h3 className="set-h">Learning mode</h3>
+    <p style={{ fontSize: 14.5, color: 'var(--ink2)' }} data-testid="settings-mode">
+      You are enrolled <b>offline (in person)</b>. Online learning is currently unavailable.
+    </p>
+    <h3 className="set-h" style={{ marginTop: 22 }}>Notifications</h3>
+    <ul className="set-list">
+      {NOTIFICATIONS.map((n) => (
+        <li key={n.title}>
+          <div><b>{n.title}</b><span>{n.text}</span></div>
+          <span className="tgl" role="switch" aria-checked="true" aria-disabled="true" aria-label={`${n.title} notifications`} title="Coming soon" />
+        </li>
+      ))}
+    </ul>
+    <p className="muted" style={{ fontSize: 12.5, marginTop: 10 }} data-testid="settings-note">
+      Notification preferences are coming soon. No messages are sent yet.
+    </p>
+  </section>
+);
+
 export const ProfilePage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   const { user, paymentDetails, learningMode, courseProgress, moduleProgress, resetAllDemoData, logout } = useAuthAndCourse();
   const navigate = useNavigate();
@@ -132,14 +165,7 @@ export const ProfilePage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) 
             </dl>
             <Link className="btn btn-line btn-sm" style={{ marginTop: 14 }} to={`/${activeMode}/modules`}><Icon name="book" size={14} /> All modules</Link>
           </section>
-          <section className="panel" aria-labelledby="mode-title">
-            <div className="phead"><h2 id="mode-title">Learning mode</h2></div>
-            <p style={{ fontSize: 14, color: 'var(--ink2)' }}>
-              You are registered for the <b>{activeMode === 'offline' ? 'offline (in person)' : 'online'}</b> mode. To ask about a change of mode,
-              write to the program team.
-            </p>
-            <Link className="btn btn-line btn-sm" style={{ marginTop: 12 }} to="/contact"><Icon name="msg" size={14} /> Contact the program team</Link>
-          </section>
+          <SettingsCard />
           <section className="panel" aria-labelledby="acct-title">
             <div className="phead"><h2 id="acct-title">Account</h2></div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
