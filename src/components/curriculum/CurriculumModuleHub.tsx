@@ -11,6 +11,9 @@ import type { QuizAttemptSummary } from '../../lib/curriculumTypes';
 import type { AckState } from '../../hooks/useCurriculumModule';
 import { SubtopicContent } from './ContentBlocks';
 import { SubtopicAcknowledgment } from './SubtopicAcknowledgment';
+import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
+import { MAX_QUIZ_EXITS, quizChancesLeft, useActiveQuizSession } from '../../lib/quizSession';
+import { passMarkCount, type QuizState } from '../../lib/curriculumTypes';
 
 /** Full-screen quiz route for a quiz lesson. */
 export const quizRouteFor = (mode: string, quizId: string) => `/${mode}/module/0/quiz/${encodeURIComponent(quizId)}`;
@@ -75,6 +78,9 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
   const [collapsedTopics, setCollapsedTopics] = useState<number[]>([]);
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** Pending "move to the next lesson" after Mark as complete (the green tick shows first). */
+  const moveTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (moveTimer.current !== null) window.clearTimeout(moveTimer.current); }, []);
 
   /*
    * Full-screen reading. Uses the browser's Fullscreen API on the whole lesson card; where it is
@@ -120,6 +126,18 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
   /** Lessons: reading material and quizzes as separate, ordered items (see lib/moduleLessons). */
   const statuses = useMemo(() => (state.status === 'ready' ? state.lessons : []), [state]);
   const groups = useMemo(() => groupLessonsByTopic(statuses), [statuses]);
+  /** After a lesson is marked complete: keep the tick visible for a moment, then open the next lesson
+   *  (only if the student is still on the lesson they completed). */
+  const moveOnAfterComplete = (doneKey: string) => {
+    const i = statuses.findIndex((m) => m.key === doneKey);
+    const nextKey = i >= 0 && i + 1 < statuses.length ? statuses[i + 1].key : null;
+    if (!nextKey) return;
+    if (moveTimer.current !== null) window.clearTimeout(moveTimer.current);
+    moveTimer.current = window.setTimeout(() => {
+      moveTimer.current = null;
+      setSelectedId((cur) => (cur === doneKey ? nextKey : cur));
+    }, prefersReducedMotion() ? 300 : 1100);
+  };
   const doneCount = statuses.filter((s) => s.state === 'done').length;
   useEffect(() => { if (state.status === 'ready') onProgress?.(doneCount, statuses.length); }, [state.status, doneCount, statuses.length, onProgress]);
 
@@ -414,6 +432,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
                       lesson={selected}
                       mode={mode}
                       attempts={state.attempts.filter((a) => a.quizId === selected.status.subtopic.quizId)}
+                      qstate={state.quizStates?.find((q) => q.quizId === selected.status.subtopic.quizId) ?? null}
                       ackState={ackState[selected.status.subtopic.id] ?? { status: 'idle' }}
                       onFinish={() => void acknowledge(selected.status.subtopic)}
                     />
@@ -428,7 +447,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
                           text={selected.status.subtopic.acknowledgmentText}
                           acknowledged={selected.readingConfirmed}
                           state={ackState[readingLessonId(selected.status.subtopic.id)] ?? { status: 'idle' }}
-                          onConfirm={() => void confirmReading(selected.status.subtopic)}
+                          onConfirm={() => void confirmReading(selected.status.subtopic).then((ok) => { if (ok) moveOnAfterComplete(selected.key); })}
                           mode={mode}
                           confirmedNote="Reading complete. The quiz is now unlocked."
                         />
@@ -438,7 +457,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
                           text={selected.status.subtopic.acknowledgmentText}
                           acknowledged={selected.status.acknowledged}
                           state={ackState[selected.status.subtopic.id] ?? { status: 'idle' }}
-                          onConfirm={() => void acknowledge(selected.status.subtopic)}
+                          onConfirm={() => void acknowledge(selected.status.subtopic).then((ok) => { if (ok) moveOnAfterComplete(selected.key); })}
                           mode={mode}
                         />
                       )}
@@ -484,16 +503,25 @@ const QuizModuleCard: React.FC<{
   lesson: Lesson;
   mode: 'online' | 'offline';
   attempts: QuizAttemptSummary[];
+  /** Pass mark / attempts left / locked (null on an older database: any attempt counts). */
+  qstate: QuizState | null;
   ackState: AckState;
   onFinish: () => void;
-}> = ({ lesson, mode, attempts, ackState, onFinish }) => {
+}> = ({ lesson, mode, attempts, qstate, ackState, onFinish }) => {
+  const { user } = useAuthAndCourse();
+  const active = useActiveQuizSession(user?.id);
   const block = lesson.quizBlock;
   const quizId = lesson.status.subtopic.quizId;
   if (!block || !quizId) return null;
   const latest = attempts.length ? attempts[attempts.length - 1] : null;
   const accent = mode === 'online' ? 'bg-accent hover:bg-accent-hover' : 'bg-primary hover:bg-slate-800';
-  const needsFinish = !!latest && lesson.readingConfirmed && !lesson.status.acknowledged;
+  const passed = qstate ? qstate.passed : !!latest;
+  const needsFinish = !!latest && passed && lesson.readingConfirmed && !lesson.status.acknowledged;
+  const need = qstate?.passMark != null ? passMarkCount(qstate.passMark, qstate.questions) : null;
+  const allowed = qstate?.maxAttempts != null ? qstate.maxAttempts + qstate.extraAttempts : null;
   const href = quizRouteFor(mode, quizId);
+  // A started, unsubmitted quiz the student left: offer to resume it.
+  const inProgress = active && active.quizId === quizId && !active.submissionId ? active : null;
 
   return (
     <div className="space-y-5" data-testid="quiz-lesson">
@@ -508,26 +536,48 @@ const QuizModuleCard: React.FC<{
           </div>
         </div>
         <ul className="text-xs text-secondary space-y-1.5" data-testid="quiz-lesson-rules">
-          <li className="flex items-start gap-2"><Maximize2 className="w-4 h-4 text-text-muted flex-shrink-0" aria-hidden="true" /><span>The quiz opens full screen. Course navigation stays locked until your answers are submitted and accepted.</span></li>
+          <li className="flex items-start gap-2"><Maximize2 className="w-4 h-4 text-text-muted flex-shrink-0" aria-hidden="true" /><span>The quiz opens full screen. You can leave a started quiz and resume it later up to {MAX_QUIZ_EXITS} times; your answers stay saved.</span></li>
           <li className="flex items-start gap-2"><ShieldCheck className="w-4 h-4 text-text-muted flex-shrink-0" aria-hidden="true" /><span>Answer every question to submit. Answers and explanations are shown only after you submit.</span></li>
+          {need !== null && (
+            <li className="flex items-start gap-2" data-testid="quiz-lesson-passmark"><CheckCircle2 className="w-4 h-4 text-text-muted flex-shrink-0" aria-hidden="true" />
+              <span>
+                Pass mark: <b className="text-primary">{need} of {qstate!.questions}</b> ({qstate!.passMark}%).
+                {allowed !== null && !passed && <> Attempts left: <b className="text-primary">{qstate!.attemptsLeft ?? 0} of {allowed}</b> — after you pass, attempts are unlimited.</>}
+                {passed && <> Passed — retake it as often as you like.</>}
+              </span>
+            </li>
+          )}
         </ul>
+        {qstate?.locked && (
+          <p role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-800" data-testid="quiz-lesson-locked">
+            <Lock className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+            <span>No attempts left. You used all {allowed} attempts without reaching {need} of {qstate.questions}. Please contact the program team to get another attempt.</span>
+          </p>
+        )}
         {lesson.state !== 'locked' && (
           <Link
             to={href}
             data-testid="quiz-start"
             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-subtle transition-colors ${accent}`}
           >
-            <span>{latest ? 'Open quiz · review or retake' : 'Start quiz'}</span>
+            <span>{inProgress ? 'Resume quiz' : latest ? 'Open quiz · review or retake' : 'Start quiz'}</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>
+        )}
+        {inProgress && lesson.state !== 'locked' && (
+          <p className="text-xs font-semibold text-amber-800" data-testid="quiz-resume-note">
+            Quiz in progress: {Object.keys(inProgress.answers).length} answered · {quizChancesLeft(inProgress)} {quizChancesLeft(inProgress) === 1 ? 'chance' : 'chances'} left to resume.
+          </p>
         )}
       </section>
 
       {latest && (
-        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 space-y-1" data-testid="quiz-lesson-result">
+        <section className={`rounded-2xl border p-5 space-y-1 ${passed ? 'border-emerald-200 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`} data-testid="quiz-lesson-result">
           <p className="text-sm font-bold text-primary">Your latest result: {latest.score} of {latest.totalQuestions} right.</p>
-          <p className="text-xs text-emerald-800">
-            Attempt {latest.attemptNumber}{attempts.length > 1 ? ` of ${attempts.length}` : ''} · Submitted — the quiz requirement is met.
+          <p className={`text-xs ${passed ? 'text-emerald-800' : 'text-amber-900'}`}>
+            Attempt {latest.attemptNumber}{attempts.length > 1 ? ` of ${attempts.length}` : ''} · {passed
+              ? (need !== null ? 'Passed — the quiz requirement is met.' : 'Submitted — the quiz requirement is met.')
+              : `Not passed yet — you need ${need} of ${latest.totalQuestions}.`}
           </p>
         </section>
       )}

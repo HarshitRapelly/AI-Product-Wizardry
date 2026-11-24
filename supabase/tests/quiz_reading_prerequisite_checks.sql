@@ -154,7 +154,7 @@ begin
     insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism', 'reading', true);
     raise exception 'FAIL: plagiarism acknowledged before the quiz';
   exception when insufficient_privilege then
-    if sqlerrm not like '%submit the quiz before acknowledging%' then raise exception 'FAIL: wrong error: %', sqlerrm; end if;
+    if sqlerrm not like '%pass the quiz before completing this subtopic%' then raise exception 'FAIL: wrong error: %', sqlerrm; end if;  -- message from 20261125001300
   end;
   if exists (select 1 from public.quiz_attempts where quiz_id = 'l0-plagiarism-quiz') then
     raise exception 'FAIL: a refused submission was stored';
@@ -195,9 +195,9 @@ begin
     raise exception 'FAIL: 9 of 10 answers accepted';
   exception when invalid_parameter_value then null; end;
 
-  -- Quiz accepted now (low score still counts: no pass mark)
+  -- Quiz accepted now (low score = a recorded fail: pass mark 70 % from 20261125001300)
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0}', 'a1000000-0000-4000-8000-000000000002');
-  if a.attempt_number <> 1 or a.score <> 2 or a.total_questions <> 10 or a.pass_mark is not null or a.passed is not null then
+  if a.attempt_number <> 1 or a.score <> 2 or a.total_questions <> 10 or a.pass_mark <> 70 or a.passed then
     raise exception 'FAIL: first attempt wrong: %', row_to_json(a);
   end if;
   -- Retry with the same id → the same attempt (idempotent), even with different answers

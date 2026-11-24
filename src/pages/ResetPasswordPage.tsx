@@ -5,10 +5,11 @@ import { useAuth } from '../context/AuthContext';
 import { useAuthAndCourse } from '../context/AuthAndCourseContext';
 import { initialAuthRedirect } from '../lib/supabase';
 import { homeFor } from '../lib/onboarding';
-import { validateNewPassword, PASSWORD_MIN_LENGTH, type NewPasswordErrors } from '../lib/registrationValidation';
+import { validateNewPassword, type NewPasswordErrors } from '../lib/registrationValidation';
 import { updatePassword, signOutOtherDevices } from '../services/authService';
 import { usePasswordResetRequest } from '../hooks/usePasswordResetRequest';
 import { AuthLoadingScreen } from '../components/auth/AuthScreens';
+import { PasswordChecklist, passwordStrengthError } from '../components/auth/PasswordChecklist';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 
@@ -153,6 +154,9 @@ const NewPasswordForm: React.FC<{ onSessionExpired: () => void; onUpdated: (othe
     if (submitting) return;
     setFormError(null);
     const fieldErrors = validateNewPassword(password, confirmPassword);
+    // The new password must meet every checklist rule; nothing is sent until it does.
+    const weak = password ? passwordStrengthError(password) : null;
+    if (weak) fieldErrors.password = weak;
     setErrors(fieldErrors);
     if (Object.keys(fieldErrors).length > 0) return;
 
@@ -185,7 +189,7 @@ const NewPasswordForm: React.FC<{ onSessionExpired: () => void; onUpdated: (othe
         <div className="space-y-2">
           <h3 className="text-lg font-extrabold text-primary">Choose a new password</h3>
           <p className="text-sm text-text-muted leading-relaxed">
-            Use at least {PASSWORD_MIN_LENGTH} characters. You&apos;ll stay signed in on this device.
+            Pick a password that meets every rule below. You&apos;ll stay signed in on this device.
           </p>
         </div>
       </div>
@@ -210,9 +214,14 @@ const NewPasswordForm: React.FC<{ onSessionExpired: () => void; onUpdated: (othe
               id="new-password"
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={`Minimum ${PASSWORD_MIN_LENGTH} characters`}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+              }}
+              placeholder="Enter a new password"
               autoComplete="new-password"
+              aria-invalid={!!errors.password || undefined}
+              aria-describedby="new-password-rules new-password-error"
               className={inputClass(!!errors.password)}
             />
             <button
@@ -224,7 +233,8 @@ const NewPasswordForm: React.FC<{ onSessionExpired: () => void; onUpdated: (othe
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {errors.password && <p className="mt-1 text-xs text-rose-500">{errors.password}</p>}
+          {errors.password && <p id="new-password-error" className="mt-1 text-xs text-rose-500">{errors.password}</p>}
+          <PasswordChecklist id="new-password-rules" password={password} className="mt-3" />
         </div>
 
         <div>

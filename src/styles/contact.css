@@ -1,0 +1,50 @@
+/* Contact page (/contact). Compact intro + enquiry form above the fold.
+   Same tokens and building blocks as src/styles/wizardry.css; every rule is scoped under .aiw. */
+
+/* Desktop: intro and "about your query" on the left, the form card on the right (spanning both rows).
+   Phones/tablets: one column in the order intro -> form -> about. */
+.aiw .ct{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);grid-template-areas:"intro form" "info form";grid-template-rows:auto 1fr;gap:18px 28px;align-items:start;max-width:1200px;margin:0 auto;padding:28px 5vw 72px}
+.aiw .ct-intro{grid-area:intro}
+.aiw .ct-form{grid-area:form}
+.aiw .ct-info{grid-area:info}
+
+/* Compact dark intro panel (the hero look, without the full-screen height). */
+.aiw .ct-intro{position:relative;overflow:hidden;border-radius:22px;padding:26px 30px 28px;color:var(--cream);background:radial-gradient(520px 260px at 100% 0%,#1d5a56 0%,var(--t900) 58%,var(--t950) 100%)}
+.aiw .ct-intro > :not(.stars){position:relative;z-index:2}
+.aiw .ct-intro h1{font-size:clamp(26px,2.6vw,36px);margin-top:10px;color:#fff}
+.aiw .ct-intro .ct-lead{font-size:16px;line-height:1.55;color:rgba(250,247,242,.82);margin-top:10px;max-width:520px}
+
+/* Form card */
+.aiw .ct .ct-form{padding:26px 28px}
+.aiw .ct-form h2{font-size:22px;color:var(--t600);margin:0 0 14px}
+.aiw .ct .field{margin-bottom:14px}
+.aiw .ct .field input,.aiw .ct .field textarea{padding:10px 13px}
+.aiw .ct .field textarea{min-height:100px}
+.aiw .ct .field.bad textarea{border-color:var(--orange)}
+.aiw .ct fieldset.field{min-width:0;margin:0 0 14px;padding:0}
+.aiw .ct .ct-msg{position:relative}
+.aiw .ct .ct-msg .count{position:absolute;top:0;right:0;line-height:20px}
+.aiw .ct .check{margin-bottom:6px}
+.aiw .ct-done{text-align:center;padding:8px 0;overflow-wrap:anywhere}
+.aiw .ct-done .mart{margin:0 auto}
+
+/* About your query */
+.aiw .ct .ct-info{padding:20px 22px}
+.aiw .ct-points{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.aiw .ct-points li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--ink2);line-height:1.5}
+.aiw .ct-points b{display:block;color:var(--t600);font-size:14px}
+.aiw .ct-ico{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#fff;color:var(--t500);border:1px solid #c9dcd9}
+.aiw .ct-more{margin-top:16px;padding-top:14px;border-top:1px solid #c9dcd9;font-size:14px;color:var(--ink2)}
+.aiw .ct-more a{color:var(--t500);font-weight:600}
+
+@media(max-width:900px){
+.aiw .ct{grid-template-columns:minmax(0,1fr);grid-template-areas:"intro" "form" "info";grid-template-rows:auto;gap:16px;max-width:680px;padding:20px 5vw 56px}
+}
+@media(max-width:620px){
+.aiw .ct{gap:14px;padding:14px 5vw 44px}
+.aiw .ct-intro{padding:20px 20px 22px;border-radius:18px}
+.aiw .ct-intro .ct-lead{font-size:15px}
+.aiw .ct .ct-form{padding:20px 18px}
+.aiw .ct-form h2{font-size:20px}
+.aiw .ct .ct-info{padding:18px}
+}

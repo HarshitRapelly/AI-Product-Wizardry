@@ -65,6 +65,37 @@ Production steps for round 2 (each needs explicit approval): read-only
 (6/6 true, 0 rows) → merge the round-2 PR → smoke test (brochure form saves and downloads; Explore scrolls; Live
 sessions shows "Sessions will appear here…"; no placeholder content).
 
+## Quiz pass marks and attempt limits (`20261125001300_quiz_attempt_limits`, branch `feature/portal-ui-round4`) — staging only
+
+Rule: a quiz may have a pass mark (percent) and an attempt limit. Until a student PASSES (best attempt ≥ the
+current pass mark) they get `max_attempts` attempts (+ extra attempts an admin grants); after passing, unlimited.
+A quiz subtopic is done only when its quiz is passed (was: any attempt), so a student who cannot pass within the
+limit cannot continue until an admin grants another attempt (`/admin/students/<id>` → Quizzes → "Grant 1 more
+attempt"). Admins set pass marks and limits per quiz on `/admin/quizzes` → "Edit rules". Module 0 quiz
+`l0-plagiarism-quiz`: 70 % (7 of 10), 3 attempts; attempts made before the migration do not count.
+
+- Adds: `quiz_definitions.max_attempts` / `attempts_counted_from`, `private.quiz_attempt_grants`,
+  `private.quiz_passed`, `private.quiz_state`, `public.my_quiz_states()`, `admin_set_quiz_rules`,
+  `admin_grant_quiz_attempts`, `admin_student_quiz_states`; `admin_quiz_summary` gains columns.
+- Changes: `private.subtopic_done` (passed instead of any attempt), `private.lesson_progress_curriculum_guard`
+  and `public.submit_quiz_attempt` (0600 bodies + the new checks; idempotent retries still work).
+- **Effect on existing students:** anyone who submitted the Module 0 quiz with < 70 % no longer has that lesson
+  done; they get 3 fresh attempts. Check the number before applying to production (read-only).
+- Staging (25 Nov 2026): dry run (rolled back) → applied → `quiz_limit_checks.sql` passed; all regression tests
+  passed after updating three fixtures that encoded "any attempt counts" (`curriculum_checks`,
+  `quiz_reading_prerequisite_checks`, `rls_and_scoring_checks`); rollback rehearsal (old rule restored, pass mark
+  back to NULL) → re-applied → checks passed. Browser: fail ×3 → locked → admin grant → pass → continue.
+- `20261125001400_quiz_pass_note`: the quiz's closing note now says "If you got 7 or more right, you passed…"
+  (was "8 or more"). Content only; staging applied (re-run safe), `curriculum_checks` updated and passing.
+- **Production pre-check (25 Nov 2026, read-only, approved):** admin migrations present, 1300 absent, Module 0 quiz
+  has no pass mark and 10 questions; `submit_quiz_attempt` and the curriculum guard are byte-identical to the
+  bodies 1300 is built from; `subtopic_done` identical except Windows line endings (same logic). Impact: 4 students
+  took the quiz, **3 have a best score below 70 % and currently have that lesson completed** — after 1300 they must
+  pass (3 fresh attempts). Snapshot: 10 profiles, 8 registrations, 27 progress rows, 8 attempts.
+- Production order: **merge the frontend first** (it falls back to the old rule on a database without 1300; the
+  live frontend from PR #5 does not know the new rule and would show those 3 students a confusing refusal), then
+  1300 → 1400 → read-only verification.
+
 ## Admin portal (branch `feature/admin-portal`, built on round 2) — not yet in production
 
 Two roles only: **Admin** and **Student**. Admins sign in on `/login` and always land on `/admin`; they never see

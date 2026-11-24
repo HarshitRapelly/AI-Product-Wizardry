@@ -13,7 +13,6 @@ import { CohortProfilePrompt } from '../../components/portal/CohortProfilePrompt
 import { EventItem, EventsStatus, TZ, useEvents } from '../../components/portal/Calendar';
 import { AI_NEWS_CATEGORIES, AI_NEWS_PLACEHOLDERS, type AiNewsCategory } from '../../data/aiNews';
 import { SHOW_DEMO_EVENTS } from '../../data/demoEvents';
-import { ProgrammeCalendar } from '../../components/portal/ProgrammeCalendar';
 
 /**
  * Portal home (both learning modes). Layout from the approved reference design; every number
@@ -128,7 +127,7 @@ const Upcoming: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
         <Link className="more" to={`/${mode}/calendar`}><Icon name="cal" size={14} /> Open calendar</Link>
       </div>
       {state.status === 'ready' && list.length > 0 ? (
-        <div className="evlist wide">{list.map((e) => <EventItem key={e.id} e={e} />)}</div>
+        <div className="evlist wide evscroll dash-up-list">{list.map((e) => <EventItem key={e.id} e={e} />)}</div>
       ) : (
         <EventsStatus state={state.status === 'ready' ? { ...state, events: list } : state} empty="Nothing scheduled yet. Sessions appear here as soon as the program team publishes them." />
       )}
@@ -159,7 +158,7 @@ const AiNewsCard: React.FC = () => {
               <button key={c} type="button" className={filter === c ? 'on' : undefined} aria-pressed={filter === c} onClick={() => setFilter(c)}>{c}</button>
             ))}
           </div>
-          <ul className="news-list" data-testid="ai-news-list">
+          <ul className="news-list evscroll" data-testid="ai-news-list" tabIndex={0} aria-label="AI news stories">
             {items.map((n) => (
               <li key={n.id} className="news-item">
                 <span className={`news-tag ${NEWS_TONE[n.category]}`}>{n.category}</span>
@@ -223,20 +222,14 @@ export const DashboardPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
         </section>
         <SpellOfTheDay />
       </div>
-      <div className="lgrid">
-        <div className="stack">
+      {/* dash-eq: both columns end at the same height on desktop; the left column sets it (wizardry.css). */}
+      <div className="lgrid dash-eq">
+        <div className="stack dash-main">
           <ContinueLearning mode={mode} />
           <Upcoming mode={mode} />
-          <ProgrammeCalendar compact />
         </div>
-        <div className="stack">
+        <div className="stack dash-news">
           <AiNewsCard />
-          <section className="panel" aria-labelledby="next-title">
-            <div className="phead"><h2 id="next-title">Modules</h2><Link className="more" to={`/${mode}/modules`}>All 12 →</Link></div>
-            <div className="lockcard" style={{ background: 'var(--tTint)', color: 'var(--t600)' }}>
-              <Icon name="book" size={18} /><span>{openText.list} open. {openText.locked}</span>
-            </div>
-          </section>
         </div>
       </div>
     </PortalLayout>

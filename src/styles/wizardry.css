@@ -1172,3 +1172,116 @@
 .aiw .ann-body a{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:13px;font-weight:700;color:var(--t500)}
 .aiw .ann-x{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
 .aiw .ann-x:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+
+/* ---- Profile badge menu (sidebar, student + admin portals) ---- */
+.aiw .me-wrap{position:relative;z-index:5;margin-top:10px}
+.aiw .me-wrap .me{margin-top:0;width:100%;text-align:left}
+.aiw .side .me[aria-expanded="true"]{background:rgba(255,255,255,.12)}
+.aiw .side .me .me-chev{margin-left:auto;flex:none;opacity:.65;transform:rotate(180deg);transition:transform .2s}
+.aiw .side .me[aria-expanded="true"] .me-chev{transform:none}
+.aiw .me-menu{position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:60;background:var(--cream);color:var(--ink);border-radius:14px;padding:6px;box-shadow:0 18px 44px rgba(0,0,0,.38);animation:pageIn .18s ease}
+.aiw .me-head{padding:10px 12px 9px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+.aiw .me-head b{display:block;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aiw .me-head small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aiw .me-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:600;color:var(--ink2);text-decoration:none;text-align:left;transition:background .15s}
+.aiw .me-item:hover,.aiw .me-item:focus-visible{background:var(--cream2);color:var(--ink);outline:none}
+.aiw .me-item.danger{color:#B3401A}
+.aiw .me-item[disabled]{opacity:.6}
+
+/* ---- Calendar page: month grid on the left, one scrolling event list on the right ----
+   The month card sets the row height; the events card matches it exactly (height:0 +
+   min-height:100% keeps it from growing the row) and its list scrolls inside. */
+.aiw .lgrid.calflip{grid-template-columns:340px minmax(0,1fr);align-items:stretch}
+.aiw .lgrid.calflip > .evpanel{height:0;min-height:100%;display:flex;flex-direction:column}
+.aiw .evpanel .evscroll{flex:1 1 auto;min-height:0}
+@media(max-width:1200px){
+  .aiw .lgrid.calflip{grid-template-columns:1fr}
+  .aiw .lgrid.calflip > .evpanel{height:auto;min-height:0}
+  .aiw .evpanel .evscroll{flex:none;max-height:520px}
+}
+.aiw .evscroll{overflow-y:auto;overscroll-behavior:contain;padding:2px 10px 2px 2px;margin-right:-10px;scrollbar-width:thin;scrollbar-color:#cfc6b5 transparent}
+.aiw .evscroll::-webkit-scrollbar{width:8px}
+.aiw .evscroll::-webkit-scrollbar-track{background:transparent;margin:4px 0}
+.aiw .evscroll::-webkit-scrollbar-thumb{background:#d8d0c1;border-radius:999px;border:2px solid var(--cream)}
+.aiw .evscroll::-webkit-scrollbar-thumb:hover{background:var(--t500)}
+.aiw .evscroll:focus-visible{outline:2px solid var(--t500);outline-offset:4px;border-radius:10px}
+.aiw .evcount{font-size:13px;color:var(--muted);font-weight:600}
+.aiw .fchip.sm{padding:5px 11px;font-size:12px}
+.aiw .calhint{margin-top:12px;font-size:12.5px;color:var(--muted)}
+.aiw .evtools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.aiw .evselect{position:relative;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink2);transition:border-color .2s,box-shadow .2s}
+.aiw .evselect:focus-within{border-color:var(--t500);box-shadow:0 0 0 4px rgba(47,111,106,.12)}
+.aiw .evselect select{appearance:none;-webkit-appearance:none;border:0;outline:0;background:transparent;padding:7px 20px 7px 0;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer}
+.aiw .evselect .evselect-chev{position:absolute;right:10px;pointer-events:none;opacity:.7}
+
+/* ---- Collapsible sidebar (desktop; student + admin portals) — slow, smooth transition ---- */
+.aiw .lms{transition:grid-template-columns .5s cubic-bezier(.4,0,.2,1)}
+.aiw .side{transition:padding .5s cubic-bezier(.4,0,.2,1)}
+.aiw .side .logo-mini{display:none}
+.aiw .side nav a .nl{display:inline-block;white-space:nowrap;overflow:hidden;max-width:190px;opacity:1;transition:max-width .5s cubic-bezier(.4,0,.2,1),opacity .35s ease}
+/* Sidebar head: logo on the left, collapse toggle on the right (light icon on the dark sidebar). */
+.aiw .side .side-head{display:flex;align-items:center;justify-content:space-between;gap:4px;padding-bottom:18px}
+.aiw .side .side-head .logo{flex:1 1 auto;min-width:0;padding:4px 6px}
+.aiw .side .side-head + .adm-badge-role{margin:-8px 8px 14px}
+.aiw .side .sidetoggle{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:10px;background:transparent;color:rgba(250,247,242,.62);transition:background .2s,color .2s}
+.aiw .side .sidetoggle:hover{background:rgba(255,255,255,.08);color:#fff}
+.aiw .sidetoggle .sidetoggle-arrow{transition:transform .5s cubic-bezier(.4,0,.2,1);transform-box:fill-box;transform-origin:center}
+.aiw .lms.collapsed .sidetoggle .sidetoggle-arrow{transform:rotate(180deg)}
+@media(min-width:981px){
+  .aiw .lms.collapsed{grid-template-columns:84px 1fr}
+  .aiw .lms.collapsed .side{padding:18px 12px}
+  /* Collapsed: the small hat logo with the toggle centred under it. */
+  .aiw .lms.collapsed .side .side-head{flex-direction:column;justify-content:flex-start;gap:10px}
+  .aiw .lms.collapsed .side .side-head .logo{flex:none;padding:4px 0}
+  .aiw .lms.collapsed .side .logo-full{display:none}
+  .aiw .lms.collapsed .side .logo-mini{display:block;width:46px;height:46px;margin:0 auto}
+  .aiw .lms.collapsed .side nav a{gap:0;justify-content:center;padding:11px 0}
+  .aiw .lms.collapsed .side nav a .nl{max-width:0;opacity:0}
+  .aiw .lms.collapsed .side nav a.on::before{left:-12px}
+  .aiw .lms.collapsed .side nav a .badge{position:absolute;top:3px;right:8px;margin:0;padding:0 5px;font-size:10px;line-height:16px}
+  .aiw .lms.collapsed .side nav a.support-link{flex-wrap:nowrap}
+  .aiw .lms.collapsed .side nav a.support-link small{display:none}
+  .aiw .lms.collapsed .adm-badge-role{display:none}
+  .aiw .lms.collapsed .side .me{justify-content:center;padding:10px 0}
+  .aiw .lms.collapsed .side .me > div,.aiw .lms.collapsed .side .me .me-chev{display:none}
+  .aiw .lms.collapsed .me-menu{right:auto;width:240px}
+}
+@media(max-width:980px){.aiw .side .sidetoggle{display:none}}
+
+/* ---- Top bar: page-title pill (admin) in brand teal with white text ---- */
+.aiw .top .pill.titlepill{background:var(--hat);color:#fff;border:1px solid rgba(255,255,255,.14)}
+.aiw .top .pill.titlepill svg{color:#fff}
+/* ---- Top bar: Calendar pill (student) white with black text and icons; light cream on hover / open ---- */
+.aiw .top .pill.calpill{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.aiw .top .pill.calpill svg{color:var(--ink)}
+.aiw .top .pill.calpill:hover,.aiw .top .pill.calpill.on{background:var(--cream2);color:var(--ink)}
+
+/* ---- Dashboard: "Continue learning + Upcoming" and "AI news" columns end at the same height ----
+   The left column sets the row height (at least 520px); the news column matches it exactly
+   (height:0 + min-height:100%, as on the calendar page). The last card in each column fills its
+   column, and the Upcoming / news lists scroll inside with the slim .evscroll scrollbar.
+   Upcoming is capped so a long schedule never makes the page huge. */
+.aiw .lgrid.dash-eq{align-items:stretch}
+.aiw .lgrid.dash-eq > .dash-main{min-height:520px}
+.aiw .lgrid.dash-eq > .dash-news{height:0;min-height:100%}
+.aiw .lgrid.dash-eq > .stack > .panel:last-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.aiw .lgrid.dash-eq .dash-up-list{flex:0 1 auto;min-height:0;max-height:560px}
+.aiw .lgrid.dash-eq .newsbox .news-list{flex:1 1 auto;min-height:0;max-height:none}
+@media(max-width:1200px){
+  .aiw .lgrid.dash-eq > .dash-main{min-height:0}
+  .aiw .lgrid.dash-eq > .dash-news{height:auto;min-height:0}
+  .aiw .lgrid.dash-eq .dash-up-list{max-height:480px}
+  .aiw .lgrid.dash-eq .newsbox .news-list{flex:none;max-height:520px}
+}
+
+/* ---- Dashboard journey bar (reference design): open + current modules = orange with a gold ring and a soft halo ---- */
+.aiw .jmini{padding:14px 22px;gap:20px;border-radius:16px;background:rgba(255,255,255,.045)}
+.aiw .jm-l,.aiw .jm-r{font-size:14px}
+.aiw .jm-track{min-height:46px}
+.aiw .jm-track::before{left:15px;right:15px;height:2px;background:linear-gradient(90deg,var(--orange) var(--p),rgba(116,170,163,.3) var(--p))}
+.aiw .jm{width:30px;height:30px;font-size:12.5px;font-weight:700;background:#24403D;border:1.5px solid rgba(116,170,163,.5);color:rgba(196,218,214,.9)}
+.aiw .jm.cur,.aiw .jm.open{background:var(--orange);border:2px solid var(--sun);color:#fff;box-shadow:0 0 0 8px rgba(242,179,61,.17);animation:jmHalo 2.8s ease-in-out infinite}
+.aiw .jm.done{width:30px;height:30px}
+@keyframes jmHalo{0%,100%{box-shadow:0 0 0 7px rgba(242,179,61,.14)}50%{box-shadow:0 0 0 10px rgba(242,179,61,.24)}}
+@media (prefers-reduced-motion: reduce){.aiw .jm.cur,.aiw .jm.open{animation:none}}
+@media(max-width:620px){.aiw .jm{width:24px;height:24px;font-size:11px}.aiw .jm.cur,.aiw .jm.open{box-shadow:0 0 0 5px rgba(242,179,61,.17)}}

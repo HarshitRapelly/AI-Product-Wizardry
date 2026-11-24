@@ -343,18 +343,6 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
               </div>
         )}
       </section>
-
-      {/* All module assignments */}
-      <section className="panel" aria-labelledby="all-asg-title">
-        <div className="phead"><h2 id="all-asg-title">All module assignments</h2></div>
-        <ul className="asg-list">
-          <li><span className="tag">Module 0</span><span>Module 0 assignment details will be published when confirmed.</span><span className="muted">No grade recorded</span></li>
-          <li className="cur"><span className="tag live">Module 1</span><span>Spot a Real User Problem: Need-Discovery Brief <span className="muted">(provisional)</span></span><span className="muted">{isSubmitted ? 'Submitted' : released ? 'Open' : 'Locked'}</span></li>
-          {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((id) => (
-            <li key={id} className="locked"><span className="tag lock">Module {id}</span><span>Assignment details will be published when available.</span><span className="muted"><Icon name="lock" size={12} /> Locked</span></li>
-          ))}
-        </ul>
-      </section>
     </PortalLayout>
   );
 };

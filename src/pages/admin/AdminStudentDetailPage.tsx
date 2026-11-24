@@ -6,8 +6,8 @@ import {
   AdminPageHead, ConfirmDialog, LoadState, Modal, ProgressBar, fmtAgo, fmtDate, fmtDateTime, moduleLabel, useAdminData, useToast,
 } from '../../components/admin/AdminUI';
 import {
-  setStudentModuleAccess, setStudentSuspended, studentDetail, updateStudent,
-  type AdminResult, type AdminStudentDetail, type AdminStudentModule, type StudentAccess, type StudentEditableField,
+  correctNeeded, grantQuizAttempts, setStudentModuleAccess, setStudentSuspended, studentDetail, studentQuizStates, updateStudent,
+  type AdminResult, type AdminStudentDetail, type AdminStudentModule, type StudentAccess, type StudentEditableField, type StudentQuizState,
 } from '../../services/adminService';
 import { MODULE_TITLES } from '../../config/program';
 
@@ -53,9 +53,30 @@ const accessWord = (v: unknown) => (v === 'open' ? 'open' : v === 'locked' ? 'lo
 const valueText = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v));
 const asObject = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 
-function describeHistory(action: string, details: Record<string, unknown> | null): { title: string; lines: string[] } {
+const passMarkWords = (v: unknown) => (typeof v === 'number' ? `${v}%` : v === null || v === undefined ? 'none' : valueText(v));
+const attemptWords = (v: unknown) => (typeof v === 'number' ? String(v) : v === null || v === undefined ? 'unlimited' : valueText(v));
+
+function describeHistory(action: string, details: Record<string, unknown> | null, quizLabel: (quizId: unknown) => string): { title: string; lines: string[] } {
   const d = details ?? {};
   switch (action) {
+    case 'quiz_grant': {
+      const extra = Number(d.extra);
+      const n = Number.isFinite(extra) && extra > 0 ? extra : 1;
+      const lines: string[] = [];
+      if (d.total_extra !== undefined && d.total_extra !== null) lines.push(`Extra attempts in total: ${valueText(d.total_extra)}`);
+      if (typeof d.note === 'string' && d.note) lines.push(`Note: ${d.note}`);
+      return { title: `Granted ${n} more attempt${n === 1 ? '' : 's'} on ${quizLabel(d.quiz_id)}`, lines };
+    }
+    case 'quiz_rules': {
+      const before = asObject(d.before), after = asObject(d.after);
+      return {
+        title: `Quiz rules changed: ${quizLabel(d.quiz_id)}`,
+        lines: [
+          `Pass mark: ${passMarkWords(before.pass_mark)} → ${passMarkWords(after.pass_mark)}`,
+          `Attempts: ${attemptWords(before.max_attempts)} → ${attemptWords(after.max_attempts)}`,
+        ],
+      };
+    }
     case 'student_module_access': {
       const id = Number(d.module_id);
       const label = Number.isFinite(id) && id >= 1 ? moduleLabel(id) : 'a module';
@@ -194,14 +215,32 @@ const EditStudentModal: React.FC<{ userId: string; detail: AdminStudentDetail; o
 type Pending =
   | { kind: 'suspend' }
   | { kind: 'reactivate' }
-  | { kind: 'access'; module: AdminStudentModule; access: StudentAccess };
+  | { kind: 'access'; module: AdminStudentModule; access: StudentAccess }
+  | { kind: 'grant'; quiz: StudentQuizState };
 
 const ACCESS_LABEL: Record<StudentAccess, string> = { default: 'Default', open: 'Open', locked: 'Locked' };
+
+/* -------------------------------------------------------------- quizzes */
+
+const quizTitle = (q: { title: string | null; quiz_id: string }) => q.title?.trim() || q.quiz_id;
+/** Attempts the student may make before passing: the quiz limit plus extra attempts granted (null = unlimited). */
+const allowedAttempts = (q: StudentQuizState) => (q.max_attempts === null ? null : q.max_attempts + (q.extra_attempts || 0));
+
+function quizStatus(q: StudentQuizState): { tag: string; text: string } {
+  if (q.passed) return { tag: 'ok', text: 'Passed' };
+  if (q.locked) return { tag: 'bad', text: 'Locked' };
+  if (q.attempts_used === 0 && q.best_pct === null) return { tag: 'lock', text: 'Not started' };
+  return { tag: 'info', text: 'In progress' };
+}
 
 export const AdminStudentDetailPage: React.FC = () => {
   const { userId = '' } = useParams<{ userId: string }>();
   const detail = useAdminData<AdminStudentDetail>(
     () => (UUID_RE.test(userId) ? studentDetail(userId) : Promise.resolve<AdminResult<AdminStudentDetail>>({ ok: false, message: NOT_FOUND })),
+    [userId],
+  );
+  const quizStates = useAdminData<StudentQuizState[]>(
+    () => (UUID_RE.test(userId) ? studentQuizStates(userId) : Promise.resolve<AdminResult<StudentQuizState[]>>({ ok: false, message: NOT_FOUND })),
     [userId],
   );
   const [toast, showToast] = useToast();
@@ -217,6 +256,13 @@ export const AdminStudentDetailPage: React.FC = () => {
   const d = detail.status === 'ready' ? detail.data : null;
   const name = d ? (d.profile.full_name?.trim() || d.profile.email) : 'Student';
   const studentCode = d ? regStr(d.registration, 'student_code') : null;
+  const quizRows = quizStates.status === 'ready' ? quizStates.data : [];
+  const quizLabel = (id: unknown) => {
+    if (typeof id !== 'string' || !id) return 'a quiz';
+    const q = quizRows.find((x) => x.quiz_id === id);
+    return q ? `${moduleLabel(q.module_id)} quiz “${quizTitle(q)}”` : id;
+  };
+  const reloadAll = () => { void detail.reload(); void quizStates.reload(); };
 
   const backLink = (
     <Link className="btn btn-ghost btn-sm" to="/admin/students"><Icon name="left" size={15} /> All students</Link>
@@ -240,6 +286,15 @@ export const AdminStudentDetailPage: React.FC = () => {
     if (!pending) return false;
     setDlgError(null);
     const trimmed = note.trim() || undefined;
+    if (pending.kind === 'grant') {
+      const q = pending.quiz;
+      const r = await grantQuizAttempts(userId, q.quiz_id, 1, trimmed);
+      if (!r.ok) { setDlgError(r.message); return false; }
+      const left = r.value.attempts_left;
+      showToast(`Granted 1 more attempt on ${quizTitle(q)} to ${name}${left === null ? '' : ` (${left} attempt${left === 1 ? '' : 's'} left)`}.`);
+      reloadAll();
+      return true;
+    }
     if (pending.kind === 'access') {
       const { module: m, access } = pending;
       const r = await setStudentModuleAccess(userId, m.module_id, access, trimmed);
@@ -286,6 +341,32 @@ export const AdminStudentDetailPage: React.FC = () => {
             <>
               <p>{name} will see an &ldquo;access paused&rdquo; screen and cannot read content, take quizzes, see the calendar or the cohort until you reactivate them. Their progress and details are kept.</p>
               {noteField('susp-reason', 'Reason (optional, for the audit log)', true)}
+              {dialogError}
+            </>
+          )}
+        />
+      );
+    }
+    if (pending.kind === 'grant') {
+      const q = pending.quiz;
+      const allowed = allowedAttempts(q);
+      return (
+        <ConfirmDialog
+          title="Grant 1 more attempt?"
+          confirmLabel="Grant attempt"
+          onConfirm={confirmPending}
+          onClose={closeDialog}
+          body={(
+            <>
+              <p>
+                {name} gets one more attempt at the {moduleLabel(q.module_id)} quiz <b>{quizTitle(q)}</b>
+                {allowed !== null ? <>: allowed attempts go from {allowed} to {allowed + 1} ({q.attempts_used} used so far).</> : '.'}
+              </p>
+              {q.locked
+                ? <p style={{ marginTop: 8 }}>They are locked on this quiz now. This unlocks it, so they can retake it and continue the course.</p>
+                : <p style={{ marginTop: 8 }}>They are not locked yet. The extra attempt is added on top of the quiz&rsquo;s limit of {q.max_attempts} and stays until they pass.</p>}
+              {d.suspension && <p style={{ marginTop: 8 }}>This student is suspended, so they cannot take quizzes until they are reactivated.</p>}
+              {noteField('grant-note', 'Note (optional, for the audit log)', false)}
               {dialogError}
             </>
           )}
@@ -362,7 +443,7 @@ export const AdminStudentDetailPage: React.FC = () => {
         actions={(
           <>
             {backLink}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => void detail.reload()}>Refresh</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={reloadAll}>Refresh</button>
           </>
         )}
       />
@@ -542,6 +623,100 @@ export const AdminStudentDetailPage: React.FC = () => {
                 )}
               </section>
 
+              {/* Quizzes: pass status and attempt limits */}
+              <section className="panel" aria-labelledby="sd-quiz-states">
+                <div className="phead">
+                  <h2 id="sd-quiz-states">Quizzes</h2>
+                  <Link className="more" to="/admin/quizzes">Quiz rules →</Link>
+                </div>
+                <LoadState state={quizStates} label="Loading quizzes…">
+                  {(qs) => {
+                    if (!qs.length) return <div className="empty">No quizzes are set up in the course content yet.</div>;
+                    const locked = qs.filter((q) => q.locked);
+                    return (
+                      <>
+                        {locked.length > 0 && (
+                          <div className="note warn" style={{ marginBottom: 14 }}>
+                            <Icon name="lock" size={18} />
+                            <span>
+                              {name} used every attempt on {locked.length === 1 ? <b>{quizTitle(locked[0])}</b> : `${locked.length} quizzes`} without passing and cannot continue until you grant another attempt.
+                            </span>
+                          </div>
+                        )}
+                        <p style={{ fontSize: 13.5, color: 'var(--muted)', marginBottom: 10 }}>
+                          A limited quiz can be taken up to its limit (plus any extra attempts you grant) until the student passes; after passing, attempts are unlimited.
+                          Attempts made before a limit was switched on do not count.
+                        </p>
+                        <div className="adm-table-wrap">
+                          <table className="adm-table">
+                            <thead>
+                              <tr>
+                                <th scope="col">Quiz</th>
+                                <th scope="col" className="num">Best</th>
+                                <th scope="col" className="num">Pass mark</th>
+                                <th scope="col" className="num">Attempts</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {qs.map((q) => {
+                                const st = quizStatus(q);
+                                const allowed = allowedAttempts(q);
+                                const title = quizTitle(q);
+                                const attemptsSub = [
+                                  q.extra_attempts > 0 ? `incl. ${q.extra_attempts} extra` : null,
+                                  allowed === null ? 'no limit' : q.passed ? 'unlimited now' : q.attempts_left !== null ? `${q.attempts_left} left` : null,
+                                ].filter(Boolean).join(' · ');
+                                const canGrant = q.max_attempts !== null && !q.passed;
+                                return (
+                                  <tr key={q.quiz_id}>
+                                    <td style={{ minWidth: 190 }}>
+                                      {title}
+                                      <span className="sub">{moduleLabel(q.module_id)}{q.questions > 0 ? ` · ${q.questions} questions` : ''}</span>
+                                    </td>
+                                    <td className="num">
+                                      {q.best_pct === null ? '—' : `${q.best_pct}%`}
+                                    </td>
+                                    <td className="num">
+                                      {q.pass_mark === null ? 'None' : `${q.pass_mark}%`}
+                                      {q.pass_mark !== null && q.questions > 0 && <span className="sub">{correctNeeded(q.pass_mark, q.questions)} of {q.questions}</span>}
+                                    </td>
+                                    <td className="num">
+                                      {allowed === null ? q.attempts_used : `${q.attempts_used}/${allowed}`}
+                                      {attemptsSub && <span className="sub">{attemptsSub}</span>}
+                                    </td>
+                                    <td className="nowrap">
+                                      <span className={`tag ${st.tag}`}>
+                                        {st.text === 'Locked' && <Icon name="lock" size={12} />}
+                                        {st.text === 'Passed' && <Icon name="check" size={12} />}
+                                        {st.text}
+                                      </span>
+                                    </td>
+                                    <td className="nowrap">
+                                      {canGrant ? (
+                                        <button
+                                          type="button"
+                                          className={`btn btn-sm ${q.locked ? 'btn-dark' : 'btn-line'}`}
+                                          aria-label={`Grant ${name} 1 more attempt on ${title}`}
+                                          onClick={() => { setNote(''); setDlgError(null); setPending({ kind: 'grant', quiz: q }); }}
+                                        >
+                                          Grant 1 more attempt
+                                        </button>
+                                      ) : <span style={{ color: 'var(--muted)' }}>—</span>}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    );
+                  }}
+                </LoadState>
+              </section>
+
               {/* Quiz attempts */}
               <section className="panel" aria-labelledby="sd-quizzes">
                 <div className="phead">
@@ -631,7 +806,7 @@ export const AdminStudentDetailPage: React.FC = () => {
                         <thead><tr><th scope="col">When</th><th scope="col">Change</th></tr></thead>
                         <tbody>
                           {s.history.map((h, i) => {
-                            const x = describeHistory(h.action, h.details);
+                            const x = describeHistory(h.action, h.details, quizLabel);
                             return (
                               <tr key={`${h.at}-${i}`}>
                                 <td className="nowrap">

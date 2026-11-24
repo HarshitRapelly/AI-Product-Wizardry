@@ -9,6 +9,10 @@ import {
   CalendarLegend, EventItem, EventsStatus, MonthGrid, currentMonth, istKey, monthRange, useEvents,
 } from '../components/portal/Calendar';
 import { PROGRAM } from '../config/program';
+import { ProfileMenu } from '../components/portal/ProfileMenu';
+import { SidebarToggle } from '../components/portal/SidebarToggle';
+import { BrandHat } from '../components/brand/BrandLogo';
+import { useSidebarCollapsed } from '../lib/sidebarState';
 
 interface PortalLayoutProps {
   children: React.ReactNode;
@@ -18,8 +22,6 @@ interface PortalLayoutProps {
 
 interface NavItem { name: string; path: string; icon: IconName; end?: boolean; badge?: number }
 
-const initialsOf = (name: string) =>
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || 'AW';
 
 /* ------------------------------------------------------- calendar dropdown */
 
@@ -111,6 +113,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
   const [sideOpen, setSideOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(false);
   const [palOpen, setPalOpen] = useState(false);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const location = useLocation();
   const navigate = useNavigate();
   const calWrap = useRef<HTMLDivElement>(null);
@@ -129,10 +132,11 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
     { name: 'Grades', path: `${prefix}/grades`, icon: 'chart' },
     { name: 'Live sessions', path: `${prefix}/live-sessions`, icon: 'video', badge: sessions.confirmedUpcoming },
     { name: 'Cohort', path: `${prefix}/cohort`, icon: 'users' },
-    { name: 'Profile', path: `${prefix}/profile`, icon: 'gear' },
   ];
+  // Profile is not in the sidebar (it opens from the profile badge menu) but stays searchable.
   const searchItems = [
     ...nav.map((n) => ({ label: n.name, path: n.path, icon: n.icon, hint: 'Portal' })),
+    { label: 'Profile', path: `${prefix}/profile`, icon: 'user' as IconName, hint: 'Portal' },
     { label: 'Module 0 · Orientation & Program Essentials', path: `${prefix}/module/0`, icon: 'book' as IconName, hint: 'Lessons' },
     { label: 'Explore the program', path: '/#explore', icon: 'globe' as IconName, hint: 'Website' },
     { label: 'Contact the program team', path: '/contact', icon: 'msg' as IconName, hint: 'Website' },
@@ -161,37 +165,37 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
 
   return (
     <div className="aiw">
-      <div className="lms">
+      <div className={`lms${collapsed ? ' collapsed' : ''}`}>
         <a href="#portal-main" className="aiw-skip">Skip to content</a>
         {sideOpen && <div className="side-scrim" onClick={() => setSideOpen(false)} aria-hidden="true" />}
         <aside className={`side${sideOpen ? ' open' : ''}`} id="portal-side" aria-label="Portal navigation">
-          {/* The logo always leads to the public home page (SHOW_HOME_STATE lets signed-in students see it). */}
-          <Link className="logo" to="/" state={SHOW_HOME_STATE} title="Go to the AI Product Wizardry home page" aria-label="AI Product Wizardry home page">
-            <img src={BRAND.logo} alt="" />
-          </Link>
+          <div className="side-head">
+            {/* The logo always leads to the public home page (SHOW_HOME_STATE lets signed-in students see it). */}
+            <Link className="logo" to="/" state={SHOW_HOME_STATE} title="Go to the AI Product Wizardry home page" aria-label="AI Product Wizardry home page">
+              <img className="logo-full" src={BRAND.logo} alt="" />
+              <BrandHat className="logo-mini" />
+            </Link>
+            <SidebarToggle collapsed={collapsed} onToggle={toggleCollapsed} controls="portal-side" />
+          </div>
           <nav aria-label="Portal">
             {nav.map((n) => (
-              <NavLink key={n.path} to={n.path} end={n.end} className={({ isActive }) => (isActive || (n.icon === 'book' && /\/module\//.test(location.pathname)) ? 'on' : undefined)}>
-                <Icon name={n.icon} /> {n.name}
+              <NavLink key={n.path} to={n.path} end={n.end} title={collapsed ? n.name : undefined} className={({ isActive }) => (isActive || (n.icon === 'book' && /\/module\//.test(location.pathname)) ? 'on' : undefined)}>
+                <Icon name={n.icon} /> <span className="nl">{n.name}</span>
                 {!!n.badge && <span className="badge" aria-label={`${n.badge} upcoming`}>{n.badge}</span>}
               </NavLink>
             ))}
             <span style={{ flex: 1 }} />
-            <Link to="/contact" className="support-link">
-              <Icon name="shield" /> Support<small>Questions & concerns</small>
+            <Link to="/contact" className="support-link" title={collapsed ? 'Support' : undefined}>
+              <Icon name="shield" /> <span className="nl">Support</span><small>Questions & concerns</small>
             </Link>
           </nav>
-          <Link to={`${prefix}/profile`} className="me" title="My profile" style={{ textDecoration: 'none' }}>
-            <span className="avatar" aria-hidden="true">{initialsOf(name)}</span>
-            <div style={{ textAlign: 'left', minWidth: 0 }}>
-              <b>{name}</b>
-              <small><Spark size={10} color="#F2B33D" /> {PROGRAM.batchName} · {activeMode === 'offline' ? 'Offline' : 'Online'}</small>
-            </div>
-          </Link>
-          <div className="sidefoot">
-            <Link to="/" state={SHOW_HOME_STATE}>← Website</Link>
-            <button type="button" onClick={handleLogout}><Icon name="logout" size={15} /> Sign out</button>
-          </div>
+          <ProfileMenu
+            name={name}
+            email={user?.email ?? null}
+            subtitle={<><Spark size={10} color="#F2B33D" /> {PROGRAM.batchName} · {activeMode === 'offline' ? 'Offline' : 'Online'}</>}
+            profilePath={`${prefix}/profile`}
+            onSignOut={handleLogout}
+          />
         </aside>
 
         <div className="main">
@@ -209,7 +213,6 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ children, mode, titl
               </button>
               {calOpen && <CalendarDropdown prefix={prefix} onClose={() => setCalOpen(false)} />}
             </div>
-            <button type="button" className="iconbtn" onClick={handleLogout} aria-label="Sign out" title="Sign out"><Icon name="logout" /></button>
           </header>
           <main className="content" id="portal-main" key={location.pathname}>
             {children}

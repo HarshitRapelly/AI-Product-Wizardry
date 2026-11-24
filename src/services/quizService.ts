@@ -1,7 +1,7 @@
 import { supabase, supabaseConfigError } from '../lib/supabase';
 import {
-  parseQuizAttempt, parseQuizQuestion, parseReviewItem,
-  type QuizAttemptSummary, type QuizQuestion, type QuizReviewItem,
+  parseQuizAttempt, parseQuizQuestion, parseQuizState, parseReviewItem,
+  type QuizAttemptSummary, type QuizQuestion, type QuizReviewItem, type QuizState,
 } from '../lib/curriculumTypes';
 import { errorOf, mapCurriculumError, type Result } from './curriculumService';
 
@@ -78,6 +78,21 @@ export async function submitQuiz(quizId: string, answers: Record<number, number>
     const attempt = parseQuizAttempt(Array.isArray(data) ? data[0] : data);
     if (!attempt) return { ok: false, error: errorOf('invalid_data') };
     return { ok: true, value: attempt };
+  });
+}
+
+/**
+ * Pass mark, attempts left and passed/locked state for every course quiz (my_quiz_states,
+ * migration 20261125001300). An older database without it → 'unavailable' (callers fall back).
+ */
+export async function fetchMyQuizStates(): Promise<Result<QuizState[]>> {
+  if (!supabase) return notConfigured();
+  const client = supabase;
+  return run(async () => {
+    const { data, error } = await client.rpc('my_quiz_states');
+    if (error) return { ok: false, error: mapCurriculumError(error) };
+    if (!Array.isArray(data)) return { ok: false, error: errorOf('invalid_data') };
+    return { ok: true, value: data.map(parseQuizState).filter((s): s is QuizState => s !== null) };
   });
 }
 
