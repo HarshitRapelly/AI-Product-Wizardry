@@ -33,9 +33,15 @@ begin
   if not (select relrowsecurity from pg_class where oid = 'public.cohort_events'::regclass) then
     raise exception 'FAIL: RLS not enabled';
   end if;
-  if (select string_agg(cmd || ':' || array_to_string(roles, ','), ' ') from pg_policies where schemaname = 'public' and tablename = 'cohort_events')
+  -- One permissive SELECT policy; restrictive policies (20261124001000: suspended students) may only narrow reads.
+  if (select string_agg(cmd || ':' || array_to_string(roles, ','), ' ') from pg_policies
+       where schemaname = 'public' and tablename = 'cohort_events' and permissive = 'PERMISSIVE')
      is distinct from 'SELECT:authenticated' then
     raise exception 'FAIL: expected exactly one SELECT policy for authenticated';
+  end if;
+  if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'cohort_events'
+              and permissive = 'RESTRICTIVE' and cmd <> 'SELECT') then
+    raise exception 'FAIL: unexpected restrictive write policy';
   end if;
   if has_table_privilege('anon', 'public.cohort_events', 'select')
      or has_table_privilege('authenticated', 'public.cohort_events', 'insert')

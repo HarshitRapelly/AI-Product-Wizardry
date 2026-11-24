@@ -1159,3 +1159,16 @@
 .aiw .cal .d.inmod.mstart{box-shadow:inset 3px 0 0 #2B3A67}
 .aiw .cal .d.inmod.mend{box-shadow:inset -3px 0 0 #2B3A67}
 .aiw .cal .d.inmod.today{box-shadow:0 0 0 2px var(--orange) inset}
+
+/* ---- Announcements (dashboard banner; admin portal, migration 20261124001100) ---- */
+.aiw .ann-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.aiw .ann{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:var(--r);background:var(--tTint);border:1px solid rgba(47,111,106,.25);color:var(--ink)}
+.aiw .ann.important{background:var(--oTint);border-color:rgba(209,83,31,.35)}
+.aiw .ann-ico{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#fff;color:var(--t500)}
+.aiw .ann.important .ann-ico{color:var(--orange)}
+.aiw .ann-body{flex:1;min-width:0}
+.aiw .ann-body b{display:block;font-size:14.5px;color:var(--ink)}
+.aiw .ann-body p{margin:3px 0 0;font-size:13.5px;color:var(--ink2);white-space:pre-line;overflow-wrap:anywhere}
+.aiw .ann-body a{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:13px;font-weight:700;color:var(--t500)}
+.aiw .ann-x{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.aiw .ann-x:hover{background:rgba(255,255,255,.6);color:var(--ink)}

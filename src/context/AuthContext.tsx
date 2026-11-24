@@ -5,14 +5,15 @@ import { fetchMyProfile, updateMyLearningMode, fillEmptyAvatar, type Profile, ty
 import { signOutThisDevice } from '../services/authService';
 import { loadAccountPayment } from '../services/paymentService';
 import { fetchRegistrationStatus, ensureMyProfile } from '../services/registrationService';
+import { fetchMyRole } from '../services/adminService';
 import type { LearningMode, PaymentDetails } from '../types';
 
 /**
  * loading        – reading the stored session, or loading the profile. Guards must wait.
  * signed_out     – no Supabase session.
  * ready          – signed in AND the student's own profile row, their payment
- *                  status (fresh from Supabase) and their registration status
- *                  are loaded.
+ *                  status (fresh from Supabase), their registration status and
+ *                  their role (admin / suspended, migration 20261124001000) are loaded.
  * profile_error  – signed in, but the profile could not be used (see profileError.kind).
  */
 export type AuthStatus = 'loading' | 'signed_out' | 'ready' | 'profile_error';
@@ -34,6 +35,10 @@ interface AuthContextValue {
    * Only meaningful when status === 'ready'.
    */
   registered: boolean | null;
+  /** Administrator (private.admin_users): sent to /admin, never to the student portal. Only meaningful when 'ready'. */
+  isAdmin: boolean;
+  /** Student account suspended by an admin: the portal shows the "access paused" screen. Only meaningful when 'ready'. */
+  suspended: boolean;
   /** Reloads profile, payment and registration status (e.g. after completing registration). */
   refreshStudent: () => Promise<void>;
   profileError: ProfileError | null;
@@ -66,6 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [account, setAccount] = useState<{ userId: string; payment: PaymentDetails | null } | null>(null);
   // Registration status, tagged with whose account it is.
   const [registration, setRegistration] = useState<{ userId: string; registered: boolean | null } | null>(null);
+  // Role (admin / suspended), tagged with whose account it is.
+  const [role, setRole] = useState<{ userId: string; isAdmin: boolean; suspended: boolean } | null>(null);
   const requestId = useRef(0); // ignores late responses for a previous user
 
   // 1. Follow Supabase's auth state. INITIAL_SESSION fires once the stored session
@@ -89,26 +96,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // load in parallel. The student only becomes 'ready' when ALL succeeded, so no
     // route guard can decide on a half-loaded state (e.g. send a paid student to
     // checkout, or a registered student back to the registration form).
-    const [result, accountResult, regResult] = await Promise.all([
+    const [result, accountResult, regResult, roleResult] = await Promise.all([
       loadOwnProfile(uid),
       loadAccountPayment(uid),
       fetchRegistrationStatus(uid),
+      fetchMyRole(),
     ]);
     if (id !== requestId.current) return; // user changed meanwhile
-    if (!result.ok || !accountResult.ok || !regResult.ok) {
+    if (!result.ok || !accountResult.ok || !regResult.ok || !roleResult.ok) {
       setProfile(null);
       setAccount(null);
       setRegistration(null);
-      const error = !result.ok
+      setRole(null);
+      const error: ProfileError = !result.ok
         ? result.error
         : !accountResult.ok
           ? accountResult.error
-          : (regResult as { ok: false; error: ProfileError }).error;
+          : !regResult.ok
+            ? (regResult as { ok: false; error: ProfileError }).error
+            : { kind: 'network', detail: (roleResult as { ok: false; message: string }).message };
       setProfileError(error);
       return;
     }
     setAccount({ userId: uid, payment: accountResult.payment });
     setRegistration({ userId: uid, registered: regResult.registered });
+    setRole({ userId: uid, isAdmin: roleResult.isAdmin, suspended: roleResult.suspended });
     setProfile(result.profile);
   }, []);
 
@@ -120,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(null);
       setAccount(null);
       setRegistration(null);
+      setRole(null);
       setProfileError(null);
       return;
     }
@@ -158,7 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     : !userId
       ? 'signed_out'
       : profile && profile.id === userId && account && account.userId === userId &&
-          registration && registration.userId === userId
+          registration && registration.userId === userId && role && role.userId === userId
         ? 'ready'
         : profileError
           ? 'profile_error'
@@ -180,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
     setAccount(null);
     setRegistration(null);
+    setRole(null);
     setProfileError(null);
     await signOutThisDevice();
   }, []);
@@ -219,13 +233,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       payment: status === 'ready' && account ? account.payment : null,
       setPaymentRecord,
       registered: status === 'ready' && registration ? registration.registered : null,
+      isAdmin: status === 'ready' && !!role?.isAdmin,
+      suspended: status === 'ready' && !!role?.suspended,
       refreshStudent,
       profileError: status === 'profile_error' ? profileError : null,
       retryProfile,
       signOut,
       setLearningMode,
     }),
-    [status, session, userId, profile, account, registration, profileError, retryProfile, refreshStudent, signOut, setLearningMode, setPaymentRecord],
+    [status, session, userId, profile, account, registration, role, profileError, retryProfile, refreshStudent, signOut, setLearningMode, setPaymentRecord],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

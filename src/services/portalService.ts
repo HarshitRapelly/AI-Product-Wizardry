@@ -88,6 +88,10 @@ export interface CohortEvent {
   allDay?: boolean;
   /** Module the entry belongs to (programme calendar entries). */
   moduleNumber?: number;
+  /** 'event', or a programme milestone (orientation / module_start / module_end / assignment_due). Migration 20261124001100. */
+  kind?: 'event' | 'orientation' | 'module_start' | 'module_end' | 'assignment_due';
+  /** Optional https link to join the session (set by an admin). */
+  meetingUrl?: string | null;
   /** Temporary placeholder (src/data/demoEvents.ts), never a database row. */
   demo?: boolean;
 }
@@ -106,23 +110,72 @@ function parseEvent(v: unknown): CohortEvent | null {
   const end = str(r.end_at);
   const endAt = end ? new Date(end) : null;
   const mode = r.learning_mode === 'online' || r.learning_mode === 'offline' ? r.learning_mode : null;
-  return { id, title, description: str(r.description), category: r.category as EventCategory, startAt, endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : null, location: str(r.location), learningMode: mode, confirmed: true, selfPacedMinutes: null };
+  const kind = KINDS.has(String(r.kind)) ? (r.kind as CohortEvent['kind']) : 'event';
+  const url = str(r.meeting_url);
+  return {
+    id, title, description: str(r.description), category: r.category as EventCategory, startAt,
+    endAt: endAt && !Number.isNaN(endAt.getTime()) ? endAt : null, location: str(r.location), learningMode: mode,
+    confirmed: true, selfPacedMinutes: null,
+    allDay: r.all_day === true,
+    ...(typeof r.module_number === 'number' ? { moduleNumber: r.module_number } : {}),
+    kind,
+    meetingUrl: url && /^https:\/\/\S+$/.test(url) ? url : null,
+  };
 }
 
-/** Published events between `from` and `to` (inclusive), for the student's mode (or all modes). */
-export function fetchEvents(from: Date, to: Date, mode: 'online' | 'offline' | null): Promise<PortalResult<CohortEvent[]>> {
+const KINDS = new Set(['event', 'orientation', 'module_start', 'module_end', 'assignment_due']);
+const EVENT_COLUMNS = 'id, title, description, category, start_at, end_at, location, learning_mode, all_day, module_number, kind, meeting_url';
+const LEGACY_EVENT_COLUMNS = 'id, title, description, category, start_at, end_at, location, learning_mode';
+const isMissingColumn = (e: { code?: string; message?: string } | null) =>
+  !!e && (e.code === '42703' || /column .* does not exist/i.test(e.message ?? ''));
+
+/**
+ * Published events between `from` and `to` (inclusive), for the student's mode (or all modes).
+ * `legacy` = the database predates migration 20261124001100 (no programme-calendar rows, no
+ * all-day/kind/link columns): the caller then adds the built-in programme calendar itself.
+ */
+export function fetchEvents(from: Date, to: Date, mode: 'online' | 'offline' | null): Promise<PortalResult<CohortEvent[]> & { legacy?: boolean }> {
   return guard(async () => {
-    const { data, error } = await supabase!
+    const query = (cols: string) => supabase!
       .from('cohort_events')
-      .select('id, title, description, category, start_at, end_at, location, learning_mode')
+      .select(cols)
       .gte('start_at', from.toISOString())
       .lte('start_at', to.toISOString())
       .order('start_at', { ascending: true })
-      .limit(200);
+      .limit(300);
+    let legacy = false;
+    let { data, error } = await query(EVENT_COLUMNS);
+    if (isMissingColumn(error)) {
+      legacy = true;
+      ({ data, error } = await query(LEGACY_EVENT_COLUMNS));
+    }
     if (error) return mapError(error);
     if (!Array.isArray(data)) return fail('unknown');
-    const rows = data.map(parseEvent).filter((e): e is CohortEvent => e !== null);
-    return { ok: true, value: rows.filter((e) => !e.learningMode || !mode || e.learningMode === mode) };
+    const rows = (data as unknown[]).map(parseEvent).filter((e): e is CohortEvent => e !== null);
+    return { ok: true, value: rows.filter((e) => !e.learningMode || !mode || e.learningMode === mode), legacy };
+  });
+}
+
+/** A published programme milestone (migration 20261124001100): its IST date. */
+export interface ProgrammeMilestone { kind: 'orientation' | 'module_start' | 'module_end' | 'assignment_due'; moduleNumber: number | null; ymd: string }
+
+/** All published programme milestones (no date range). Older databases → 'unavailable'. */
+export function fetchProgrammeMilestones(): Promise<PortalResult<ProgrammeMilestone[]>> {
+  return guard(async () => {
+    const { data, error } = await supabase!
+      .from('cohort_events')
+      .select('kind, module_number, start_at')
+      .in('kind', ['orientation', 'module_start', 'module_end', 'assignment_due'])
+      .order('start_at', { ascending: true })
+      .limit(200);
+    if (isMissingColumn(error)) return fail('unavailable');
+    if (error) return mapError(error);
+    if (!Array.isArray(data)) return fail('unknown');
+    const ist = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+    const value = (data as Record<string, unknown>[])
+      .filter((r) => typeof r.start_at === 'string' && KINDS.has(String(r.kind)) && r.kind !== 'event')
+      .map((r) => ({ kind: r.kind as ProgrammeMilestone['kind'], moduleNumber: typeof r.module_number === 'number' ? r.module_number : null, ymd: ist(r.start_at as string) }));
+    return { ok: true, value };
   });
 }
 

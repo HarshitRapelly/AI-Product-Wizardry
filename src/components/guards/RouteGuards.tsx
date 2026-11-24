@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { AuthLoadingScreen, ProfileErrorScreen } from '../auth/AuthScreens';
+import { AuthLoadingScreen, ProfileErrorScreen, SuspendedScreen } from '../auth/AuthScreens';
 import { homeFor, postAuthDestination } from '../../lib/onboarding';
 import { quizPathFor, useActiveQuizSession } from '../../lib/quizSession';
 
@@ -15,18 +15,37 @@ interface GuardProps {
  *  - loading        → loading screen (never redirect before the session is known)
  *  - profile_error  → explain the problem (never treat it as "no profile")
  *  - signed_out     → /login, remembering where the student was going
+ *  - administrator              → /admin (admins never see the student portal)
  *  - registration not completed → /register (completion form, once)
+ *  - suspended by an admin      → "access paused" screen
  * Returns null when the student is signed in, loaded and registered.
  */
 function useSignedInGate(): React.ReactElement | null {
-  const { status, registered } = useAuth();
+  const { status, registered, isAdmin, suspended } = useAuth();
   const location = useLocation();
   if (status === 'loading') return <AuthLoadingScreen />;
   if (status === 'profile_error') return <ProfileErrorScreen />;
   if (status === 'signed_out') return <Navigate to="/login" state={{ from: location }} replace />;
+  if (isAdmin) return <Navigate to="/admin" replace />;
   if (registered === false) return <Navigate to="/register" replace />;
+  if (suspended) return <SuspendedScreen />;
   return null;
 }
+
+/**
+ * /admin pages: signed in AND an administrator (private.admin_users, checked by the database).
+ * Students are sent to their own portal. Every admin call is also checked by the database.
+ */
+export const AdminGuard: React.FC<GuardProps> = ({ children }) => {
+  const { status, registered, isAdmin } = useAuth();
+  const { isPaid, learningMode } = useAuthAndCourse();
+  const location = useLocation();
+  if (status === 'loading') return <AuthLoadingScreen message="Loading the admin portal…" />;
+  if (status === 'profile_error') return <ProfileErrorScreen />;
+  if (status === 'signed_out') return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!isAdmin) return <Navigate to={homeFor({ learningMode, isPaid, registered })} replace />;
+  return <>{children}</>;
+};
 
 /** Signed in, registered, learning mode chosen and (simulated) payment completed; otherwise → /register. */
 export const PaidGuard: React.FC<GuardProps> = ({ children }) => {
@@ -86,14 +105,14 @@ export const PortalModeGuard: React.FC<PortalModeGuardProps> = ({ children, requ
 export const SHOW_HOME_STATE = { showHome: true } as const;
 
 export const HomeRoute: React.FC<GuardProps> = ({ children }) => {
-  const { status, registered } = useAuth();
+  const { status, registered, isAdmin } = useAuth();
   const { isPaid, learningMode } = useAuthAndCourse();
   const location = useLocation();
   const explicitHome = (location.state as { showHome?: unknown } | null)?.showHome === true;
 
   if (status === 'loading') return <AuthLoadingScreen />;
   if (status === 'profile_error') return <ProfileErrorScreen />;
-  if (status === 'ready' && !explicitHome) return <Navigate to={homeFor({ learningMode, isPaid, registered })} replace />;
+  if (status === 'ready' && !explicitHome) return <Navigate to={homeFor({ learningMode, isPaid, registered, isAdmin })} replace />;
   return <>{children}</>;
 };
 
@@ -103,7 +122,7 @@ export const HomeRoute: React.FC<GuardProps> = ({ children }) => {
  * destination's own guard re-checks registration, mode and payment.
  */
 export const GuestOnlyGuard: React.FC<GuardProps> = ({ children }) => {
-  const { status, registered } = useAuth();
+  const { status, registered, isAdmin } = useAuth();
   const { isPaid, learningMode } = useAuthAndCourse();
   const location = useLocation();
 
@@ -111,7 +130,7 @@ export const GuestOnlyGuard: React.FC<GuardProps> = ({ children }) => {
   if (status === 'profile_error') return <ProfileErrorScreen />;
   if (status === 'ready') {
     const from = (location.state as { from?: unknown } | null)?.from;
-    return <Navigate to={postAuthDestination({ learningMode, isPaid, registered }, from)} replace />;
+    return <Navigate to={postAuthDestination({ learningMode, isPaid, registered, isAdmin }, from)} replace />;
   }
   return <>{children}</>;
 };
@@ -127,13 +146,14 @@ export type RegisterView = 'signup' | 'complete' | 'enroll' | 'enrolled';
  *  - otherwise (enrolled)                     → their dashboard
  */
 export const RegisterRoute: React.FC<{ children: (view: RegisterView) => React.ReactNode }> = ({ children }) => {
-  const { status, registered } = useAuth();
+  const { status, registered, isAdmin } = useAuth();
   const { isPaid, learningMode } = useAuthAndCourse();
   const location = useLocation();
 
   if (status === 'loading') return <AuthLoadingScreen />;
   if (status === 'profile_error') return <ProfileErrorScreen />;
   if (status === 'ready') {
+    if (isAdmin) return <Navigate to="/admin" replace />;
     if (registered === false) return <>{children('complete')}</>;
     if (!learningMode || !isPaid) return <>{children('enroll')}</>;
     if ((location.state as { justEnrolled?: unknown } | null)?.justEnrolled === true) return <>{children('enrolled')}</>;

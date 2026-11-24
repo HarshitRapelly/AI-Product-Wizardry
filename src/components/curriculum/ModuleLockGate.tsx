@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, Loader2, Lock, RotateCcw } from 'lucide-react';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
-import { isModuleReleased, moduleNumberOf, moduleStateOf } from '../../lib/moduleStatus';
+import { isModuleReleased, moduleAccessOf, moduleNumberOf, moduleStateOf } from '../../lib/moduleStatus';
 
 interface Props {
   mode: 'online' | 'offline';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 /**
- * Modules that are not released (lib/moduleStatus RELEASED_MODULE_IDS; database:
+ * Modules that are not open for this student (lib/moduleStatus, from public.my_module_access(); database:
  * Migration 13) are always locked, also after the previous module is complete.
  * Renders a module's pages only when the server says the module is unlocked
  * (my_level_progress().is_unlocked). Locked, not-yet-available, loading and
@@ -39,22 +39,33 @@ export const ModuleLockGate: React.FC<Props> = ({ mode, moduleId, children }) =>
 
   const accent = mode === 'online' ? 'bg-accent' : 'bg-primary';
   const released = isModuleReleased(moduleId);
+  const access = moduleAccessOf(moduleId);
   let body: React.ReactNode;
   if (!released) {
+    const reason = access?.reason ?? 'not_released';
+    const opensOn = access?.releaseAt
+      ? new Date(access.releaseAt).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })
+      : null;
+    const text = reason === 'locked_for_you'
+      ? `The program team has locked Module ${n} for your account. Please contact them if you think this is a mistake.`
+      : reason === 'scheduled' && opensOn
+        ? `Module ${n} opens on ${opensOn} (IST).`
+        : `Module ${n} is not open yet. It opens when the program team releases it.`;
+    const canGoToModule0 = moduleId !== 1 && isModuleReleased(1);
     body = (
-      <div className="space-y-4" data-testid="module-locked" data-reason="not_released">
+      <div className="space-y-4" data-testid="module-locked" data-reason={reason}>
         <div className="flex items-start gap-3">
           <Lock className="w-6 h-6 text-slate-400 flex-shrink-0" aria-hidden="true" />
           <div className="space-y-1">
             <h1 className="text-xl font-extrabold text-primary">Module {n} is locked</h1>
             <p className="text-sm text-secondary">
-              Module {n} is not open yet. Only Module 0 is available right now; later modules open when the program team releases them.
+              {text}
               {prevRow?.isComplete ? ` You have completed Module ${prev} — well done.` : ''}
             </p>
           </div>
         </div>
-        <Link to={`/${mode}/module/0`} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white ${accent}`}>
-          Go to Module 0
+        <Link to={canGoToModule0 ? `/${mode}/module/0` : `/${mode}/dashboard`} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white ${accent}`}>
+          {canGoToModule0 ? 'Go to Module 0' : 'Back to dashboard'}
         </Link>
       </div>
     );
