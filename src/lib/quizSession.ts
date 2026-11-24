@@ -3,11 +3,11 @@ import { useSyncExternalStore } from 'react';
 /**
  * The student's ACTIVE quiz (started, not yet accepted by the server).
  *
- * What it is for: the application-level lockdown. While a session exists, every
- * portal route sends the student back to the quiz (PortalModeGuard), in this tab
- * and in other open tabs (storage event). It also restores the answers after a
- * refresh and keeps the submission id so a retried submission can never create a
- * second attempt (submit_quiz_attempt is idempotent per id).
+ * What it is for: resuming. It keeps the answers (also after a refresh or after the
+ * student left the quiz to visit other pages), counts how often the student left
+ * full screen / the quiz (MAX_QUIZ_EXITS chances to resume), and keeps the submission
+ * id so a retried submission can never create a second attempt (submit_quiz_attempt
+ * is idempotent per id). The portal is NOT locked while a quiz is in progress.
  *
  * What it is NOT: proof of anything. Quiz completion, scores and unlocking come
  * only from the server (quiz_attempts + lesson_progress). Clearing this key can
@@ -33,7 +33,14 @@ export interface QuizSession {
   submissionId: string | null;
   /** Times the student left the exam page (tab switch / window hidden). Local note only, never sent. */
   awayCount?: number;
+  /** Times the student left full screen or left the quiz page (local only, never sent). */
+  exits?: number;
 }
+
+/** A started quiz can be left and resumed this many times; the next exit closes the attempt (not recorded). */
+export const MAX_QUIZ_EXITS = 2;
+/** Resume chances left for a session. */
+export const quizChancesLeft = (s: Pick<QuizSession, 'exits'> | null | undefined) => Math.max(0, MAX_QUIZ_EXITS - (s?.exits ?? 0));
 
 const PREFIX = 'aiw:quiz-session:v1:';
 const EVENT = 'aiw-quiz-session';
@@ -55,7 +62,7 @@ function parse(raw: string | null): QuizSession | null {
       for (const [k, x] of Object.entries(v.answers)) if (/^\d{1,4}$/.test(k) && Number.isInteger(x) && (x as number) >= 0 && (x as number) < 100) answers[k] = x as number;
     }
     const sid = typeof v.submissionId === 'string' && /^[0-9a-f-]{36}$/i.test(v.submissionId) ? v.submissionId : null;
-    return { v: 1, quizId: v.quizId, subtopicId: v.subtopicId, module: v.module, startedAt: v.startedAt, answers, index: Number.isInteger(v.index) && (v.index as number) >= 0 ? (v.index as number) : 0, submissionId: sid, awayCount: Number.isInteger(v.awayCount) && (v.awayCount as number) >= 0 ? Math.min(v.awayCount as number, 9999) : 0 };
+    return { v: 1, quizId: v.quizId, subtopicId: v.subtopicId, module: v.module, startedAt: v.startedAt, answers, index: Number.isInteger(v.index) && (v.index as number) >= 0 ? (v.index as number) : 0, submissionId: sid, awayCount: Number.isInteger(v.awayCount) && (v.awayCount as number) >= 0 ? Math.min(v.awayCount as number, 9999) : 0, exits: Number.isInteger(v.exits) && (v.exits as number) >= 0 ? Math.min(v.exits as number, 99) : 0 };
   } catch {
     return null;
   }

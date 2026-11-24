@@ -33,6 +33,11 @@ export function adminErrorMessage(err: unknown): { message: string; code?: strin
   if (/unknown_student/.test(msg)) return { message: 'Student not found.', code: 'invalid' };
   if (/unknown_event|unknown_announcement|unknown_enquiry/.test(msg)) return { message: 'This item no longer exists. Refresh the page.', code: 'invalid' };
   if (/registration_required/.test(msg)) return { message: 'This student has not completed registration, so only the name can be changed.', code: 'invalid' };
+  if (/invalid_pass_mark/.test(msg)) return { message: 'Pass mark must be between 1% and 100%.', code: 'invalid', field: 'pass_mark' };
+  if (/invalid_max_attempts/.test(msg)) return { message: 'Attempts must be between 1 and 20.', code: 'invalid', field: 'max_attempts' };
+  if (/unknown_quiz/.test(msg)) return { message: 'This quiz no longer exists. Refresh the page.', code: 'invalid' };
+  if (/invalid_extra/.test(msg)) return { message: 'You can grant between 1 and 10 extra attempts at a time.', code: 'invalid', field: 'extra' };
+  if (/not_limited/.test(msg)) return { message: 'This quiz has no attempt limit.', code: 'invalid' };
   const field = /invalid_(?:student|event|announcement):(\w+)/.exec(msg)?.[1];
   if (field) {
     const FIELD_MSG: Record<string, string> = {
@@ -50,6 +55,8 @@ export function adminErrorMessage(err: unknown): { message: string; code?: strin
     if (/meeting_url|link_url/.test(msg)) return { message: 'Links must start with https://', code: 'invalid', field: 'url' };
     if (/end_after_start|ends_after_starts/.test(msg)) return { message: 'The end must be after the start.', code: 'invalid', field: 'end' };
     if (/title/.test(msg)) return { message: 'Enter a title.', code: 'invalid', field: 'title' };
+    if (/pass_mark/.test(msg)) return { message: 'Pass mark must be between 1% and 100%.', code: 'invalid', field: 'pass_mark' };
+    if (/max_attempts/.test(msg)) return { message: 'Attempts must be between 1 and 20.', code: 'invalid', field: 'max_attempts' };
     return { message: 'Please check the values and try again.', code: 'invalid' };
   }
   if (code === '22023' || code === '22007' || code === '22008' || code === '22P02') return { message: 'Please check the values and try again.', code: 'invalid' };
@@ -178,13 +185,66 @@ export interface AdminCohortRow {
 }
 export const listCohort = () => rpc<AdminCohortRow[]>('admin_list_cohort');
 
+/**
+ * pass_mark is a PERCENT (1–100, null = no pass mark); max_attempts is 1–20 or null (unlimited).
+ * A student may take a limited quiz max_attempts times (+ extra attempts an admin grants) until they pass;
+ * after passing, attempts are unlimited. Using every attempt without passing locks the student on that quiz.
+ */
 export interface QuizSummaryRow {
   quiz_id: string; module_id: number; title: string | null; pass_mark: number | null; students: number; attempts: number;
   avg_pct: number | null; avg_best_pct: number | null; passed_students: number;
+  questions: number; max_attempts: number | null; locked_students: number;
 }
-export const quizSummary = () => rpc<QuizSummaryRow[]>('admin_quiz_summary');
+export async function quizSummary(): Promise<AdminResult<QuizSummaryRow[]>> {
+  const r = await rpc<QuizSummaryRow[]>('admin_quiz_summary');
+  if (!r.ok) return r;
+  // questions / max_attempts / locked_students come from the quiz-rules migration: default them on an older database.
+  return {
+    ok: true,
+    value: (r.value ?? []).map((q) => ({
+      ...q, questions: q.questions ?? 0, max_attempts: q.max_attempts ?? null, locked_students: q.locked_students ?? 0,
+    })),
+  };
+}
 export interface QuizQuestionStat { question_id: number; question_position: number | null; prompt: string | null; attempts: number; correct_pct: number | null }
 export const quizQuestionStats = (quizId: string) => rpc<QuizQuestionStat[]>('admin_quiz_question_stats', { p_quiz_id: quizId });
+
+export interface QuizRules { quiz_id: string; pass_mark: number | null; max_attempts: number | null }
+export const setQuizRules = (quizId: string, passMark: number | null, maxAttempts: number | null) =>
+  rpc<QuizRules>('admin_set_quiz_rules', { p_quiz_id: quizId, p_pass_mark: passMark, p_max_attempts: maxAttempts });
+
+/** One quiz used by the course content, as it stands for one student. attempts_left null = unlimited. */
+export interface StudentQuizState {
+  quiz_id: string; module_id: number; title: string | null; questions: number; pass_mark: number | null; max_attempts: number | null;
+  attempts_used: number; extra_attempts: number; attempts_left: number | null; passed: boolean; locked: boolean; best_pct: number | null;
+}
+export const studentQuizStates = (userId: string) => rpc<StudentQuizState[]>('admin_student_quiz_states', { p_user: userId });
+
+export interface QuizGrantResult { quiz_id: string; extra_attempts: number; attempts_left: number | null; locked: boolean }
+export const grantQuizAttempts = (userId: string, quizId: string, extra = 1, note?: string) =>
+  rpc<QuizGrantResult>('admin_grant_quiz_attempts', { p_user: userId, p_quiz_id: quizId, p_extra: extra, p_note: note ?? null });
+
+/**
+ * The database stores each attempt's percentage as round(score × 100 / questions) and a student
+ * passes when that percentage is at least the pass mark.
+ */
+const attemptPct = (correct: number, questions: number) => Math.floor((correct * 200 + questions) / (2 * questions));
+
+/** Fewest correct answers (out of `questions`) that reach a pass mark of `passMark` %. 70% of 10 → 7. */
+export function correctNeeded(passMark: number, questions: number): number {
+  for (let c = 0; c <= questions; c += 1) if (attemptPct(c, questions) >= passMark) return c;
+  return questions;
+}
+
+/**
+ * The pass mark (%) meaning "at least `correct` of `questions` correct": 7 of 10 → 70%, 2 of 3 → 66%.
+ * floor(correct × 100 / questions) holds whether the score is compared rounded or exact; for unusual
+ * question counts where it would not, the database's own rounding is used instead.
+ */
+export function passMarkForCorrect(correct: number, questions: number): number {
+  const p = Math.max(1, Math.floor((correct * 100) / questions));
+  return correctNeeded(p, questions) === correct ? p : Math.max(1, attemptPct(correct, questions));
+}
 
 /* ------------------------------------------------- enquiries, leads, audit */
 

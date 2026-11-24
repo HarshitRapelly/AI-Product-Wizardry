@@ -5,21 +5,19 @@ import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { courseProgressShort } from '../../services/progressService';
 import { activeModuleLabel } from '../../lib/moduleStatus';
 import { fetchMyRegistrationDetails, type MyRegistrationDetailsResult } from '../../services/registrationService';
-import { fetchMyCohortProfile, type CohortProfile, type PortalError } from '../../services/portalService';
 import { StudentIdChip, useStudentCode } from '../../components/portal/StudentIdChip';
-import { CohortProfileForm } from '../../components/portal/CohortProfileForm';
 import { Icon } from '../../components/aiw/Icon';
 import { PROGRAM } from '../../config/program';
+import '../../styles/cohort-profile.css';
 
 /**
  * /:mode/profile — the student's own account: identity and permanent AI Wizardry Student ID,
- * real progress, registration details and cohort profile. Every value comes from the database
- * or the student's session; nothing is invented (no points, ranks or placeholder identities).
+ * real progress, registration details and settings. The cohort profile is managed on the Cohort
+ * page. Every value comes from the database or the student's session; nothing is invented (no
+ * points, ranks or placeholder identities).
  */
 
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
-
-type Load<T> = { status: 'loading' } | { status: 'ready'; value: T } | { status: 'error'; error: PortalError };
 
 /** The student's own registration details (Supabase, own row only — RLS). */
 const RegistrationDetailsCard: React.FC<{ userId: string | null }> = ({ userId }) => {
@@ -94,15 +92,8 @@ export const ProfilePage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) 
   const { user, paymentDetails, learningMode, courseProgress, moduleProgress, resetAllDemoData, logout } = useAuthAndCourse();
   const navigate = useNavigate();
   const code = useStudentCode();
-  const [cohort, setCohort] = useState<Load<CohortProfile | null>>({ status: 'loading' });
   const [isResetting, setIsResetting] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let c = false;
-    fetchMyCohortProfile().then((r) => { if (!c) setCohort(r.ok ? { status: 'ready', value: r.value } : { status: 'error', error: r.error }); });
-    return () => { c = true; };
-  }, [user?.id]);
 
   const handleReset = async () => {
     if (isResetting) return;
@@ -144,18 +135,7 @@ export const ProfilePage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) 
         </div>
       </section>
 
-      <div className="lgrid">
-        <div className="stack">
-          <section className="panel" aria-labelledby="cp-heading">
-            <div className="phead"><h2 id="cp-heading">Cohort profile</h2><Link className="more" to={`/${activeMode}/cohort`}>Open cohort →</Link></div>
-            {cohort.status === 'loading' && <div className="empty" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>}
-            {cohort.status === 'error' && <div className="note info" role="status"><Icon name="alert" size={18} /><span>{cohort.error.kind === 'unavailable' ? 'Cohort profiles are not available yet.' : cohort.error.message}</span></div>}
-            {cohort.status === 'ready' && user && (
-              <CohortProfileForm userId={user.id} initial={cohort.value} onSaved={(p) => setCohort({ status: 'ready', value: p })} />
-            )}
-          </section>
-          <RegistrationDetailsCard userId={user?.id ?? null} />
-        </div>
+      <div className="pf-grid">
         <div className="stack">
           <section className="panel" aria-labelledby="prog-title">
             <div className="phead"><h2 id="prog-title">Progress</h2></div>
@@ -165,17 +145,26 @@ export const ProfilePage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) 
             </dl>
             <Link className="btn btn-line btn-sm" style={{ marginTop: 14 }} to={`/${activeMode}/modules`}><Icon name="book" size={14} /> All modules</Link>
           </section>
-          <SettingsCard />
-          <section className="panel" aria-labelledby="acct-title">
+          <RegistrationDetailsCard userId={user?.id ?? null} />
+          <section className="panel pf-account" aria-labelledby="acct-title">
             <div className="phead"><h2 id="acct-title">Account</h2></div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button type="button" className="btn btn-line btn-sm" onClick={() => { logout(); navigate('/login'); }}><Icon name="logout" size={14} /> Sign out</button>
-              <button type="button" className="btn btn-line btn-sm" onClick={handleReset} disabled={isResetting} style={{ color: '#9b2c12' }}>
-                {isResetting ? 'Resetting…' : 'Reset account session'}
-              </button>
+            <div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button type="button" className="btn btn-line btn-sm" onClick={() => { logout(); navigate('/login'); }}><Icon name="logout" size={14} /> Sign out</button>
+                <button type="button" className="btn btn-line btn-sm" onClick={handleReset} disabled={isResetting} style={{ color: '#9b2c12' }}>
+                  {isResetting ? 'Resetting…' : 'Reset account session'}
+                </button>
+              </div>
+              {resetError && <div className="note err" role="alert" style={{ marginTop: 10 }}><Icon name="alert" size={18} /><span>{resetError}</span></div>}
             </div>
-            {resetError && <div className="note err" role="alert" style={{ marginTop: 10 }}><Icon name="alert" size={18} /><span>{resetError}</span></div>}
+            <p className="pf-cohort-link" data-testid="profile-cohort-link">
+              <Icon name="users" size={15} />
+              <Link to={`/${activeMode}/cohort`}>Edit your cohort profile on the Cohort page →</Link>
+            </p>
           </section>
+        </div>
+        <div className="stack">
+          <SettingsCard />
         </div>
       </div>
     </PortalLayout>

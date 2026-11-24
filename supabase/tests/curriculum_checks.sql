@@ -228,14 +228,14 @@ begin
   if (select count(*) from public.course_subtopics s, jsonb_array_elements(s.body) b where b->>'type' = 'quiz') <> 1
      or not exists (select 1 from public.course_subtopics s, jsonb_array_elements(s.body) b
                      where s.id = 'l0-plagiarism' and b->>'type' = 'quiz' and b->>'quiz_id' = 'l0-plagiarism-quiz'
-                       and b->>'post_submission_note' = 'If you got 8 or more right, you are ready for the assignments. If you got fewer, re-read the ground rules above before you start Module 1.'
+                       and b->>'post_submission_note' = 'If you got 7 or more right, you passed and are ready for the assignments. If you got fewer, re-read the ground rules above and try again before you start Module 1.'
                        and b->>'intro' = 'Read each scenario and pick the best answer before you look at the answer key. The names and situations are invented for practice.'
                        and b->>'review_intro' = 'Check your answers only after you have tried all 10 questions.') then
     raise exception 'FAIL: quiz block wrong';
   end if;
 
-  -- Quiz: definition without pass mark, 10 questions × 4 options, keys + explanations
-  if not exists (select 1 from private.quiz_definitions where quiz_id = 'l0-plagiarism-quiz' and module_id = 1 and pass_mark is null) then
+  -- Quiz: 10 questions × 4 options, keys + explanations; pass mark 70 % with 3 attempts (20261125001300)
+  if not exists (select 1 from private.quiz_definitions where quiz_id = 'l0-plagiarism-quiz' and module_id = 1 and pass_mark = 70 and max_attempts = 3) then
     raise exception 'FAIL: plagiarism quiz definition wrong';
   end if;
   if (select string_agg(question_id::text, ',' order by position) from public.quiz_questions where quiz_id = 'l0-plagiarism-quiz') is distinct from '1,2,3,4,5,6,7,8,9,10'
@@ -532,10 +532,10 @@ begin
     raise exception 'FAIL: a rejected submission was stored';
   end if;
 
-  -- Low score (all A → only Q4 and Q8 correct = 2/10) still counts: no pass mark
+  -- Low score (all A → only Q4 and Q8 correct = 2/10): recorded as a FAIL (pass mark 70 %, 20261125001300)
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0}',
                                   'c1000000-0000-4000-8000-000000000001');
-  if a.score <> 2 or a.total_questions <> 10 or a.percentage <> 20 or a.pass_mark is not null or a.passed is not null
+  if a.score <> 2 or a.total_questions <> 10 or a.percentage <> 20 or a.pass_mark <> 70 or a.passed
      or a.attempt_number <> 1 or a.module_id <> 1 then
     raise exception 'FAIL: low-score plagiarism attempt wrong: %', row_to_json(a);
   end if;
@@ -547,10 +547,10 @@ begin
     raise exception 'FAIL: retried submission was not idempotent';
   end if;
 
-  -- A distinct submission is a separate attempt; all correct = 100 %, passed still NULL
+  -- A distinct submission is a separate attempt; all correct = 100 % → passed
   a2 := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}',
                                    'c1000000-0000-4000-8000-000000000002');
-  if a2.attempt_number <> 2 or a2.score <> 10 or a2.percentage <> 100 or a2.passed is not null then
+  if a2.attempt_number <> 2 or a2.score <> 10 or a2.percentage <> 100 or not a2.passed then
     raise exception 'FAIL: second attempt wrong: %', row_to_json(a2);
   end if;
 

@@ -3,14 +3,19 @@ import { Link } from 'react-router-dom';
 import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 import { PublicSite } from '../components/site/SiteChrome';
 import { Icon } from '../components/aiw/Icon';
-import { MailArt, Starfield, Wave } from '../components/aiw/Art';
+import { MailArt, Starfield } from '../components/aiw/Art';
 import { useAuthAndCourse } from '../context/AuthAndCourseContext';
 import {
   ENQUIRY_LIMITS, ENQUIRY_TOPICS, submitEnquiry, validateEnquiry,
   type EnquiryErrors, type EnquiryField, type EnquiryInput, type EnquiryTopic,
 } from '../services/enquiryService';
+import '../styles/contact.css';
 
-/** /contact — "Send us your query", stored in Supabase (public.enquiries via submit_enquiry). */
+/**
+ * /contact — "Send us your query", stored in Supabase (public.enquiries via submit_enquiry).
+ * Layout: a compact intro and the form card sit at the top so the form is visible without scrolling.
+ * Desktop: intro + "about your query" on the left, form on the right. Phones: intro, form, about.
+ */
 export const ContactPage: React.FC = () => {
   const { user } = useAuthAndCourse();
   const [form, setForm] = useState<EnquiryInput>({
@@ -59,33 +64,17 @@ export const ContactPage: React.FC = () => {
 
   return (
     <PublicSite>
-      <section className="hero" style={{ padding: '60px 5vw 120px' }} aria-labelledby="contact-title">
-        <Starfield count={30} />
-        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+      <div className="ct">
+        <section className="ct-intro" aria-labelledby="contact-title">
+          <Starfield count={16} />
           <p className="eyebrow gold">Get in touch</p>
-          <h1 id="contact-title" style={{ fontSize: 'clamp(32px,4.2vw,54px)', marginTop: 12 }}>Have a question before you join?</h1>
-          <p className="lead">Ask us anything about the program, fees, schedule or eligibility. The program team will get back to you.</p>
-        </div>
-        <Wave />
-      </section>
+          <h1 id="contact-title">Have a question before you join?</h1>
+          <p className="ct-lead">Ask us anything about the program, fees, schedule or eligibility. The program team will get back to you.</p>
+        </section>
 
-      <div className="contactgrid">
-        <aside className="card t reveal" style={{ padding: 26 }}>
-          <MailArt />
-          <h2 style={{ fontSize: 24, marginTop: 6 }}>Send us your query</h2>
-          <p className="muted" style={{ fontSize: 14.5, marginTop: 6 }}>The program team reads every message and will reply by email or phone.</p>
-          <ul style={{ margin: '16px 0 0 18px', fontSize: 14, color: 'var(--ink2)', display: 'grid', gap: 6 }}>
-            <li>Questions about Module 0 to Module 11, fees, schedule or eligibility.</li>
-            <li>We only use your details to answer your question.</li>
-          </ul>
-          <p style={{ marginTop: 16, fontSize: 14 }}>
-            Looking for program details? <Link to={{ pathname: '/', hash: '#explore' }} state={SHOW_HOME_STATE} style={{ color: 'var(--t500)', fontWeight: 600 }}>Explore the program</Link>.
-          </p>
-        </aside>
-
-        <div className="fcard reveal">
+        <div className="fcard ct-form">
           {status === 'sent' ? (
-            <div role="status" style={{ textAlign: 'center' }}>
+            <div role="status" className="ct-done">
               <MailArt />
               <h2 style={{ fontSize: 26, margin: '10px 0 6px' }}>Thanks, {form.name.trim().split(/\s+/)[0]}! Your query is in.</h2>
               <p className="muted" style={{ fontSize: 14.5 }}>
@@ -104,7 +93,8 @@ export const ContactPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <form onSubmit={onSubmit} noValidate aria-describedby={failure ? 'cq-failure' : undefined}>
+            <form onSubmit={onSubmit} noValidate aria-labelledby="cq-title" aria-describedby={failure ? 'cq-failure' : undefined}>
+              <h2 id="cq-title">Send us your query</h2>
               <div className="row2">
                 <div className={field('name')}>
                   <label htmlFor="cq-name">Full name</label>
@@ -127,7 +117,7 @@ export const ContactPage: React.FC = () => {
               </div>
               <fieldset className={field('topic')} style={{ border: 0 }}>
                 <legend style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', marginBottom: 6 }}>What's it about?</legend>
-                <div className="cats" role="radiogroup" aria-label="Topic">
+                <div className="cats" role="radiogroup" aria-label="Topic" aria-describedby={err('topic') ? 'cq-topic-err' : undefined}>
                   {ENQUIRY_TOPICS.map((t, i) => (
                     <button
                       key={t.value}
@@ -142,11 +132,11 @@ export const ContactPage: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {err('topic') && <span className="err">{err('topic')}</span>}
+                {err('topic') && <span className="err" id="cq-topic-err">{err('topic')}</span>}
               </fieldset>
-              <div className={field('message')}>
+              <div className={`${field('message')} ct-msg`}>
                 <label htmlFor="cq-message">Your question</label>
-                <textarea id="cq-message" ref={(el) => { refs.current.message = el; }} rows={5} value={form.message} onChange={(e) => set('message', e.target.value)}
+                <textarea id="cq-message" ref={(el) => { refs.current.message = el; }} rows={4} value={form.message} onChange={(e) => set('message', e.target.value)}
                   maxLength={ENQUIRY_LIMITS.message} placeholder="Tell us what you'd like to know." aria-invalid={!!err('message')} aria-describedby={described('message')} required />
                 <span className="count" aria-live="polite">{form.message.trim().length}/{ENQUIRY_LIMITS.message}</span>
                 {err('message') && <span className="err" id="cq-message-err">{err('message')}</span>}
@@ -175,6 +165,26 @@ export const ContactPage: React.FC = () => {
             </form>
           )}
         </div>
+
+        <aside className="card t ct-info reveal" aria-label="About your query">
+          <ul className="ct-points">
+            <li>
+              <span className="ct-ico"><Icon name="msg" size={16} /></span>
+              <span><b>What you can ask</b>Questions about Module 0 to Module 11, fees, schedule or eligibility.</span>
+            </li>
+            <li>
+              <span className="ct-ico"><Icon name="users" size={16} /></span>
+              <span><b>What happens next</b>The program team reads every message and will reply by email or phone.</span>
+            </li>
+            <li>
+              <span className="ct-ico"><Icon name="shield" size={16} /></span>
+              <span><b>Your details</b>We only use your details to answer your question.</span>
+            </li>
+          </ul>
+          <p className="ct-more">
+            Looking for program details? <Link to={{ pathname: '/', hash: '#explore' }} state={SHOW_HOME_STATE}>Explore the program</Link>.
+          </p>
+        </aside>
       </div>
     </PublicSite>
   );

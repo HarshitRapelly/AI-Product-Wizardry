@@ -38,8 +38,47 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .aiw-lesson-enter { animation: aiw-lesson-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* "Mark as complete" → green "Completed" button with a tick: a small pop when it appears. */
+@keyframes aiw-done-pop {
+  0%   { transform: scale(0.92); opacity: 0.6; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.aiw-done-pop { animation: aiw-done-pop 380ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* "Mark as completed" button (brand teal on a soft teal tint) — compact */
+.aiw-ack-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: 9px;
+  background: #E3EEEC; color: #2F6F6A;
+  font-size: 13px; line-height: 18px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  transition: background-color .2s ease, box-shadow .2s ease, transform .15s ease;
+}
+button.aiw-ack-btn:hover:not(:disabled) { background: #D3E5E2; box-shadow: 0 2px 10px rgba(47,111,106,.18); }
+button.aiw-ack-btn:active:not(:disabled) { transform: translateY(1px); }
+button.aiw-ack-btn:focus-visible { outline: 3px solid rgba(47,111,106,.45); outline-offset: 2px; }
+button.aiw-ack-btn:disabled { opacity: .55; cursor: not-allowed; }
+.aiw-ack-orb {
+  width: 18px; height: 18px; border-radius: 9999px; flex: none;
+  border: 2.5px solid #2F6F6A; display: inline-flex; align-items: center; justify-content: center;
+}
+.aiw-ack-orb.is-done { background: #2F6F6A; color: #fff; border-color: #2F6F6A; }
 @media (prefers-reduced-motion: reduce) {
-  .aiw-lesson-enter { animation: none; }
+  .aiw-lesson-enter, .aiw-done-pop { animation: none; }
+}
+/* New-password checklist: out of sight until the user types, then opens smoothly (height + fade)
+   and closes again if the field is cleared. The spacing class sits inside the clip, so nothing
+   is left behind while closed. */
+.aiw-pwc {
+  display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden;
+  transition: grid-template-rows 250ms cubic-bezier(.4, 0, .2, 1), opacity 200ms ease, visibility 0s linear 250ms;
+}
+.aiw-pwc.is-open {
+  grid-template-rows: 1fr; opacity: 1; visibility: visible;
+  transition: grid-template-rows 250ms cubic-bezier(.4, 0, .2, 1), opacity 250ms ease, visibility 0s;
+}
+.aiw-pwc-clip { min-height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .aiw-pwc, .aiw-pwc.is-open { transition: none; }
 }
 
 /* Brand text selection */

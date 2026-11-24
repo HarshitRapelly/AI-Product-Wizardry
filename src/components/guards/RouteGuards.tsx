@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { AuthLoadingScreen, ProfileErrorScreen, SuspendedScreen } from '../auth/AuthScreens';
 import { homeFor, postAuthDestination } from '../../lib/onboarding';
-import { quizPathFor, useActiveQuizSession } from '../../lib/quizSession';
 
 interface GuardProps {
   children: React.ReactNode;
@@ -63,22 +62,16 @@ interface PortalModeGuardProps {
 
 /**
  * Portal pages: signed in → registered → mode chosen → paid → the page matches the student's mode.
- * While the student has an active quiz (started, not yet accepted by the server), every
- * portal page sends them back to that quiz — typed URLs, Back button, other tabs included.
+ * A quiz in progress no longer locks the portal: the student may leave it and resume it later
+ * (a limited number of times, see lib/quizSession MAX_QUIZ_EXITS).
  */
 export const PortalModeGuard: React.FC<PortalModeGuardProps> = ({ children, requiredMode }) => {
   const gate = useSignedInGate();
-  const { isPaid, learningMode, user } = useAuthAndCourse();
+  const { isPaid, learningMode } = useAuthAndCourse();
   const location = useLocation();
-  const activeQuiz = useActiveQuizSession(user?.id);
   if (gate) return gate;
 
   if (!learningMode || !isPaid) return <Navigate to="/register" replace />; // enrollment happens on /register
-
-  if (activeQuiz) {
-    const quizPath = quizPathFor(learningMode, activeQuiz);
-    if (location.pathname !== quizPath) return <Navigate to={quizPath} replace />;
-  }
 
   if (learningMode !== requiredMode) {
     // Route to the equivalent page in the student's active modality

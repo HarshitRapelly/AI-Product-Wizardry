@@ -1,5 +1,7 @@
 import type { LearningMode } from '../types';
 import { FULL_NAME_MAX_LENGTH, FULL_NAME_MIN_LENGTH, isValidEmail, validateNewPassword } from './registrationValidation';
+import { passwordStrengthError } from './passwordRules';
+import { collegeIdMessage } from './collegeId';
 
 /**
  * The four-step registration form: options, per-step validation and the payload
@@ -23,17 +25,16 @@ export const ASPIRATION_MAX = 1000;
 /**
  * College ID Number (Migration 12). Kept as TEXT exactly as typed (only outer
  * spaces trimmed): letters, digits and leading zeros are preserved, it is never
- * converted to a number. 1–40 characters: letters, digits and the separators
+ * converted to a number. Required by the registration form (as before); the
+ * DATABASE also accepts NULL and 1–40 characters: letters, digits and the separators
  * space . / _ - (must start and end with a letter or digit). Not unique.
+ * NEW registrations are stricter (uppercase letters and digits only) — see lib/collegeId.ts.
  */
 export const COLLEGE_ID_MAX = 40;
 export const COLLEGE_ID_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9 ./_-]*[A-Za-z0-9])?$/;
 export function collegeIdError(raw: string): string | null {
-  const v = raw.trim();
-  if (!v) return 'College ID Number is required';
-  if (v.length > COLLEGE_ID_MAX) return `College ID Number must be ${COLLEGE_ID_MAX} characters or fewer`;
-  if (!COLLEGE_ID_PATTERN.test(v)) return 'Use letters, numbers and - / _ . or spaces only (start and end with a letter or number)';
-  return null;
+  if (!raw.trim()) return 'College ID Number is required';
+  return collegeIdMessage(raw);
 }
 
 /** Program fee shown in the form (unchanged: same amount as checkout). */
@@ -156,7 +157,12 @@ export function validateRegistrationStep(
 
     // Password: required for a new account; optional when completing (e.g. Google users).
     const wantsPassword = mode === 'signup' || form.password !== '' || form.confirmPassword !== '';
-    if (wantsPassword) Object.assign(e, validateNewPassword(form.password, form.confirmPassword));
+    if (wantsPassword) {
+      Object.assign(e, validateNewPassword(form.password, form.confirmPassword));
+      // New password must meet every checklist rule (lib/passwordRules.ts). Login is not affected.
+      const weak = form.password ? passwordStrengthError(form.password) : null;
+      if (weak) e.password = weak;
+    }
   }
 
   if (step === 1) {

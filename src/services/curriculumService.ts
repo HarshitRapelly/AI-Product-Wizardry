@@ -26,6 +26,8 @@ export type CurriculumErrorKind =
   | 'module_locked'    // module not released, or previous module not complete
   | 'order'            // an earlier subtopic is not done yet
   | 'quiz_required'    // Plagiarism: submit the quiz before acknowledging
+  | 'quiz_not_passed'  // 20261125001300: pass the quiz before completing the subtopic
+  | 'attempt_limit'    // 20261125001300: no attempts left until an admin grants one
   | 'reading_required' // Migration 11: confirm the reading before the quiz
   | 'undo'             // trying to un-acknowledge
   | 'invalid_request'  // bad answers / values
@@ -44,6 +46,8 @@ const MESSAGES: Record<CurriculumErrorKind, string> = {
   module_locked: 'This module is locked. Complete the previous module first.',
   order: 'Please finish the previous subtopic first.',
   quiz_required: 'Please submit the quiz before confirming this subtopic.',
+  quiz_not_passed: 'Pass the quiz to complete this lesson.',
+  attempt_limit: 'You have used all your attempts for this quiz. Please contact the program team to get another attempt.',
   reading_required: 'Please finish and confirm the reading before taking the quiz.',
   undo: 'A confirmed subtopic cannot be undone.',
   invalid_request: 'Something in your answer could not be accepted. Please check and try again.',
@@ -71,6 +75,8 @@ export function mapCurriculumError(err: unknown): CurriculumError {
   if (/(level|module)_locked: ((level|module) \d+ is not open yet|this (level|module) has not been released)/.test(msg)) return errorOf('module_locked', 'This module is not open yet. Only Module 0 is available right now.');
   if (/(level|module)_locked/.test(msg)) return errorOf('module_locked');
   if (/submit the quiz before/.test(msg)) return errorOf('quiz_required');
+  if (/pass the quiz before/.test(msg)) return errorOf('quiz_not_passed');
+  if (/attempt_limit/.test(msg)) return errorOf('attempt_limit');
   if (/confirm the reading before/.test(msg)) return errorOf('reading_required');
   if (/acknowledge the (previous|earlier) subtopic/.test(msg)) return errorOf('order');
   if (/cannot be undone/.test(msg)) return errorOf('undo');

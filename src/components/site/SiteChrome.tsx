@@ -41,7 +41,7 @@ export const SiteNav: React.FC = () => {
         <ExploreLink>Explore</ExploreLink>
         <NavLink to="/contact" className={({ isActive }) => `hide-sm${isActive ? ' on' : ''}`}>Contact</NavLink>
         {isAuthenticated && isPaid ? (
-          <Link to="/dashboard" className="btn btn-primary btn-sm"><Icon name="wand" size={16} /> Go to my portal</Link>
+          <Link to="/dashboard" className="btn btn-primary btn-sm"><Icon name="wand" size={16} /> Dashboard</Link>
         ) : isAuthenticated ? (
           <Link to="/register" className="btn btn-primary btn-sm">Continue registration</Link>
         ) : (

@@ -60,6 +60,39 @@ export interface QuizAttemptSummary {
   submittedAt: string;
 }
 
+/**
+ * The caller's state for one quiz (public.my_quiz_states, migration 20261125001300).
+ * attemptsLeft null = unlimited (no limit, or already passed).
+ */
+export interface QuizState {
+  quizId: string;
+  passMark: number | null;
+  maxAttempts: number | null;
+  questions: number;
+  attemptsUsed: number;
+  extraAttempts: number;
+  attemptsLeft: number | null;
+  passed: boolean;
+  locked: boolean;
+}
+
+export function parseQuizState(v: unknown): QuizState | null {
+  if (!v || typeof v !== 'object') return null;
+  const r = v as Record<string, unknown>;
+  const int = (x: unknown) => (typeof x === 'number' && Number.isInteger(x) ? x : null);
+  if (typeof r.quiz_id !== 'string' || typeof r.passed !== 'boolean' || typeof r.locked !== 'boolean') return null;
+  return {
+    quizId: r.quiz_id, passMark: int(r.pass_mark), maxAttempts: int(r.max_attempts), questions: int(r.questions) ?? 0,
+    attemptsUsed: int(r.attempts_used) ?? 0, extraAttempts: int(r.extra_attempts) ?? 0, attemptsLeft: int(r.attempts_left),
+    passed: r.passed, locked: r.locked,
+  };
+}
+
+/** "7 of 10" for a percent pass mark (rounded up, as the server compares percent >= pass mark). */
+export function passMarkCount(passMark: number, questions: number): number {
+  return Math.ceil((passMark * questions) / 100 - 1e-9);
+}
+
 export interface QuizReviewItem {
   questionId: number;
   position: number;

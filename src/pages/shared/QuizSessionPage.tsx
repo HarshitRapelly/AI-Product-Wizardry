@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Loader2, Lock, Maximize2,
+  AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Loader2, Lock, Maximize2,
   RotateCcw, ShieldCheck, XCircle,
 } from 'lucide-react';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { useCurriculumModule } from '../../hooks/useCurriculumModule';
 import { MODULE0_ID } from '../../components/curriculum/Module0HubPage';
 import { BrandHat } from '../../components/brand/BrandLogo';
-import { clearQuizSession, useActiveQuizSession, writeQuizSession, type QuizSession } from '../../lib/quizSession';
+import { MAX_QUIZ_EXITS, clearQuizSession, quizChancesLeft, readQuizSession, useActiveQuizSession, writeQuizSession, type QuizSession } from '../../lib/quizSession';
 import type { Lesson } from '../../lib/moduleLessons';
-import type { QuizAttemptSummary, QuizQuestion, QuizReviewItem } from '../../lib/curriculumTypes';
+import { passMarkCount, type QuizAttemptSummary, type QuizQuestion, type QuizReviewItem, type QuizState } from '../../lib/curriculumTypes';
 import { fetchQuizQuestions, fetchQuizReview, newSubmissionId, submitQuiz } from '../../services/quizService';
 import type { CurriculumError } from '../../services/curriculumService';
 
@@ -44,26 +44,21 @@ function exitFullscreen() {
  *  - Opening it requires the quiz lesson to be unlocked (all earlier lessons done,
  *    reading confirmed) — derived from server data; the server additionally refuses
  *    submissions before the earlier subtopics are done.
- *  - "Start" creates the active quiz session (lib/quizSession): from then on every
- *    portal route leads back here (PortalModeGuard) until the SERVER accepts the
- *    submission. Refresh restores the answers; a retried submission reuses the same
- *    id, so it can never create a second attempt.
+ *  - "Start" creates the active quiz session (lib/quizSession). Refresh restores the
+ *    answers; a retried submission reuses the same id, so it can never create a
+ *    second attempt.
  *  - Answers and explanations are loaded only for a submitted attempt (get_my_quiz_review),
  *    and only shown when the student opens "Review Answers" after the marksheet.
  *
- * Examination mode (strongest LEGITIMATE browser protections; not a kiosk):
+ * Full-screen mode with resume chances (no lockdown):
  *  - Start requests browser fullscreen (Fullscreen API, from the student's click).
- *  - Leaving fullscreen (Esc, browser UI) cannot be prevented: it is detected and a
- *    warning with "Return to full screen" is shown; answers are never lost.
- *  - Switching tabs / hiding the window is detected (visibilitychange) and counted
- *    on this device; a warning is shown on return. It cannot be prevented.
- *  - Browser Back is absorbed by a history guard entry and shows a warning; any
- *    other portal URL redirects back here (PortalModeGuard).
- *  - Closing / refreshing asks the browser's standard "Leave site?" confirmation
- *    (beforeunload); if the student leaves anyway, the session and answers are
- *    restored on return.
- * Strict lockdown (blocking Esc, Alt+Tab, other apps, closing the browser) needs a
- * managed kiosk browser or dedicated examination software; a web page cannot do it.
+ *  - Leaving full screen (Esc) shows a popup: "Enter full screen mode" to continue, or
+ *    "Leave quiz for now" to visit other pages. Answers stay saved.
+ *  - Each time the student leaves full screen (or leaves the page while in full screen)
+ *    counts as one exit. MAX_QUIZ_EXITS exits can be resumed; the next one closes the
+ *    attempt WITHOUT recording it (the server needs every question answered, so a
+ *    half-finished quiz cannot be submitted automatically).
+ *  - Coming back to an unfinished quiz shows the same popup to enter full screen again.
  */
 export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   const { quizId = '' } = useParams();
@@ -82,6 +77,8 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
     [state, quizId],
   );
   const available = !!quizLesson && quizLesson.state !== 'locked';
+  /** Pass mark / attempts left / locked (migration 20261125001300; null on an older database). */
+  const qstate: QuizState | null = state.status === 'ready' ? state.quizStates?.find((q) => q.quizId === quizId) ?? null : null;
 
   // Questions (prompts + options only — never answers).
   const [questions, setQuestions] = useState<Questions>({ status: 'loading' });
@@ -109,78 +106,77 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
     else if (hadSession.current && !result) { hadSession.current = false; void reload({ quiet: true }); }
   }, [mine, result, reload]);
 
-  // Warn before closing / refreshing while answers are not yet accepted by the server.
-  useEffect(() => {
-    if (!mine) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; return ''; };
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [mine]);
-
-  // ---- Examination mode: fullscreen, leaving the page, Back button --------------------
+  // ---- Full screen with resume chances ------------------------------------------------
+  const navigate = useNavigate();
   const [fullscreen, setFullscreen] = useState(isFullscreenNow());
-  useEffect(() => {
-    const onChange = () => setFullscreen(isFullscreenNow());
-    document.addEventListener('fullscreenchange', onChange);
-    return () => document.removeEventListener('fullscreenchange', onChange);
-  }, []);
-
-  const [awayWarning, setAwayWarning] = useState(false);
   const sessionRef = useRef(mine);
   sessionRef.current = mine;
-  useEffect(() => {
-    if (!mine || !uid) return;
-    const onVisibility = () => {
-      const cur = sessionRef.current;
-      if (document.visibilityState === 'hidden' && cur && !cur.submissionId) {
-        writeQuizSession(uid, { ...cur, awayCount: (cur.awayCount ?? 0) + 1 });
-        setAwayWarning(true);
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [mine ? mine.startedAt : null, uid]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** The current time out of full screen has already been counted as an exit. */
+  const outCounted = useRef(false);
+  /** Submission finishing: leaving full screen then is not an exit. */
+  const submittingRef = useRef(false);
 
-  // Back button: keep a guard history entry on top while the exam is active. A Back
-  // press pops it (same URL), so we warn and put it back instead of leaving the exam.
-  const location = useLocation();
-  const navigate = useNavigate();
-  const guardArmed = useRef(false);
-  const [backWarning, setBackWarning] = useState(false);
+  /** One exit: counted on this device; past the limit the attempt is closed (not recorded). */
+  const registerExit = useCallback(() => {
+    if (!uid) return;
+    const cur = readQuizSession(uid);
+    if (!cur || cur.quizId !== quizId || cur.submissionId || submittingRef.current) return;
+    const exits = (cur.exits ?? 0) + 1;
+    if (exits > MAX_QUIZ_EXITS) {
+      clearQuizSession(uid);
+      setClosedReason(`You left the quiz more than ${MAX_QUIZ_EXITS} times, so this attempt was closed. Your answers were not submitted and nothing was recorded. You can start the quiz again.`);
+      return;
+    }
+    writeQuizSession(uid, { ...cur, exits });
+  }, [uid, quizId]);
+
   useEffect(() => {
-    if (!mine) { guardArmed.current = false; return; }
-    if ((location.state as { examGuard?: unknown } | null)?.examGuard === true) { guardArmed.current = true; return; }
-    if (guardArmed.current) setBackWarning(true);
-    guardArmed.current = true;
-    navigate(location.pathname, { state: { examGuard: true } });
-  }, [mine ? mine.startedAt : null, location.key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (!mine) { setAwayWarning(false); setBackWarning(false); } }, [mine]);
+    const onChange = () => {
+      const now = isFullscreenNow();
+      setFullscreen(now);
+      if (now) { outCounted.current = false; return; }
+      if (sessionRef.current && !outCounted.current) { outCounted.current = true; registerExit(); }
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, [registerExit]);
+
+  // Leaving the quiz page while still in full screen (e.g. browser Back) also counts as an exit.
+  useEffect(() => () => {
+    if (sessionRef.current && isFullscreenNow()) { registerExit(); exitFullscreen(); }
+  }, [registerExit]);
 
   const start = () => {
-    if (!uid || !quizLesson || !available) return;
+    if (!uid || !quizLesson || !available || qstate?.locked) return;
     setResult(null);
     setClosedReason(null);
     writeQuizSession(uid, {
       v: 1, quizId, subtopicId: quizLesson.status.subtopic.id, module: '0',
-      startedAt: new Date().toISOString(), answers: {}, index: 0, submissionId: null,
+      startedAt: new Date().toISOString(), answers: {}, index: 0, submissionId: null, exits: 0,
     });
+    outCounted.current = false;
     enterFullscreen();
   };
 
   /** Called once the server accepted the submission. */
   const onAccepted = async (attempt: QuizAttemptSummary) => {
+    submittingRef.current = true;
     if (uid) clearQuizSession(uid);
     exitFullscreen();
+    submittingRef.current = false;
     setResult(attempt);
     recordAttempt(attempt);
-    // The subtopic acknowledgment the student already gave on the reading is recorded now
-    // (the database requires the quiz first). On failure the hub offers "Finish this lesson".
-    if (quizLesson && quizLesson.readingConfirmed && !quizLesson.status.acknowledged) await acknowledge(quizLesson.status.subtopic);
+    // The subtopic acknowledgment the student already gave on the reading is recorded now — only
+    // after a PASS (the database requires a passed quiz). On failure the hub offers "Finish this lesson".
+    const passedNow = attempt.passed !== false;
+    if (passedNow && quizLesson && quizLesson.readingConfirmed && !quizLesson.status.acknowledged) await acknowledge(quizLesson.status.subtopic);
   };
 
   const onRefused = (message: string) => {
+    submittingRef.current = true;
     if (uid) clearQuizSession(uid);
     exitFullscreen();
+    submittingRef.current = false;
     setClosedReason(message);
     void reload({ quiet: true });
   };
@@ -198,7 +194,6 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
         <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-rose-700"><AlertCircle className="w-5 h-5" aria-hidden="true" />{state.message}</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => void reload()} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs font-bold text-primary hover:bg-slate-50"><RotateCcw className="w-4 h-4" aria-hidden="true" />Try again</button>
-          {!mine && <BackToCourse mode={mode} />}
         </div>
       </Card>
     );
@@ -206,7 +201,6 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
     body = (
       <Card testId="quiz-not-found">
         <p className="text-sm font-semibold text-primary">{closedReason ?? 'This quiz is not available.'}</p>
-        <BackToCourse mode={mode} />
       </Card>
     );
   } else if (!available) {
@@ -220,11 +214,11 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
             {closedReason && <p className="text-xs text-text-muted">{closedReason}</p>}
           </div>
         </div>
-        <BackToCourse mode={mode} lessonKey={quizLesson.blockedBy ? lessons.find((m) => m.state === 'available')?.key : null} />
       </Card>
     );
   } else if (result) {
-    body = <ResultView mode={mode} lesson={quizLesson} lessons={lessons} attempt={result} attemptCount={attempts.length} questions={questions} onRetake={start} ackPending={!quizLesson.status.acknowledged && quizLesson.readingConfirmed} />;
+    body = <ResultView mode={mode} lesson={quizLesson} lessons={lessons} attempt={result} attemptCount={attempts.length} questions={questions} onRetake={start}
+      qstate={qstate} ackPending={!quizLesson.status.acknowledged && quizLesson.readingConfirmed && result.passed !== false} />;
   } else if (mine && uid) {
     body = questions.status === 'loading'
       ? <Centered><p role="status" className="flex items-center gap-2 text-sm text-cream/80"><Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />Loading the questions…</p></Centered>
@@ -237,7 +231,7 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
         )
         : <ActiveQuiz uid={uid} session={mine} items={questions.items} mode={mode} onAccepted={onAccepted} onRefused={onRefused} />;
   } else {
-    body = <IntroView mode={mode} lesson={quizLesson} attempts={attempts} questions={questions} onStart={start} closedReason={closedReason} />;
+    body = <IntroView mode={mode} lesson={quizLesson} attempts={attempts} questions={questions} onStart={start} closedReason={closedReason} qstate={qstate} />;
   }
 
   return (
@@ -249,24 +243,25 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
             <p className="text-[10px] font-bold uppercase tracking-wider text-gold truncate">{topicLabel}</p>
             <h1 className="text-sm sm:text-base font-bold text-white truncate" data-testid="quiz-title">{title}</h1>
           </div>
-          {mine && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-semibold text-cream/90" data-testid="quiz-lock-badge">
-              <Lock className="w-3.5 h-3.5 text-gold" aria-hidden="true" />Course navigation locked until you submit
+          {mine && !result && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-semibold text-cream/90" data-testid="quiz-chances-badge">
+              <Maximize2 className="w-3.5 h-3.5 text-gold" aria-hidden="true" />Resume chances left: {quizChancesLeft(mine)}
             </span>
           )}
         </div>
       </header>
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-4">
-        {mine && !result && (
-          <ExamWarnings
-            fullscreenLeft={fullscreenSupported() && !fullscreen}
-            away={awayWarning ? mine.awayCount ?? 0 : 0}
-            back={backWarning}
-            onReturnFullscreen={enterFullscreen}
-            onDismiss={() => { setAwayWarning(false); setBackWarning(false); }}
-          />
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-8 space-y-4">
+        {(!mine || result) && (
+          <div className="flex items-center"><TopBack to={hubPath(mode, quizLesson ? (available ? quizLesson.key : lessons.find((m) => m.state === 'available')?.key ?? null) : null)} /></div>
         )}
         {body}
+        {mine && !result && available && questions.status === 'ready' && fullscreenSupported() && !fullscreen && (
+          <FullscreenPrompt
+            exits={mine.exits ?? 0}
+            onEnter={enterFullscreen}
+            onLeave={() => navigate(hubPath(mode, quizLesson?.key ?? null))}
+          />
+        )}
       </main>
     </div>
   );
@@ -277,15 +272,18 @@ const Centered: React.FC<{ children: React.ReactNode }> = ({ children }) => <div
 const Card: React.FC<{ children: React.ReactNode; testId?: string }> = ({ children, testId }) => (
   <div className="bg-surface text-text rounded-2xl border border-border shadow-elevated p-6 sm:p-8 space-y-5" data-testid={testId}>{children}</div>
 );
-const BackToCourse: React.FC<{ mode: string; lessonKey?: string | null; label?: string }> = ({ mode, lessonKey, label = 'Back to the course' }) => (
-  <Link to={hubPath(mode, lessonKey)} data-testid="quiz-back" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
-    <ArrowLeft className="w-4 h-4" aria-hidden="true" /><span>{label}</span>
+/** "Back" at the top left of the page (outside the cards): returns to the lesson in the course. */
+const TopBack: React.FC<{ to: string }> = ({ to }) => (
+  <Link to={to} data-testid="quiz-back"
+    className="inline-flex items-center gap-1.5 -ml-1 px-3 py-1.5 rounded-lg text-sm font-semibold text-cream/90 hover:text-white hover:bg-white/10 transition-colors">
+    <ArrowLeft className="w-4 h-4" aria-hidden="true" /><span>Back</span>
   </Link>
 );
 
 const IntroView: React.FC<{
   mode: 'online' | 'offline'; lesson: Lesson; attempts: QuizAttemptSummary[]; questions: Questions; onStart: () => void; closedReason: string | null;
-}> = ({ mode, lesson, attempts, questions, onStart, closedReason }) => {
+  qstate: QuizState | null;
+}> = ({ mode, lesson, attempts, questions, onStart, closedReason, qstate }) => {
   const block = lesson.quizBlock;
   const latest = attempts.length ? attempts[attempts.length - 1] : null;
   const [showReview, setShowReview] = useState(false);
@@ -301,16 +299,16 @@ const IntroView: React.FC<{
         </div>
         <ul className="text-sm text-secondary space-y-2" data-testid="quiz-instructions">
           <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>{count ? `${count} questions` : 'Multiple-choice questions'}, one at a time. You can move back and forth and change answers before you submit.</span></li>
-          <li className="flex items-start gap-2"><Lock className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>Once you start, the rest of the course is locked until your answers are submitted and accepted.</span></li>
+          <li className="flex items-start gap-2"><Lock className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>You can leave a started quiz and resume it later up to {MAX_QUIZ_EXITS} times; your answers stay saved. Leaving a third time closes the attempt without recording it.</span></li>
           <li className="flex items-start gap-2"><ShieldCheck className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>If the page reloads, your answers are restored. Your marksheet appears after you submit; you can then review the answers.</span></li>
-          <li className="flex items-start gap-2"><Maximize2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>The quiz opens in full screen. Leaving full screen, switching tabs or pressing Back shows a warning — your answers stay saved. (A web page cannot stop the browser from leaving full screen or closing; this is a focus aid, not exam-proctoring software.)</span></li>
+          <li className="flex items-start gap-2"><Maximize2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" aria-hidden="true" /><span>The quiz opens in full screen. Pressing Esc (leaving full screen) counts as leaving the quiz: go back to full screen, or leave and resume later.</span></li>
         </ul>
+        <QuizRules qstate={qstate} />
         {closedReason && <p role="status" className="text-xs text-text-muted">{closedReason}</p>}
         <div className="flex flex-wrap items-center gap-3 pt-1">
-          <button type="button" onClick={onStart} data-testid="quiz-begin" disabled={questions.status !== 'ready'} className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-subtle disabled:opacity-50 ${accent}`}>
+          <button type="button" onClick={onStart} data-testid="quiz-begin" disabled={questions.status !== 'ready' || !!qstate?.locked} className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-subtle disabled:opacity-50 disabled:cursor-not-allowed ${accent}`}>
             <span>{latest ? 'Retake quiz' : 'Start quiz'}</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
-          <BackToCourse mode={mode} lessonKey={lesson.key} />
         </div>
         {questions.status === 'error' && <p role="alert" className="text-xs text-rose-700">{questions.error.message}</p>}
       </Card>
@@ -319,7 +317,7 @@ const IntroView: React.FC<{
         <Card testId="quiz-last-result">
           {!showReview ? (
             <>
-              <Marksheet attempt={latest} attemptCount={attempts.length} heading="Your latest result" />
+              <Marksheet attempt={latest} attemptCount={attempts.length} heading="Your latest result" qstate={qstate} />
               <ReviewButton onClick={() => setShowReview(true)} />
             </>
           ) : questions.status === 'ready' && block ? (
@@ -480,12 +478,12 @@ const ActiveQuiz: React.FC<{
 
 const ResultView: React.FC<{
   mode: 'online' | 'offline'; lesson: Lesson; lessons: Lesson[]; attempt: QuizAttemptSummary; attemptCount: number;
-  questions: Questions; onRetake: () => void; ackPending: boolean;
-}> = ({ mode, lesson, lessons, attempt, attemptCount, questions, onRetake, ackPending }) => {
+  questions: Questions; onRetake: () => void; ackPending: boolean; qstate: QuizState | null;
+}> = ({ mode, lesson, lessons, attempt, attemptCount, questions, onRetake, ackPending, qstate }) => {
   const block = lesson.quizBlock;
   const idx = lessons.findIndex((m) => m.key === lesson.key);
   const next = idx >= 0 ? lessons[idx + 1] ?? null : null;
-  const canContinue = !ackPending && !!next && next.state !== 'locked';
+  const canContinue = !ackPending && attempt.passed !== false && !!next && next.state !== 'locked';
   const accent = mode === 'online' ? 'bg-accent hover:bg-accent-hover' : 'bg-primary hover:bg-slate-800';
   const [reviewing, setReviewing] = useState(false);
   if (reviewing && questions.status === 'ready' && block) {
@@ -498,21 +496,21 @@ const ResultView: React.FC<{
   return (
     <div className="space-y-5" data-testid="quiz-result">
       <Card>
-        <Marksheet attempt={attempt} attemptCount={attemptCount} heading="Marksheet" />
+        <Marksheet attempt={attempt} attemptCount={attemptCount} heading="Marksheet" qstate={qstate} />
+        <QuizRules qstate={qstate} compact />
         {block && <p className="text-sm font-semibold text-primary" data-testid="quiz-guidance">{block.post_submission_note}</p>}
         {questions.status === 'ready' && block && <ReviewButton onClick={() => setReviewing(true)} />}
         <div className="flex flex-wrap items-center gap-3">
-          {canContinue && next ? (
+          {canContinue && next && (
             <Link to={hubPath(mode, next.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
               <span>Continue to {next.number}. {next.title}</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
-          ) : (
-            <Link to={hubPath(mode, lesson.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
-              <span>Back to the course</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
           )}
-          <button type="button" data-testid="quiz-retake" onClick={onRetake} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-xs font-bold text-primary hover:bg-slate-50">
-            <RotateCcw className="w-4 h-4" aria-hidden="true" /><span>Retake quiz</span>
+          <button type="button" data-testid="quiz-retake" onClick={onRetake} disabled={!!qstate?.locked}
+            className={attempt.passed === false && !qstate?.locked
+              ? `inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`
+              : 'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-xs font-bold text-primary hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed'}>
+            <RotateCcw className="w-4 h-4" aria-hidden="true" /><span>{attempt.passed === false ? 'Try again' : 'Retake quiz'}</span>
           </button>
         </div>
       </Card>
@@ -521,7 +519,10 @@ const ResultView: React.FC<{
 };
 
 /** Marksheet from the server-recorded attempt (score / total / percentage are computed by submit_quiz_attempt). */
-const Marksheet: React.FC<{ attempt: QuizAttemptSummary; attemptCount: number; heading: string }> = ({ attempt, attemptCount, heading }) => {
+const Marksheet: React.FC<{ attempt: QuizAttemptSummary; attemptCount: number; heading: string; qstate?: QuizState | null }> = ({ attempt, attemptCount, heading, qstate }) => {
+  const passMark = qstate?.passMark ?? attempt.passMark;
+  const need = passMark !== null ? passMarkCount(passMark, attempt.totalQuestions) : null;
+  const failed = attempt.passed === false;
   const incorrect = Math.max(0, attempt.totalQuestions - attempt.score);
   const cells: [string, string, string][] = [
     ['Total marks', String(attempt.totalQuestions), 'marks-total'],
@@ -544,11 +545,46 @@ const Marksheet: React.FC<{ attempt: QuizAttemptSummary; attemptCount: number; h
           </div>
         ))}
       </dl>
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-0.5">
-        <p className="text-sm font-bold text-primary" data-testid="quiz-score">You got {attempt.score} of {attempt.totalQuestions} right.</p>
-        <p className="text-xs text-emerald-800">Attempt {attempt.attemptNumber}{attemptCount > 1 ? ` of ${attemptCount}` : ''} · Quiz submitted — this completes the quiz for this subtopic. 1 mark per question.</p>
+      <div className={`rounded-xl border p-3 space-y-0.5 ${failed ? 'border-amber-300 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`} data-testid="quiz-outcome" data-passed={failed ? 'false' : 'true'}>
+        <p className="text-sm font-bold text-primary" data-testid="quiz-score">
+          You got {attempt.score} of {attempt.totalQuestions} right{need !== null ? (failed ? ` — not passed (you need ${need} of ${attempt.totalQuestions}).` : ' — passed.') : '.'}
+        </p>
+        <p className={`text-xs ${failed ? 'text-amber-900' : 'text-emerald-800'}`}>
+          Attempt {attempt.attemptNumber}{attemptCount > 1 ? ` of ${attemptCount}` : ''} · {failed
+            ? 'This attempt is recorded. Pass the quiz to complete this lesson and continue.'
+            : need !== null ? 'Quiz passed — this completes the quiz for this lesson.' : 'Quiz submitted — this completes the quiz for this subtopic.'} 1 mark per question.
+        </p>
       </div>
     </section>
+  );
+};
+
+/** Pass mark and attempts (server state). Locked: no attempts left until the program team grants one. */
+const QuizRules: React.FC<{ qstate: QuizState | null; compact?: boolean }> = ({ qstate, compact }) => {
+  if (!qstate || (qstate.passMark === null && qstate.maxAttempts === null)) return null;
+  const need = qstate.passMark !== null ? passMarkCount(qstate.passMark, qstate.questions) : null;
+  const allowed = qstate.maxAttempts !== null ? qstate.maxAttempts + qstate.extraAttempts : null;
+  if (qstate.locked) {
+    return (
+      <div role="alert" data-testid="quiz-locked-attempts" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+        <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+        <span>
+          <b>No attempts left.</b> You have used all {allowed} attempt{allowed === 1 ? '' : 's'} without reaching {need} of {qstate.questions}.
+          {' '}Please contact the program team to get another attempt — you cannot continue the course until you pass.
+        </span>
+      </div>
+    );
+  }
+  if (compact && qstate.passed) return null;
+  return (
+    <div data-testid="quiz-rules" className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-border bg-slate-50 px-4 py-3 text-sm text-secondary">
+      {need !== null && <span><b className="text-primary">Pass mark:</b> {need} of {qstate.questions} ({qstate.passMark}%)</span>}
+      {qstate.passed
+        ? <span className="font-semibold text-emerald-700">Passed — you can retake it as often as you like.</span>
+        : qstate.attemptsLeft !== null
+          ? <span><b className="text-primary">Attempts left:</b> {qstate.attemptsLeft} of {allowed}{qstate.attemptsUsed === 0 ? '' : ` (${qstate.attemptsUsed} used)`}. After you pass, attempts are unlimited.</span>
+          : null}
+    </div>
   );
 };
 
@@ -561,38 +597,49 @@ const ReviewButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 
 const ReviewPanel: React.FC<{ attemptId: number; items: QuizQuestion[]; intro: string; onBack: () => void }> = ({ attemptId, items, intro, onBack }) => (
   <div className="space-y-4" data-testid="quiz-review-panel">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="text-lg font-extrabold text-primary">Answer review</h2>
+    <div className="flex flex-col items-start gap-3">
       <button type="button" onClick={onBack} data-testid="quiz-review-close" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-xs font-bold text-primary hover:bg-slate-50">
         <ArrowLeft className="w-4 h-4" aria-hidden="true" /><span>Back to marksheet</span>
       </button>
+      <h2 className="text-lg font-extrabold text-primary">Answer review</h2>
     </div>
     <ReviewList attemptId={attemptId} items={items} intro={intro} />
   </div>
 );
 
-/** Warnings while the exam is active. Honest: these detect and inform, they cannot prevent. */
-const ExamWarnings: React.FC<{ fullscreenLeft: boolean; away: number; back: boolean; onReturnFullscreen: () => void; onDismiss: () => void }> = ({
-  fullscreenLeft, away, back, onReturnFullscreen, onDismiss,
-}) => {
-  if (!fullscreenLeft && !away && !back) return null;
+/** Shown while a started quiz is not in full screen: enter full screen, or leave and resume later. */
+const FullscreenPrompt: React.FC<{ exits: number; onEnter: () => void; onLeave: () => void }> = ({ exits, onEnter, onLeave }) => {
+  const left = Math.max(0, MAX_QUIZ_EXITS - exits);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => { box.current?.querySelector<HTMLButtonElement>('button')?.focus(); }, []);
   return (
-    <div role="alert" data-testid="exam-warning" className="rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 p-4 space-y-2">
-      <p className="flex items-center gap-2 text-sm font-bold"><AlertTriangle className="w-5 h-5" aria-hidden="true" />Your exam is still in progress — your answers are saved.</p>
-      <ul className="text-xs space-y-1 pl-7 list-disc">
-        {fullscreenLeft && <li data-testid="exam-warning-fullscreen">You left full screen. Return to full screen to continue the exam without distractions.</li>}
-        {away > 0 && <li data-testid="exam-warning-away">You switched away from the exam page ({away} {away === 1 ? 'time' : 'times'}). Please stay on this page until you submit.</li>}
-        {back && <li data-testid="exam-warning-back">The Back button is disabled during the exam. Submit your answers to return to the course.</li>}
-      </ul>
-      <div className="flex flex-wrap gap-2 pl-7">
-        {fullscreenLeft && (
-          <button type="button" onClick={onReturnFullscreen} data-testid="exam-return-fullscreen" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-bold">
-            <Maximize2 className="w-4 h-4" aria-hidden="true" />Return to full screen
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas-deep/80 backdrop-blur-sm" role="presentation">
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="fs-title" data-testid="fullscreen-prompt"
+        className="w-full max-w-md bg-surface text-text rounded-2xl border border-border shadow-elevated p-6 sm:p-7 space-y-4">
+        <span className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center" aria-hidden="true">
+          <Maximize2 className="w-6 h-6 text-amber-600" />
+        </span>
+        <div className="space-y-2">
+          <h2 id="fs-title" className="text-lg font-extrabold text-primary">Enter full screen mode</h2>
+          <p className="text-sm text-secondary">
+            {exits === 0 ? 'The quiz runs in full screen. Your answers are saved.' : 'You left full screen. Your answers are saved.'}
+          </p>
+          <p className="text-sm text-secondary" data-testid="fullscreen-chances">
+            {left > 0
+              ? <>You can leave the quiz and resume it later: <b>{left} {left === 1 ? 'chance' : 'chances'} left</b>.</>
+              : <><b>No chances left.</b> If you leave full screen again, this attempt will be closed without being recorded.</>}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button type="button" onClick={onEnter} data-testid="fullscreen-enter"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-slate-800 text-white text-sm font-bold">
+            <Maximize2 className="w-4 h-4" aria-hidden="true" />Enter full screen
           </button>
-        )}
-        {(away > 0 || back) && (
-          <button type="button" onClick={onDismiss} data-testid="exam-warning-dismiss" className="px-3 py-1.5 rounded-lg border border-amber-400 text-xs font-bold">Continue the exam</button>
-        )}
+          <button type="button" onClick={onLeave} data-testid="fullscreen-leave"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-bold text-primary hover:bg-slate-50">
+            Leave quiz for now
+          </button>
+        </div>
       </div>
     </div>
   );

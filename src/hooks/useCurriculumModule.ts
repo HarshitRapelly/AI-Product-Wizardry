@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthAndCourse } from '../context/AuthAndCourseContext';
 import { acknowledgeSubtopic, confirmReadingModule, fetchMyLessonProgress, fetchSubtopics, type CurriculumError } from '../services/curriculumService';
-import { fetchMyAttempts } from '../services/quizService';
+import { fetchMyAttempts, fetchMyQuizStates } from '../services/quizService';
 import { computeSubtopicStatuses, type SubtopicStatus } from '../lib/curriculumRules';
 import { computeLessons, readingLessonId, type Lesson } from '../lib/moduleLessons';
-import type { CourseSubtopic, LessonProgressRow, QuizAttemptSummary } from '../lib/curriculumTypes';
+import type { CourseSubtopic, LessonProgressRow, QuizAttemptSummary, QuizState } from '../lib/curriculumTypes';
 
 export type CurriculumModuleState =
   | { status: 'loading' }
-  | { status: 'ready'; subtopics: CourseSubtopic[]; progress: LessonProgressRow[]; attempts: QuizAttemptSummary[]; statuses: SubtopicStatus[]; lessons: Lesson[] }
+  | { status: 'ready'; subtopics: CourseSubtopic[]; progress: LessonProgressRow[]; attempts: QuizAttemptSummary[]; quizStates: QuizState[] | null; statuses: SubtopicStatus[]; lessons: Lesson[] }
   /** The module has no published content. */
   | { status: 'empty' }
   /** Curriculum tables / functions are not deployed yet (Migrations 9–10). */
@@ -28,7 +28,7 @@ const STALE_KINDS = new Set(['order', 'quiz_required', 'reading_required', 'modu
 export function useCurriculumModule(moduleId: number) {
   const { user, refreshProgress } = useAuthAndCourse();
   const uid = user?.id ?? null;
-  const [data, setData] = useState<{ subtopics: CourseSubtopic[]; progress: LessonProgressRow[]; attempts: QuizAttemptSummary[] } | null>(null);
+  const [data, setData] = useState<{ subtopics: CourseSubtopic[]; progress: LessonProgressRow[]; attempts: QuizAttemptSummary[]; quizStates: QuizState[] | null } | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'empty' | 'unavailable' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [ack, setAck] = useState<Record<string, AckState>>({});
@@ -52,9 +52,11 @@ export function useCurriculumModule(moduleId: number) {
     }
     if (!subs.value.length) { setData(null); setState('empty'); return; }
     const quizIds = [...new Set(subs.value.map((s) => s.quizId).filter((q): q is string => !!q))];
-    const [prog, atts] = await Promise.all([fetchMyLessonProgress(moduleId), fetchMyAttempts(quizIds)]);
+    const [prog, atts, qs] = await Promise.all([fetchMyLessonProgress(moduleId), fetchMyAttempts(quizIds), fetchMyQuizStates()]);
     if (my !== req.current) return;
-    const failed = !prog.ok ? prog.error : !atts.ok ? atts.error : null;
+    // Quiz states: an older database without them → null (the "any attempt" rule is shown).
+    const qsFailed = !qs.ok && qs.error.kind !== 'unavailable' ? qs.error : null;
+    const failed = !prog.ok ? prog.error : !atts.ok ? atts.error : qsFailed;
     if (failed) {
       if (opts.quiet) return;
       setData(null);
@@ -62,7 +64,7 @@ export function useCurriculumModule(moduleId: number) {
       else { setMessage(failed.message); setState('error'); }
       return;
     }
-    setData({ subtopics: subs.value, progress: prog.ok ? prog.value : [], attempts: atts.ok ? atts.value : [] });
+    setData({ subtopics: subs.value, progress: prog.ok ? prog.value : [], attempts: atts.ok ? atts.value : [], quizStates: qs.ok ? qs.value : null });
     setState('ready');
   }, [moduleId, uid]);
 
@@ -98,22 +100,23 @@ export function useCurriculumModule(moduleId: number) {
    * Confirms a subtopic. One request at a time per subtopic (double clicks are
    * ignored). Network failures can simply be retried: the write is an upsert.
    */
-  const acknowledge = useCallback(async (s: CourseSubtopic) => {
-    if (inFlight.current.has(s.id)) return;
+  const acknowledge = useCallback(async (s: CourseSubtopic): Promise<boolean> => {
+    if (inFlight.current.has(s.id)) return false;
     inFlight.current.add(s.id);
     setAck((a) => ({ ...a, [s.id]: { status: 'pending' } }));
     const my = req.current;
     const r = await acknowledgeSubtopic(s);
     inFlight.current.delete(s.id);
-    if (my !== req.current) return; // student changed meanwhile
+    if (my !== req.current) return false; // student changed meanwhile
     if (r.ok) {
       mergeProgress(r.value);
       setAck((a) => ({ ...a, [s.id]: { status: 'idle' } }));
       void refreshProgress();
-    } else {
-      setAck((a) => ({ ...a, [s.id]: { status: 'error', error: r.error } }));
-      if (STALE_KINDS.has(r.error.kind)) void load({ quiet: true }); // this tab was out of date
+      return true;
     }
+    setAck((a) => ({ ...a, [s.id]: { status: 'error', error: r.error } }));
+    if (STALE_KINDS.has(r.error.kind)) void load({ quiet: true }); // this tab was out of date
+    return false;
   }, [mergeProgress, refreshProgress, load]);
 
   /**
@@ -122,19 +125,19 @@ export function useCurriculumModule(moduleId: number) {
    * quiz before lessons were split), the subtopic acknowledgment is recorded too.
    * Ack state is reported under the reading row id.
    */
-  const confirmReading = useCallback(async (s: CourseSubtopic) => {
+  const confirmReading = useCallback(async (s: CourseSubtopic): Promise<boolean> => {
     const rid = readingLessonId(s.id);
-    if (inFlight.current.has(rid)) return;
+    if (inFlight.current.has(rid)) return false;
     inFlight.current.add(rid);
     setAck((a) => ({ ...a, [rid]: { status: 'pending' } }));
     const my = req.current;
     const r = await confirmReadingModule(s.moduleId, rid);
     inFlight.current.delete(rid);
-    if (my !== req.current) return;
+    if (my !== req.current) return false;
     if (!r.ok) {
       setAck((a) => ({ ...a, [rid]: { status: 'error', error: r.error } }));
       if (STALE_KINDS.has(r.error.kind)) void load({ quiet: true });
-      return;
+      return false;
     }
     mergeProgress(r.value);
     setAck((a) => ({ ...a, [rid]: { status: 'idle' } }));
@@ -142,17 +145,20 @@ export function useCurriculumModule(moduleId: number) {
     const attempted = !!s.quizId && !!d?.attempts.some((a) => a.quizId === s.quizId);
     const acknowledged = !!d?.progress.some((p) => p.lessonId === s.id && p.isCompleted);
     if (attempted && !acknowledged) await acknowledge(s);
+    return true;
   }, [mergeProgress, load, acknowledge]);
 
   /** A successful quiz submission (new attempt, or the same one returned on retry). */
   const recordAttempt = useCallback((a: QuizAttemptSummary) => {
     setData((d) => (d ? { ...d, attempts: [...d.attempts.filter((x) => x.id !== a.id), a].sort((x, y) => x.attemptNumber - y.attemptNumber) } : d));
+    // Attempts left / passed changed on the server: re-read the quiz states.
+    void fetchMyQuizStates().then((r) => { if (r.ok) setData((d) => (d ? { ...d, quizStates: r.value } : d)); });
     void refreshProgress();
   }, [refreshProgress]);
 
   const value: CurriculumModuleState = useMemo(() => {
     if (state === 'ready' && data) {
-      const statuses = computeSubtopicStatuses(data.subtopics, data.progress, data.attempts);
+      const statuses = computeSubtopicStatuses(data.subtopics, data.progress, data.attempts, data.quizStates);
       return { status: 'ready', ...data, statuses, lessons: computeLessons(statuses, data.progress) };
     }
     if (state === 'error') return { status: 'error', message };

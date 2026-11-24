@@ -1,4 +1,4 @@
-import type { CourseSubtopic, LessonProgressRow, QuizAttemptSummary } from './curriculumTypes';
+import type { CourseSubtopic, LessonProgressRow, QuizAttemptSummary, QuizState } from './curriculumTypes';
 
 /**
  * Display-only mirror of the database rules (Migration 9). The database is the
@@ -6,7 +6,9 @@ import type { CourseSubtopic, LessonProgressRow, QuizAttemptSummary } from './cu
  * show what is done, what is next and what is still locked.
  *
  *  - A subtopic is DONE when its acknowledgment is completed and, if it has a
- *    quiz, at least one attempt exists (the first submission counts forever).
+ *    quiz, the quiz is PASSED (best attempt at or above the current pass mark; any
+ *    attempt for quizzes without a pass mark — migration 20261125001300). On an older
+ *    database without quiz states: at least one attempt exists.
  *  - Subtopics are completed in order (by position).
  *  - A module is complete when it has subtopics and all of them are done.
  */
@@ -17,27 +19,37 @@ export interface SubtopicStatus {
   state: SubtopicState;
   acknowledged: boolean;
   quizSubmitted: boolean;
+  /** The quiz is passed (or has no pass mark and was submitted). False without a quiz. */
+  quizPassed: boolean;
   /** Title of the subtopic that must be finished first (for locked ones). */
   blockedBy: string | null;
 }
 
-export function isSubtopicDone(s: CourseSubtopic, progress: Map<string, LessonProgressRow>, attemptsByQuiz: Map<string, QuizAttemptSummary[]>): boolean {
+/** Quiz requirement: passed per the server's quiz state, else (older database) any attempt. */
+function quizOk(quizId: string, attemptsByQuiz: Map<string, QuizAttemptSummary[]>, states?: Map<string, QuizState>): boolean {
+  const st = states?.get(quizId);
+  return st ? st.passed : (attemptsByQuiz.get(quizId)?.length ?? 0) > 0;
+}
+
+export function isSubtopicDone(s: CourseSubtopic, progress: Map<string, LessonProgressRow>, attemptsByQuiz: Map<string, QuizAttemptSummary[]>, states?: Map<string, QuizState>): boolean {
   const ack = progress.get(s.id)?.isCompleted === true;
-  return ack && (!s.quizId || (attemptsByQuiz.get(s.quizId)?.length ?? 0) > 0);
+  return ack && (!s.quizId || quizOk(s.quizId, attemptsByQuiz, states));
 }
 
 export function computeSubtopicStatuses(
   subtopics: CourseSubtopic[],
   progressRows: LessonProgressRow[],
   attempts: QuizAttemptSummary[],
+  quizStates?: QuizState[] | null,
 ): SubtopicStatus[] {
   const progress = new Map(progressRows.map((p) => [p.lessonId, p]));
+  const states = quizStates ? new Map(quizStates.map((q) => [q.quizId, q])) : undefined;
   const attemptsByQuiz = new Map<string, QuizAttemptSummary[]>();
   for (const a of attempts) attemptsByQuiz.set(a.quizId, [...(attemptsByQuiz.get(a.quizId) ?? []), a]);
   const ordered = [...subtopics].sort((a, b) => a.position - b.position);
   let firstUnfinished: CourseSubtopic | null = null;
   return ordered.map((s) => {
-    const done = isSubtopicDone(s, progress, attemptsByQuiz);
+    const done = isSubtopicDone(s, progress, attemptsByQuiz, states);
     const state: SubtopicState = done ? 'done' : firstUnfinished ? 'locked' : 'available';
     const blockedBy = state === 'locked' && firstUnfinished ? firstUnfinished.title : null;
     if (!done && !firstUnfinished) firstUnfinished = s;
@@ -46,6 +58,7 @@ export function computeSubtopicStatuses(
       state,
       acknowledged: progress.get(s.id)?.isCompleted === true,
       quizSubmitted: !!s.quizId && (attemptsByQuiz.get(s.quizId)?.length ?? 0) > 0,
+      quizPassed: !!s.quizId && quizOk(s.quizId, attemptsByQuiz, states),
       blockedBy,
     };
   });

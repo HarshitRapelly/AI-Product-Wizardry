@@ -1,53 +1,78 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { PortalLayout } from '../../layouts/PortalLayout';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { Icon } from '../../components/aiw/Icon';
-import { CohortProfileForm } from '../../components/portal/CohortProfileForm';
+import { CohortProfileDialog } from '../../components/portal/CohortProfileDialog';
 import {
   fetchMyCohortProfile, listCohortMembers,
   type CohortMember, type CohortProfile, type PortalError,
 } from '../../services/portalService';
+import '../../styles/cohort-profile.css';
 
 /**
- * /:mode/cohort — directory of cohort members who chose to share their profile (opt-in), plus
- * the student's own profile editor. Data: public.list_cohort_profiles() (only permitted fields,
- * no emails, phones or ids) and the student's own cohort_profiles row (RLS: own row only).
+ * /:mode/cohort — directory of cohort members who chose to share their profile (opt-in). The
+ * student's own profile is a compact summary strip at the top of the directory; "Add yours" /
+ * "Edit yours" opens the profile form in a modal. Data: public.list_cohort_profiles() (only
+ * permitted fields, no emails, phones or ids) and the student's own cohort_profiles row (RLS:
+ * own row only).
  */
 
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
 
 type Load<T> = { status: 'loading' } | { status: 'ready'; value: T } | { status: 'error'; error: PortalError };
 
-const MemberDialog: React.FC<{ m: CohortMember; onClose: () => void }> = ({ m, onClose }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const prev = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>('button')?.focus();
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', k);
-    return () => { document.removeEventListener('keydown', k); prev?.focus?.(); };
-  }, [onClose]);
+/** One directory card: name, headline, bio clamped to three lines ("Show more"), build idea, LinkedIn. */
+const MemberCard: React.FC<{ m: CohortMember }> = ({ m }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false);
+  const bioRef = useRef<HTMLParagraphElement>(null);
+  const bioId = `cm-bio-${m.key}`;
+
+  // "Show more" only when the bio is actually cut off at the current card width.
+  useLayoutEffect(() => {
+    const el = bioRef.current;
+    if (!el || expanded) return;
+    const measure = () => setClamped(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [m.bio, expanded]);
+
   return (
-    <div className="modal-bg" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal prof" role="dialog" aria-modal="true" aria-labelledby="mem-name" ref={ref}>
-        <button type="button" className="x" onClick={onClose} aria-label="Close"><Icon name="x" /></button>
-        <div className="prof-ph"><span className="avatar" style={{ width: 96, height: 96, fontSize: 30 }}>{initials(m.name)}</span></div>
-        <h2 id="mem-name" style={{ fontSize: 26, marginTop: 12 }}>{m.name}</h2>
-        <p className="muted" style={{ marginTop: 2 }}>{m.headline}</p>
-        <p style={{ marginTop: 14, textAlign: 'left', fontSize: 14.5, color: 'var(--ink2)', whiteSpace: 'pre-line' }}>{m.bio}</p>
-        {m.buildIdea && (
-          <div className="card g" style={{ marginTop: 12, textAlign: 'left' }}>
-            <b style={{ display: 'flex', gap: 6, alignItems: 'center' }}><Icon name="rocket" size={15} /> Would love to build</b>
-            <p style={{ fontSize: 14, marginTop: 4 }}>{m.buildIdea}</p>
-          </div>
-        )}
-        {m.linkedinUrl && (
-          <a className="btn btn-dark" style={{ marginTop: 16 }} href={m.linkedinUrl} target="_blank" rel="noopener noreferrer">
-            <Icon name="linkedin" size={16} /> View LinkedIn profile <span className="sr-only">(opens in a new tab)</span>
-          </a>
-        )}
+    <li className={`ccard cohort-card${m.isMe ? ' me' : ''}`}>
+      <div className="cc-head">
+        <span className="avatar" aria-hidden="true">{initials(m.name)}</span>
+        <div className="cc-id">
+          <h3 className="cname" id={`cm-name-${m.key}`}>{m.name}</h3>
+          {m.headline && <span className="hl">{m.headline}</span>}
+        </div>
+        {m.isMe && <span className="tag ok">You</span>}
       </div>
-    </div>
+      <p ref={bioRef} id={bioId} className={`cc-bio${expanded ? ' open' : ''}`}>{m.bio}</p>
+      {(clamped || expanded) && (
+        <button type="button" className="cc-more" aria-expanded={expanded} aria-controls={bioId} onClick={() => setExpanded((x) => !x)}>
+          {expanded ? 'Show less' : 'Show more'}<span className="sr-only"> of {m.name}&rsquo;s bio</span>
+        </button>
+      )}
+      {(m.buildIdea || m.linkedinUrl) && (
+        <div className="cc-foot">
+          {m.buildIdea && (
+            <div className="cc-idea">
+              <b><Icon name="rocket" size={13} /> Would love to build</b>
+              <span>{m.buildIdea}</span>
+            </div>
+          )}
+          {m.linkedinUrl && (
+            <a className="cc-link" href={m.linkedinUrl} target="_blank" rel="noopener noreferrer">
+              <Icon name="linkedin" size={14} /> <span className="sr-only">{m.name} on </span>LinkedIn
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          )}
+        </div>
+      )}
+    </li>
   );
 };
 
@@ -57,24 +82,49 @@ export const CohortPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) =
   const [mine, setMine] = useState<Load<CohortProfile | null>>({ status: 'loading' });
   const [q, setQ] = useState('');
   const [onlyIdeas, setOnlyIdeas] = useState(false);
-  const [open, setOpen] = useState<CohortMember | null>(null);
   const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState<CohortProfile | null>(null);
   const [tick, setTick] = useState(0);
+  const editBtn = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let c = false;
-    setMembers({ status: 'loading' });
-    listCohortMembers().then((r) => { if (!c) setMembers(r.ok ? { status: 'ready', value: r.value } : { status: 'error', error: r.error }); });
-    fetchMyCohortProfile().then((r) => { if (!c) setMine(r.ok ? { status: 'ready', value: r.value } : { status: 'error', error: r.error }); });
+    // Keep what is already on screen while it refreshes (e.g. after saving your profile); a failed
+    // background refresh never replaces data that loaded fine.
+    setMembers((m) => (m.status === 'ready' ? m : { status: 'loading' }));
+    listCohortMembers().then((r) => {
+      if (!c) setMembers((cur) => (r.ok ? { status: 'ready', value: r.value } : cur.status === 'ready' ? cur : { status: 'error', error: r.error }));
+    });
+    fetchMyCohortProfile().then((r) => {
+      if (!c) setMine((cur) => (r.ok ? { status: 'ready', value: r.value } : cur.status === 'ready' ? cur : { status: 'error', error: r.error }));
+    });
     return () => { c = true; };
   }, [tick]);
 
+  const myProfile = mine.status === 'ready' ? mine.value : null;
   const list = useMemo(() => {
     if (members.status !== 'ready') return [];
     const s = q.trim().toLowerCase();
-    return members.value.filter((m) => !m.isMe && (!s || `${m.name} ${m.headline}`.toLowerCase().includes(s)) && (!onlyIdeas || !!m.buildIdea));
-  }, [members, q, onlyIdeas]);
+    return members.value
+      // Your own card appears only while your profile is visible to the cohort (what classmates see).
+      .filter((m) => (m.isMe ? !!myProfile?.isVisible : true))
+      .filter((m) => (!s || `${m.name} ${m.headline}`.toLowerCase().includes(s)) && (!onlyIdeas || !!m.buildIdea))
+      .sort((a, b) => Number(b.isMe) - Number(a.isMe));
+  }, [members, q, onlyIdeas, myProfile]);
   const unavailable = members.status === 'error' && members.error.kind === 'unavailable';
+
+  const openEditor = () => { setSaved(null); setEditing(true); };
+  const closeEditor = useCallback(() => setEditing(false), []);
+  const onSaved = useCallback((p: CohortProfile) => {
+    setMine({ status: 'ready', value: p });
+    setEditing(false);
+    setSaved(p);
+    setTick((t) => t + 1);
+  }, []);
+
+  const canEdit = mine.status === 'ready' && !!user;
+  const status = myProfile ? (myProfile.isVisible ? 'Visible to your cohort' : 'Hidden') : 'Not added yet';
+  const statusTag = myProfile ? (myProfile.isVisible ? 'ok' : 'lock') : 'due';
 
   return (
     <PortalLayout mode={mode} title="Cohort">
@@ -84,45 +134,51 @@ export const CohortPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) =
         <p>Discover classmates, see what they want to build and connect. Only profiles that students chose to share appear here.</p>
       </div>
 
-      {/* Your profile */}
-      <section className="panel" style={{ marginBottom: 22 }} aria-labelledby="mine-title">
-        <div className="phead">
-          <h2 id="mine-title">Your cohort profile</h2>
-          {mine.status === 'ready' && mine.value && !editing && (
-            <button type="button" className="btn btn-line btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={14} /> Edit</button>
-          )}
-        </div>
-        {mine.status === 'loading' && <div className="empty" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>}
-        {mine.status === 'error' && (
-          <div className="note info" role="status"><Icon name="alert" size={18} /><span>{mine.error.kind === 'unavailable' ? 'Cohort profiles are not available yet.' : mine.error.message}</span></div>
-        )}
-        {mine.status === 'ready' && user && (editing || !mine.value) && (
-          <>
-            {!mine.value && <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>Introduce yourself so other students can discover you and connect. You decide whether your profile is shown.</p>}
-            <CohortProfileForm
-              userId={user.id}
-              initial={mine.value}
-              onSaved={(p) => { setMine({ status: 'ready', value: p }); setEditing(false); setTick((t) => t + 1); }}
-              onCancel={mine.value ? () => setEditing(false) : undefined}
-            />
-          </>
-        )}
-        {mine.status === 'ready' && mine.value && !editing && (
-          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <span className="avatar" style={{ width: 52, height: 52, fontSize: 18 }} aria-hidden="true">{initials(user?.name ?? '')}</span>
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <b style={{ fontSize: 16 }}>{user?.name}</b>
-              <p className="muted" style={{ fontSize: 14 }}>{mine.value.headline}</p>
-              <p style={{ fontSize: 14, marginTop: 6, color: 'var(--ink2)' }}>{mine.value.bio}</p>
-            </div>
-            <span className={`tag ${mine.value.isVisible ? 'ok' : 'lock'}`}>{mine.value.isVisible ? 'Visible to your cohort' : 'Hidden from the directory'}</span>
-          </div>
-        )}
-      </section>
-
-      {/* Directory */}
       <section className="panel" aria-labelledby="dir-title">
         <div className="phead"><h2 id="dir-title">Cohort directory</h2>{members.status === 'ready' && <span className="tag lesson">{list.length} {list.length === 1 ? 'member' : 'members'}</span>}</div>
+
+        {/* Your own profile: compact summary; the form opens in a modal. */}
+        <div className="cohort-own" data-testid="cohort-own-summary">
+          <span className="avatar" aria-hidden="true">{initials(user?.name ?? '')}</span>
+          <div className="co-main">
+            <p className="co-top">
+              <b id="cohort-own-label">Your cohort profile</b>
+              {mine.status === 'ready' && <span className={`tag ${statusTag}`} data-testid="cohort-own-status">{status}</span>}
+            </p>
+            {mine.status === 'loading' && <p className="co-sub" role="status"><span className="spinner" aria-hidden="true" /> Loading…</p>}
+            {mine.status === 'error' && (
+              <p className="co-sub co-wrap" role="status">{mine.error.kind === 'unavailable' ? 'Cohort profiles are not available yet.' : mine.error.message}</p>
+            )}
+            {mine.status === 'ready' && (
+              <p className="co-sub" title={myProfile?.headline || undefined}>
+                {myProfile ? myProfile.headline : 'Introduce yourself so classmates can discover you and connect.'}
+              </p>
+            )}
+          </div>
+          {canEdit && (
+            <button
+              ref={editBtn}
+              type="button"
+              className={`btn btn-sm ${myProfile ? 'btn-line' : 'btn-dark'}`}
+              onClick={openEditor}
+              aria-haspopup="dialog"
+              aria-describedby="cohort-own-label"
+              data-testid="cohort-edit-open"
+            >
+              <Icon name={myProfile ? 'edit' : 'wand'} size={14} /> {myProfile ? 'Edit yours' : 'Add yours'}
+            </button>
+          )}
+        </div>
+        {saved && (
+          <div className="note ok cohort-saved" role="status" data-testid="cohort-saved">
+            <Icon name="check" size={18} />
+            <span>
+              Your cohort profile is saved.{' '}
+              {saved.isVisible ? 'Classmates can see it in the directory.' : 'It stays hidden from the directory until you choose to show it.'}
+            </span>
+          </div>
+        )}
+
         <div className="toolbar">
           <label htmlFor="cohort-search" className="sr-only">Search by name or headline</label>
           <input id="cohort-search" type="search" placeholder="Search by name or headline" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -144,24 +200,21 @@ export const CohortPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) =
           </div>
         )}
         {members.status === 'ready' && list.length > 0 && (
-          <div className="cgrid2">
-            {list.map((m) => (
-              <button key={m.key} type="button" className="ccard" onClick={() => setOpen(m)} aria-haspopup="dialog">
-                <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <span className="avatar" aria-hidden="true">{initials(m.name)}</span>
-                  <span style={{ minWidth: 0 }}>
-                    <span className="cname">{m.name}</span>
-                    <span className="hl">{m.headline}</span>
-                  </span>
-                </span>
-                <p style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.bio}</p>
-                {m.buildIdea && <span className="tag due" style={{ alignSelf: 'flex-start' }}><Icon name="rocket" size={11} /> Would love to build</span>}
-              </button>
-            ))}
-          </div>
+          <ul className="cohort-grid" aria-label="Cohort members" data-testid="cohort-directory">
+            {list.map((m) => <MemberCard key={m.key} m={m} />)}
+          </ul>
         )}
       </section>
-      {open && <MemberDialog m={open} onClose={() => setOpen(null)} />}
+
+      {editing && user && mine.status === 'ready' && (
+        <CohortProfileDialog
+          userId={user.id}
+          initial={mine.value}
+          onSaved={onSaved}
+          onClose={closeEditor}
+          returnFocusRef={editBtn}
+        />
+      )}
     </PortalLayout>
   );
 };

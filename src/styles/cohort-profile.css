@@ -1,0 +1,64 @@
+/* =============================================================================
+   Cohort page (directory first, own-profile strip, profile modal) and Profile page
+   layout. Imported by src/pages/shared/CohortPage.tsx and ProfilePage.tsx.
+   Every rule is scoped under .aiw and builds on the tokens in wizardry.css.
+   ============================================================================= */
+
+/* ---- Your cohort profile: compact summary strip at the top of the directory ---- */
+.aiw .cohort-own{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:12px 14px;margin-bottom:16px;border-radius:16px;background:var(--tTint);border:1px solid #c9dcd9}
+.aiw .cohort-own .co-main{flex:1 1 160px;min-width:0}
+.aiw .cohort-own .co-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px;color:var(--ink)}
+.aiw .cohort-own .co-sub{margin-top:2px;font-size:13.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aiw .cohort-own .co-sub.co-wrap{white-space:normal}
+.aiw .cohort-own .co-sub .spinner{vertical-align:-3px;margin-right:6px}
+.aiw .cohort-own .btn{flex:none}
+.aiw .cohort-saved{margin:-4px 0 16px}
+@media(max-width:560px){
+  .aiw .cohort-own .btn{width:100%;justify-content:center}
+}
+
+/* ---- Directory: 3 columns desktop, 2 tablet, 1 phone ---- */
+.aiw .cohort-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;list-style:none;margin:0;padding:0}
+@media(max-width:1180px){.aiw .cohort-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.aiw .cohort-grid{grid-template-columns:minmax(0,1fr)}}
+
+.aiw .cohort-grid .cohort-card{min-width:0;gap:10px;overflow-wrap:anywhere}
+/* Cards are not clickable as a whole any more: no lift on hover. (.cohort-grid prefix: this file
+   loads before wizardry.css, so overrides of .ccard need the extra specificity.) */
+.aiw .cohort-grid .cohort-card:hover{transform:none;box-shadow:none;border-color:var(--line)}
+.aiw .cohort-grid .cohort-card.me,.aiw .cohort-grid .cohort-card.me:hover{border-color:#b8dcc6}
+.aiw .cohort-grid .cohort-card .cc-head{display:flex;gap:10px;align-items:flex-start}
+.aiw .cohort-grid .cohort-card .cc-id{flex:1;min-width:0}
+.aiw .cohort-grid .cohort-card .cname{line-height:1.25}
+.aiw .cohort-grid .cohort-card .hl{margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.aiw .cohort-grid .cohort-card .cc-head .tag{flex:none;margin-top:2px}
+.aiw .cohort-grid .cohort-card .cc-bio{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.aiw .cohort-grid .cohort-card .cc-bio.open{display:block;-webkit-line-clamp:unset;overflow:visible}
+.aiw .cohort-grid .cohort-card .cc-more{align-self:flex-start;margin-top:-6px;padding:2px 0;font-size:12.5px;font-weight:700;color:var(--t500);text-decoration:underline;text-underline-offset:2px}
+.aiw .cohort-grid .cohort-card .cc-more:hover{color:var(--t700)}
+.aiw .cohort-grid .cohort-card .cc-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.aiw .cohort-grid .cohort-card .cc-idea{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:12px;background:var(--gTint);border:1px solid #ead6a8;font-size:13px;color:var(--ink2)}
+.aiw .cohort-grid .cohort-card .cc-idea b{display:flex;align-items:center;gap:5px;font-size:11.5px;letter-spacing:.03em;color:#8d5f0e}
+.aiw .cohort-grid .cohort-card .cc-link{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--t500);text-decoration:none}
+.aiw .cohort-grid .cohort-card .cc-link:hover{text-decoration:underline}
+
+/* ---- Profile modal ---- */
+.aiw .modal.cp-edit .cp-edit-title{font-size:26px;margin:6px 44px 4px 0}
+.aiw .modal.cp-edit .cp-edit-intro{font-size:14px;margin-bottom:18px}
+@media(max-width:560px){
+  .aiw .modal.cp-edit{padding:22px 18px}
+  .aiw .modal.cp-edit .cp-edit-title{font-size:22px}
+}
+
+/* ---- Profile page: balanced two-column grid (one column on phones) ---- */
+.aiw .pf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:stretch}
+/* The last card of the shorter column grows so both columns end on the same line. */
+.aiw .pf-grid>.stack>.panel:last-child{flex:1 1 auto}
+@media(max-width:760px){.aiw .pf-grid{grid-template-columns:minmax(0,1fr)}}
+.aiw .pf-cohort-link{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px}
+/* Account card: the cohort link sits at the bottom edge when the card is stretched. */
+.aiw .pf-account{display:flex;flex-direction:column}
+.aiw .pf-account>.pf-cohort-link{margin-top:auto}
+.aiw .pf-account>.phead+div{margin-bottom:16px}
+.aiw .pf-cohort-link a{font-weight:600;color:var(--t500);text-decoration:none}
+.aiw .pf-cohort-link a:hover{text-decoration:underline}

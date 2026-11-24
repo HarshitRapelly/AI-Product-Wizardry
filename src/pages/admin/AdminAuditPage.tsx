@@ -5,18 +5,19 @@ import { Icon } from '../../components/aiw/Icon';
 import {
   AdminPageHead, ErrorNote, LoadState, fmtAgo, fmtDate, fmtDateTime, moduleLabel, useAdminData,
 } from '../../components/admin/AdminUI';
-import { listAudit, type AuditEntry } from '../../services/adminService';
+import { correctNeeded, listAudit, quizSummary, type AuditEntry, type QuizSummaryRow } from '../../services/adminService';
 
 const PAGE = 100;
 
 /* ------------------------------------------------------------------ areas */
 
-type Area = 'modules' | 'students' | 'calendar' | 'announcements' | 'enquiries' | 'exports';
+type Area = 'modules' | 'students' | 'quizzes' | 'calendar' | 'announcements' | 'enquiries' | 'exports';
 type AreaFilter = 'all' | Area;
 
 const AREAS: { value: Area; label: string; tag: string }[] = [
   { value: 'modules', label: 'Module access', tag: 'lesson' },
   { value: 'students', label: 'Students', tag: 'warn' },
+  { value: 'quizzes', label: 'Quizzes', tag: 'guest' },
   { value: 'calendar', label: 'Calendar', tag: 'due' },
   { value: 'announcements', label: 'Announcements', tag: 'live' },
   { value: 'enquiries', label: 'Enquiries', tag: 'info' },
@@ -26,6 +27,7 @@ const AREAS: { value: Area; label: string; tag: string }[] = [
 function areaOf(action: string): Area | null {
   if (action === 'module_release' || action === 'student_module_access') return 'modules';
   if (action === 'student_suspend' || action === 'student_reactivate' || action === 'student_update') return 'students';
+  if (action === 'quiz_rules' || action === 'quiz_grant') return 'quizzes';
   if (action.startsWith('event_')) return 'calendar';
   if (action.startsWith('announcement_')) return 'announcements';
   if (action === 'enquiry_status') return 'enquiries';
@@ -83,10 +85,48 @@ const ACCESS_BEFORE: Record<string, string> = { open: 'opened for this student',
 
 interface Summary { text: string; sub?: string | null; known: boolean }
 
-function describe(e: AuditEntry): Summary {
+type QuizLookup = Map<string, QuizSummaryRow>;
+
+/** "Module 0 quiz 'Plagiarism check'", or the quiz id when the quiz list has not loaded. */
+function quizRef(quizId: unknown, quizzes: QuizLookup): string {
+  const id = str(quizId);
+  if (!id) return 'a quiz';
+  const q = quizzes.get(id);
+  if (!q) return `quiz ${id}`;
+  return `${moduleLabel(q.module_id)} quiz${q.title ? ` '${q.title}'` : ''}`;
+}
+/** "pass mark 70% (7 of 10), 3 attempts" / "no pass mark, unlimited attempts" (x of N uses the quiz's current question count). */
+function quizRulesText(r: Obj, questions: number): string {
+  const p = num(r.pass_mark);
+  const m = num(r.max_attempts);
+  const pass = p === null ? 'no pass mark' : `pass mark ${p}%${questions > 0 ? ` (${correctNeeded(p, questions)} of ${questions})` : ''}`;
+  return `${pass}, ${m === null ? 'unlimited attempts' : `${m} attempt${m === 1 ? '' : 's'}`}`;
+}
+
+function describe(e: AuditEntry, quizzes: QuizLookup): Summary {
   const d = obj(e.details) ?? {};
   const who = e.target_name || 'a student';
   switch (e.action) {
+    case 'quiz_rules': {
+      const ref = quizRef(d.quiz_id, quizzes);
+      const questions = quizzes.get(str(d.quiz_id) ?? '')?.questions ?? 0;
+      const before = obj(d.before), after = obj(d.after) ?? {};
+      if (before && same(before.pass_mark, after.pass_mark) && same(before.max_attempts, after.max_attempts)) {
+        return { text: `Saved the rules of ${ref} (no changes)`, known: true };
+      }
+      return {
+        text: `Set ${ref} to ${quizRulesText(after, questions)}`,
+        sub: before ? `Before: ${quizRulesText(before, questions)}` : null,
+        known: true,
+      };
+    }
+    case 'quiz_grant': {
+      const extra = num(d.extra) ?? 1;
+      const total = num(d.total_extra);
+      const sub = [total !== null ? `${total} extra attempt${total === 1 ? '' : 's'} in total` : null, str(d.note) ? `Note: “${str(d.note)}”` : null]
+        .filter(Boolean).join(' · ');
+      return { text: `Granted ${extra} more attempt${extra === 1 ? '' : 's'} on ${quizRef(d.quiz_id, quizzes)} to ${who}`, sub, known: true };
+    }
     case 'module_release': {
       const m = mod(d.module_id);
       const b = obj(d.before);
@@ -197,6 +237,9 @@ function describe(e: AuditEntry): Summary {
 /** /admin/audit — every change an administrator made, newest first. */
 export const AdminAuditPage: React.FC = () => {
   const first = useAdminData(() => listAudit(PAGE, null));
+  // Quiz titles and question counts for the quiz entries; the log still renders (with quiz ids) if this fails.
+  const quizList = useAdminData(quizSummary);
+  const quizzes: QuizLookup = new Map(quizList.status === 'ready' ? quizList.data.map((q) => [q.quiz_id, q] as const) : []);
   const [more, setMore] = useState<{ rows: AuditEntry[]; done: boolean }>({ rows: [], done: false });
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreError, setMoreError] = useState<string | null>(null);
@@ -206,7 +249,7 @@ export const AdminAuditPage: React.FC = () => {
 
   const all = first.status === 'ready' ? [...first.data, ...more.rows] : [];
   const hasMore = first.status === 'ready' && first.data.length === PAGE && !more.done;
-  const counts: Record<AreaFilter, number> = { all: all.length, modules: 0, students: 0, calendar: 0, announcements: 0, enquiries: 0, exports: 0 };
+  const counts: Record<AreaFilter, number> = { all: all.length, modules: 0, students: 0, quizzes: 0, calendar: 0, announcements: 0, enquiries: 0, exports: 0 };
   all.forEach((e) => { const a = areaOf(e.action); if (a) counts[a] += 1; });
   const rows = area === 'all' ? all : all.filter((e) => areaOf(e.action) === area);
 
@@ -217,6 +260,7 @@ export const AdminAuditPage: React.FC = () => {
     setMoreError(null);
     setOpen({});
     void first.reload();
+    void quizList.reload();
   };
 
   const loadOlder = async () => {
@@ -277,7 +321,7 @@ export const AdminAuditPage: React.FC = () => {
                       </thead>
                       <tbody>
                         {rows.map((e) => {
-                          const s = describe(e);
+                          const s = describe(e, quizzes);
                           const a = areaOf(e.action);
                           const meta = a ? AREAS.find((x) => x.value === a) : null;
                           const tagCls = e.action === 'student_suspend' ? 'bad' : meta?.tag ?? 'lock';

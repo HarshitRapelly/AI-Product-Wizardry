@@ -12,6 +12,7 @@ import {
   ONLINE_FEE_LABEL,
   STEPS,
   YEAR_OF_STUDY_OPTIONS,
+  collegeIdError,
   dateOfBirthBounds,
   normalizeMobile,
   toRegistrationPayload,
@@ -23,8 +24,9 @@ import {
   type RegistrationMode,
   type StepIndex,
 } from '../lib/registrationDetails';
-import { PASSWORD_MIN_LENGTH } from '../lib/registrationValidation';
+import { COLLEGE_ID_EXAMPLE } from '../lib/collegeId';
 import { EnrollmentConfirmed, EnrollmentPanel } from '../components/auth/EnrollmentPanel';
+import { PasswordChecklist } from '../components/auth/PasswordChecklist';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { SHOW_HOME_STATE } from '../components/guards/RouteGuards';
 import { effectiveLearningMode } from '../lib/learningMode';
@@ -62,17 +64,29 @@ function savedMobile(phone: string | null | undefined): string | null {
   return /^[6-9][0-9]{9}$/.test(ten) ? ten : null;
 }
 
+/** Visual "*" after a required label; screen readers get aria-required on the input instead. */
+const RequiredMark = () => (
+  <span aria-hidden="true" className="ml-0.5 font-bold text-ember">*</span>
+);
+const OptionalMark = () => <span className="ml-1 font-normal text-text-muted">(optional)</span>;
+
 const Field: React.FC<{
   id: string;
   label: React.ReactNode;
+  /** Shows a red "*" (pair it with aria-required on the input). */
+  required?: boolean;
+  /** Shows a subtle "(optional)". */
+  optional?: boolean;
   error?: React.ReactNode;
   hint?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
-}> = ({ id, label, error, hint, className = '', children }) => (
+}> = ({ id, label, required, optional, error, hint, className = '', children }) => (
   <div className={className}>
     <label htmlFor={id} className="block text-sm font-semibold text-secondary mb-2">
       {label}
+      {required && <RequiredMark />}
+      {optional && <OptionalMark />}
     </label>
     {children}
     {hint && !error && <p className="mt-1.5 text-xs text-text-muted">{hint}</p>}
@@ -313,6 +327,8 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
   const degreeLabel = form.degree === 'Other' ? form.degreeOther.trim() || 'Other' : form.degree;
   const modeLabel = form.learningMode === 'online' ? 'Online' : form.learningMode === 'offline' ? 'Offline' : '—';
   const feeLabel = form.learningMode === 'offline' ? '₹0 (Batch 1 fellowship)' : ONLINE_FEE_LABEL;
+  // Live College ID warning while typing (the value itself is never changed for the student).
+  const collegeIdWarning = collegeIdError(form.collegeIdNumber);
 
   const passwordToggle = (shown: boolean, toggle: () => void, label: string) => (
     <button
@@ -511,22 +527,25 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
               }}
             >
               <ProgressSteps current={step} />
+              <p className="mt-6 text-xs sm:text-sm text-text-muted">
+                Fields marked <span className="font-bold text-ember">*</span> are required.
+              </p>
 
               {step === 0 && (
-                <section className="mt-10">
+                <section className="mt-8">
                   <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-text">Personal details</h2>
                   <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
-                    <Field id="reg-full-name" label="Full name (as it should appear on your certificate)" error={errors.fullName} className="sm:col-span-2"
+                    <Field id="reg-full-name" label="Full name (as it should appear on your certificate)" required error={errors.fullName} className="sm:col-span-2"
                       hint={nameLocked ? <SavedHint /> : undefined}>
                       <div className="relative">
-                        <input id="reg-full-name" type="text" autoComplete="name" value={form.fullName}
+                        <input id="reg-full-name" type="text" autoComplete="name" value={form.fullName} aria-required="true"
                           readOnly={nameLocked} aria-readonly={nameLocked || undefined}
                           onChange={(e) => { if (!nameLocked) set('fullName')(e.target.value); }}
                           className={nameLocked ? lockedInputClass : inputClass(!!errors.fullName)} />
                         {nameLocked && <LockBadge />}
                       </div>
                     </Field>
-                    <Field id="reg-email" label="Email"
+                    <Field id="reg-email" label="Email" required={!completing}
                       error={errors.email ?? (emailTaken ? (
                         <span role="alert">
                           This email is already registered. Please log in.{' '}
@@ -535,39 +554,49 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                       ) : undefined)}
                       hint={completing ? 'This is your sign-in email and cannot be changed here.' : undefined}>
                       <input id="reg-email" type="email" autoComplete="email" value={form.email} readOnly={completing} disabled={completing}
+                        aria-required={!completing || undefined}
                         onChange={(e) => { setEmailTaken(false); set('email')(e.target.value); }}
                         className={inputClass(!!errors.email || emailTaken)} />
                     </Field>
-                    <Field id="reg-mobile" label="Mobile number" error={errors.mobile}
+                    <Field id="reg-mobile" label="Mobile number" required error={errors.mobile}
                       hint={mobileLocked ? <SavedHint /> : hasUnusablePhone ? 'Your saved number is not a 10-digit mobile. Please enter one.' : undefined}>
                       <div className="relative">
                         <input id="reg-mobile" type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="10-digit mobile"
-                          value={form.mobile} readOnly={mobileLocked} aria-readonly={mobileLocked || undefined}
+                          value={form.mobile} readOnly={mobileLocked} aria-readonly={mobileLocked || undefined} aria-required="true"
                           onChange={(e) => { if (!mobileLocked) set('mobile')(e.target.value); }}
                           className={mobileLocked ? lockedInputClass : inputClass(!!errors.mobile)} />
                         {mobileLocked && <LockBadge />}
                       </div>
                     </Field>
-                    <Field id="reg-dob" label="Date of birth" error={errors.dateOfBirth}>
-                      <input id="reg-dob" type="date" min={dob.min} max={dob.max} value={form.dateOfBirth}
+                    <Field id="reg-dob" label="Date of birth" required error={errors.dateOfBirth}>
+                      <input id="reg-dob" type="date" min={dob.min} max={dob.max} value={form.dateOfBirth} aria-required="true"
                         onChange={(e) => set('dateOfBirth')(e.target.value)} className={inputClass(!!errors.dateOfBirth)} />
                     </Field>
-                    <Field id="reg-city" label="City you live in" error={errors.city}>
-                      <input id="reg-city" type="text" autoComplete="address-level2" value={form.city}
+                    <Field id="reg-city" label="City you live in" required error={errors.city}>
+                      <input id="reg-city" type="text" autoComplete="address-level2" value={form.city} aria-required="true"
                         onChange={(e) => set('city')(e.target.value)} className={inputClass(!!errors.city)} />
                     </Field>
-                    <Field id="reg-password" label={completing ? <>Set a password <span className="font-normal text-text-muted">(optional)</span></> : 'Password'}
-                      error={errors.password}
-                      hint={completing ? 'Lets you also sign in with email and password. Leave blank to keep using Google only.' : `Minimum ${PASSWORD_MIN_LENGTH} characters`}>
+                    <Field id="reg-password" label={completing ? 'Set a password' : 'Password'} required={!completing} optional={completing}
+                      error={errors.password}>
                       <div className="relative">
                         <input id="reg-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.password}
+                          aria-required={!completing || undefined} aria-invalid={!!errors.password || undefined}
+                          aria-describedby="reg-password-hint reg-password-rules reg-password-error"
                           onChange={(e) => set('password')(e.target.value)} className={`${inputClass(!!errors.password)} pr-12`} />
                         {passwordToggle(showPassword, () => setShowPassword((v) => !v), showPassword ? 'Hide password' : 'Show password')}
                       </div>
+                      {completing && (
+                        <p id="reg-password-hint" className="mt-1.5 text-xs text-text-muted">
+                          Lets you also sign in with email and password. Leave blank to keep using Google only.
+                        </p>
+                      )}
+                      {/* Hidden until the student starts typing (for everyone, incl. Google users completing registration). */}
+                      <PasswordChecklist id="reg-password-rules" password={form.password} className="mt-3" />
                     </Field>
-                    <Field id="reg-confirm-password" label="Confirm password" error={errors.confirmPassword}>
+                    <Field id="reg-confirm-password" label="Confirm password" required={!completing || form.password !== ''} error={errors.confirmPassword}>
                       <div className="relative">
                         <input id="reg-confirm-password" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password"
+                          aria-required={!completing || form.password !== '' || undefined}
                           value={form.confirmPassword} onChange={(e) => set('confirmPassword')(e.target.value)}
                           className={`${inputClass(!!errors.confirmPassword)} pr-12`} />
                         {passwordToggle(showConfirmPassword, () => setShowConfirmPassword((v) => !v), showConfirmPassword ? 'Hide password' : 'Show password')}
@@ -578,21 +607,34 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
               )}
 
               {step === 1 && (
-                <section className="mt-10">
+                <section className="mt-8">
                   <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-text">Degree details</h2>
                   <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
-                    <Field id="reg-college" label="College / university" error={errors.college} className="sm:col-span-2">
+                    <Field id="reg-college" label="College / university" required error={errors.college} className="sm:col-span-2">
                       <input id="reg-college" type="text" value={form.college} onChange={(e) => set('college')(e.target.value)}
-                        className={inputClass(!!errors.college)} />
+                        aria-required="true" className={inputClass(!!errors.college)} />
                     </Field>
-                    <Field id="reg-college-id" label="College ID Number" error={errors.collegeIdNumber}>
-                      <input id="reg-college-id" type="text" inputMode="text" autoComplete="off" spellCheck={false}
-                        placeholder="e.g. 21BCE0042" maxLength={60} value={form.collegeIdNumber}
-                        onChange={(e) => set('collegeIdNumber')(e.target.value)} className={inputClass(!!errors.collegeIdNumber)} />
+                    <Field id="reg-college-id" label="College ID Number" required error={errors.collegeIdNumber}
+                      hint={collegeIdWarning ? undefined : 'Uppercase letters and numbers only, as on your college ID card.'}>
+                      <input id="reg-college-id" type="text" inputMode="text" autoComplete="off" autoCapitalize="characters" spellCheck={false}
+                        placeholder={COLLEGE_ID_EXAMPLE} maxLength={60} value={form.collegeIdNumber} aria-required="true"
+                        aria-invalid={!!(errors.collegeIdNumber || collegeIdWarning) || undefined}
+                        aria-describedby="reg-college-id-warning reg-college-id-error"
+                        onChange={(e) => set('collegeIdNumber')(e.target.value)}
+                        className={`${inputBase} ${errors.collegeIdNumber ? 'border-rose-400' : collegeIdWarning ? 'border-warning' : 'border-border'}`} />
+                      {/* Live warning while typing; after "Continue" the same message shows as the field error. */}
+                      <div id="reg-college-id-warning" aria-live="polite">
+                        {collegeIdWarning && !errors.collegeIdNumber && (
+                          <p className="mt-1.5 flex items-start gap-1.5 text-xs text-warning-text">
+                            <AlertCircle className="mt-px h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                            <span>{collegeIdWarning}</span>
+                          </p>
+                        )}
+                      </div>
                     </Field>
-                    <Field id="reg-degree" label="Degree" error={errors.degree}>
+                    <Field id="reg-degree" label="Degree" required error={errors.degree}>
                       <div className="relative">
-                        <select id="reg-degree" value={form.degree} onChange={(e) => set('degree')(e.target.value)}
+                        <select id="reg-degree" value={form.degree} onChange={(e) => set('degree')(e.target.value)} aria-required="true"
                           className={`${inputClass(!!errors.degree)} appearance-none pr-10`}>
                           <option value="">Select</option>
                           {DEGREE_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -600,19 +642,19 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                         <SelectChevron />
                       </div>
                     </Field>
-                    <Field id="reg-branch" label="Branch / specialisation" error={errors.branch}>
-                      <input id="reg-branch" type="text" placeholder="e.g. Computer Science" value={form.branch}
+                    <Field id="reg-branch" label="Branch / specialisation" required error={errors.branch}>
+                      <input id="reg-branch" type="text" placeholder="e.g. Computer Science" value={form.branch} aria-required="true"
                         onChange={(e) => set('branch')(e.target.value)} className={inputClass(!!errors.branch)} />
                     </Field>
                     {form.degree === 'Other' && (
-                      <Field id="reg-degree-other" label="Your degree" error={errors.degreeOther} className="sm:col-span-2">
-                        <input id="reg-degree-other" type="text" placeholder="e.g. B.Des" value={form.degreeOther}
+                      <Field id="reg-degree-other" label="Your degree" required error={errors.degreeOther} className="sm:col-span-2">
+                        <input id="reg-degree-other" type="text" placeholder="e.g. B.Des" value={form.degreeOther} aria-required="true"
                           onChange={(e) => set('degreeOther')(e.target.value)} className={inputClass(!!errors.degreeOther)} />
                       </Field>
                     )}
-                    <Field id="reg-year" label="Current year of study" error={errors.yearOfStudy}>
+                    <Field id="reg-year" label="Current year of study" required error={errors.yearOfStudy}>
                       <div className="relative">
-                        <select id="reg-year" value={form.yearOfStudy} onChange={(e) => set('yearOfStudy')(e.target.value)}
+                        <select id="reg-year" value={form.yearOfStudy} onChange={(e) => set('yearOfStudy')(e.target.value)} aria-required="true"
                           className={`${inputClass(!!errors.yearOfStudy)} appearance-none pr-10`}>
                           <option value="">Select</option>
                           {YEAR_OF_STUDY_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -620,9 +662,9 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                         <SelectChevron />
                       </div>
                     </Field>
-                    <Field id="reg-grad-year" label="Expected graduation year" error={errors.graduationYear}>
+                    <Field id="reg-grad-year" label="Expected graduation year" required error={errors.graduationYear}>
                       <div className="relative">
-                        <select id="reg-grad-year" value={form.graduationYear} onChange={(e) => set('graduationYear')(e.target.value)}
+                        <select id="reg-grad-year" value={form.graduationYear} onChange={(e) => set('graduationYear')(e.target.value)} aria-required="true"
                           className={`${inputClass(!!errors.graduationYear)} appearance-none pr-10`}>
                           <option value="">Select</option>
                           {GRADUATION_YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -630,7 +672,7 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                         <SelectChevron />
                       </div>
                     </Field>
-                    <Field id="reg-aspiration" label={<>What do you hope to build or become? <span className="font-normal text-text-muted">(optional)</span></>}
+                    <Field id="reg-aspiration" label="What do you hope to build or become?" optional
                       error={errors.aspiration} className="sm:col-span-2">
                       <textarea id="reg-aspiration" rows={4} value={form.aspiration} onChange={(e) => set('aspiration')(e.target.value)}
                         className={`${inputClass(!!errors.aspiration)} resize-y`} />
@@ -640,7 +682,7 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
               )}
 
               {step === 2 && (
-                <section className="mt-10">
+                <section className="mt-8">
                   <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-text">Choose how you learn</h2>
                   <p className="mt-2 text-base text-text-muted">Each mode has its own journey in the portal.</p>
                   <div role="radiogroup" aria-label="Learning mode" className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -655,7 +697,7 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
               )}
 
               {step === 3 && (
-                <section className="mt-10">
+                <section className="mt-8">
                   <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-text">Review your details</h2>
                   {formError && (
                     <div role="alert" className="mt-6 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -678,7 +720,7 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                       ['Date of birth', form.dateOfBirth],
                       ['City', form.city.trim()],
                       ['College', form.college.trim()],
-                      ['College ID Number', form.collegeIdNumber.trim()],
+                      ['College ID Number', form.collegeIdNumber.trim() || 'Not provided'],
                       ['Degree', `${degreeLabel}, ${form.branch.trim()}`],
                       ['Year', form.yearOfStudy === 'Graduated' ? `Graduated · ${form.graduationYear}` : `${form.yearOfStudy} · graduating ${form.graduationYear}`],
                       ['Mode', modeLabel],
@@ -692,10 +734,10 @@ export const RegisterPage: React.FC<{ mode?: RegisterView }> = ({ mode: view = '
                   </dl>
                   <div className="mt-8 space-y-4">
                     <label htmlFor="reg-agree" className="flex items-start gap-3 text-[15px] text-secondary cursor-pointer">
-                      <input id="reg-agree" type="checkbox" checked={form.agreedToCodeOfConduct}
+                      <input id="reg-agree" type="checkbox" checked={form.agreedToCodeOfConduct} aria-required="true"
                         onChange={(e) => set('agreedToCodeOfConduct')(e.target.checked)}
                         className="mt-0.5 w-5 h-5 rounded border-border-strong text-accent focus:ring-accent" />
-                      <span>I confirm these details are correct and agree to the program&apos;s code of conduct.</span>
+                      <span>I confirm these details are correct and agree to the program&apos;s code of conduct.<RequiredMark /></span>
                     </label>
                     {errors.agreedToCodeOfConduct && <p className="text-xs text-rose-600">{errors.agreedToCodeOfConduct}</p>}
                     <label htmlFor="reg-updates" className="flex items-start gap-3 text-[15px] text-secondary cursor-pointer">

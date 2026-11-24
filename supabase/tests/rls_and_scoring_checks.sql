@@ -25,6 +25,11 @@
 
 begin;
 
+-- 20261125001300: the Module 0 quiz must be PASSED (70%) before its subtopic completes, so the
+-- fixture below submits the correct answers (built from the key, as postgres).
+do $$ begin perform set_config('rls.right', (select jsonb_object_agg(k.question_id::text, k.correct_option)::text
+  from private.quiz_answer_keys k where k.quiz_id = 'l0-plagiarism-quiz'), true); end $$;
+
 -- ---------------------------------------------------------------------------
 -- Setup (as postgres): three students. C imitates a Google OAuth sign-up.
 -- ---------------------------------------------------------------------------
@@ -256,8 +261,7 @@ begin
     (1, 'l0-faqs', 'reading', true);
   -- Plagiarism reading confirmed (required for the quiz from Migration 11 on)
   insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-plagiarism-reading', 'reading', true);
-  perform public.submit_quiz_attempt('l0-plagiarism-quiz',
-    '{"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0}', gen_random_uuid());
+  perform public.submit_quiz_attempt('l0-plagiarism-quiz', current_setting('rls.right')::jsonb, gen_random_uuid());
   insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values
     (1, 'l0-plagiarism', 'reading', true),
     (1, 'l0-system-requirements', 'reading', true);
