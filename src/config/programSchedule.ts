@@ -44,9 +44,32 @@ export function istDate(ymd: string): Date {
   return new Date(`${ymd}T00:00:00+05:30`);
 }
 
+/** A programme calendar: the published sheet, or the sheet with dates edited by an admin. */
+export interface ProgrammeSchedule { orientation: string; commences: string; presentationsPerClass: number; modules: ScheduledModule[] }
+
+/** Milestone dates from the database (migration 20261124001100) as IST YYYY-MM-DD. */
+export interface MilestoneDate { kind: 'orientation' | 'module_start' | 'module_end' | 'assignment_due'; moduleNumber: number | null; ymd: string }
+
+/**
+ * The sheet with every date an admin has edited in the database applied. A milestone that is
+ * missing in the database (deleted) keeps the published date; titles and class/presentation
+ * counts always come from the sheet.
+ */
+export function applyMilestones(milestones: readonly MilestoneDate[], base: ProgrammeSchedule = PROGRAMME_CALENDAR): ProgrammeSchedule {
+  const pick = (kind: MilestoneDate['kind'], n: number | null) => milestones.find((x) => x.kind === kind && x.moduleNumber === n)?.ymd;
+  const modules = base.modules.map((m) => ({
+    ...m,
+    firstClass: pick('module_start', m.n) ?? m.firstClass,
+    lastClass: pick('module_end', m.n) ?? m.lastClass,
+    assignmentDue: pick('assignment_due', m.n) ?? m.assignmentDue,
+  }));
+  const commences = modules[0]?.firstClass ?? base.commences;
+  return { ...base, orientation: pick('orientation', null) ?? base.orientation, commences, modules };
+}
+
 /** Totals of the calendar (presentations, classes, first and last class). */
-export function scheduleTotals(): { presentations: number; classes: number; first: string; last: string } {
-  const m = PROGRAMME_CALENDAR.modules;
+export function scheduleTotals(schedule: ProgrammeSchedule = PROGRAMME_CALENDAR): { presentations: number; classes: number; first: string; last: string } {
+  const m = schedule.modules;
   return {
     presentations: m.reduce((s, x) => s + x.presentations, 0),
     classes: m.reduce((s, x) => s + x.classes, 0),
@@ -56,8 +79,8 @@ export function scheduleTotals(): { presentations: number; classes: number; firs
 }
 
 /** Today's place in the calendar (IST): the module in its class period, or the next one to start. */
-export function scheduleStatus(todayYmd: string): { current: ScheduledModule | null; next: ScheduledModule | null } {
-  const m = PROGRAMME_CALENDAR.modules;
+export function scheduleStatus(todayYmd: string, schedule: ProgrammeSchedule = PROGRAMME_CALENDAR): { current: ScheduledModule | null; next: ScheduledModule | null } {
+  const m = schedule.modules;
   return {
     current: m.find((x) => x.firstClass <= todayYmd && todayYmd <= x.lastClass) ?? null,
     next: m.find((x) => x.firstClass > todayYmd) ?? null,
@@ -65,6 +88,6 @@ export function scheduleStatus(todayYmd: string): { current: ScheduledModule | n
 }
 
 /** The module whose class period contains this IST date (for shading the month grid). */
-export function moduleOnDay(ymd: string): ScheduledModule | null {
-  return PROGRAMME_CALENDAR.modules.find((x) => x.firstClass <= ymd && ymd <= x.lastClass) ?? null;
+export function moduleOnDay(ymd: string, schedule: ProgrammeSchedule = PROGRAMME_CALENDAR): ScheduledModule | null {
+  return schedule.modules.find((x) => x.firstClass <= ymd && ymd <= x.lastClass) ?? null;
 }

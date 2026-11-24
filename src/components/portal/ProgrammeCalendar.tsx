@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '../aiw/Icon';
-import { PROGRAMME_CALENDAR, istDate, scheduleStatus, scheduleTotals, type ScheduledModule } from '../../config/programSchedule';
+import { istDate, scheduleStatus, scheduleTotals, type ScheduledModule } from '../../config/programSchedule';
+import { useProgrammeSchedule } from './programmeScheduleStore';
 import { istKey } from './Calendar';
 
 const TZ = 'Asia/Kolkata';
@@ -31,8 +32,9 @@ function periodProgress(m: ScheduledModule, today: string): number {
  */
 export const ProgrammeCalendar: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const today = istKey(new Date());
-  const { current, next } = scheduleStatus(today);
-  const totals = scheduleTotals();
+  const PROGRAMME_CALENDAR = useProgrammeSchedule(); // the database's dates (admins can edit them), else the published sheet
+  const { current, next } = scheduleStatus(today, PROGRAMME_CALENDAR);
+  const totals = scheduleTotals(PROGRAMME_CALENDAR);
   const [showAll, setShowAll] = useState(!compact);
   const mods = PROGRAMME_CALENDAR.modules;
   const anchor = Math.max(0, mods.findIndex((m) => m.lastClass >= today));

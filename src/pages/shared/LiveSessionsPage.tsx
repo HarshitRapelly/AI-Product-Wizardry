@@ -17,7 +17,7 @@ const SessionCard: React.FC<{ e: CohortEvent }> = ({ e }) => {
   const [note, setNote] = useState('');
   const kind = CATEGORY_NAME[e.category] ?? EVENT_CATEGORY_LABEL[e.category] ?? 'Session';
   const when = e.confirmed && e.allDay
-    ? `${part(e.startAt, { weekday: 'long', day: 'numeric', month: 'long' })} · ${e.moduleNumber ? 'Class day · In person' : 'All day'}`
+    ? `${part(e.startAt, { weekday: 'long', day: 'numeric', month: 'long' })} · ${(e.kind ? e.kind === 'module_start' || e.kind === 'module_end' : !!e.moduleNumber) ? 'Class day · In person' : 'All day'}${e.location ? ` · ${e.location}` : ''}`
     : e.confirmed
     ? `${fmtTime(e.startAt)}${e.endAt ? ` – ${fmtTime(e.endAt)}` : ''}${e.location ? ` · ${e.location}` : ' · In person'}`
     : `Tentatively ${part(e.startAt, { month: 'short' })} · date, time and room will appear here once confirmed.`;
@@ -33,10 +33,16 @@ const SessionCard: React.FC<{ e: CohortEvent }> = ({ e }) => {
         <p>{when}</p>
         {note && <p className="ls-note" role="status">{note}</p>}
       </div>
-      <button type="button" className="btn btn-line btn-sm ls-act"
-        onClick={() => setNote(e.confirmed ? 'RSVPs open soon. Nothing was saved.' : 'Notifications open soon. Nothing was saved.')}>
-        {e.confirmed ? 'RSVP' : (<><Icon name="alert" size={14} /> Notify me</>)}
-      </button>
+      {e.confirmed && e.meetingUrl ? (
+        <a className="btn btn-dark btn-sm ls-act" href={e.meetingUrl} target="_blank" rel="noopener noreferrer" data-testid="session-join">
+          Join <Icon name="right" size={14} />
+        </a>
+      ) : (
+        <button type="button" className="btn btn-line btn-sm ls-act"
+          onClick={() => setNote(e.confirmed ? 'RSVPs open soon. Nothing was saved.' : 'Notifications open soon. Nothing was saved.')}>
+          {e.confirmed ? 'RSVP' : (<><Icon name="alert" size={14} /> Notify me</>)}
+        </button>
+      )}
     </li>
   );
 };

@@ -270,13 +270,13 @@ const NewPasswordForm: React.FC<{ onSessionExpired: () => void; onUpdated: (othe
 };
 
 export const ResetPasswordPage: React.FC = () => {
-  const { status, profile, registered } = useAuth();
+  const { status, profile, registered, isAdmin } = useAuth();
   const { learningMode, isPaid } = useAuthAndCourse();
   const navigate = useNavigate();
   const [problem, setProblem] = useState<LinkProblem>(detectProblem);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [updated, setUpdated] = useState<{ othersSignedOut: boolean } | null>(null);
-  const destination = homeFor({ learningMode, isPaid, registered });
+  const destination = homeFor({ learningMode, isPaid, registered, isAdmin });
 
   // After success, continue to the student's next step (guards still re-check everything).
   useEffect(() => {

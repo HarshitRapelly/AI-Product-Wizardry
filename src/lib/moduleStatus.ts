@@ -9,15 +9,29 @@ import type { ModuleProgressState } from '../context/AuthAndCourseContext';
 export type ModuleState = 'complete' | 'active' | 'locked';
 
 /**
- * Modules open to students in this release (my_level_progress level_id; 1 = "Module 0").
- * Every other module stays LOCKED regardless of progress — completing Module 0 does not
- * open Module 1. The database enforces the same rule (Migration 13:
- * public.curriculum_level_releases); this list keeps the app locked even against a
- * database where Migration 13 is not applied yet. To open a module later, release it in
- * public.curriculum_level_releases AND add its level_id here.
+ * Which modules are open for THIS student (module_id; 1 = "Module 0"), as the database says
+ * (public.my_module_access(), migration 20261124001000): global release, scheduled release,
+ * per-student lock/unlock by an admin, suspension. Admins change it in the admin portal; the
+ * database enforces it on every read and write. Until the database answers (or when it
+ * cannot), only Module 0 counts as open (fail closed — the database refuses the rest anyway).
+ * Filled by AuthAndCourseContext together with the module progress (so consumers re-render).
  */
-export const RELEASED_MODULE_IDS: ReadonlySet<number> = new Set([1]);
-export const isModuleReleased = (moduleId: number) => RELEASED_MODULE_IDS.has(moduleId);
+export type ModuleAccessReason = 'suspended' | 'open_for_you' | 'locked_for_you' | 'released' | 'scheduled' | 'not_released';
+export interface ModuleAccess { moduleId: number; isOpen: boolean; reason: ModuleAccessReason; releaseAt: string | null }
+
+const DEFAULT_OPEN: ReadonlySet<number> = new Set([1]);
+let openModules: ReadonlySet<number> = DEFAULT_OPEN;
+let accessById: ReadonlyMap<number, ModuleAccess> = new Map();
+
+/** Called with the rows of public.my_module_access(); null resets to the fail-closed default. */
+export function setModuleAccess(rows: ModuleAccess[] | null): void {
+  if (!rows) { openModules = DEFAULT_OPEN; accessById = new Map(); return; }
+  openModules = new Set(rows.filter((r) => r.isOpen).map((r) => r.moduleId));
+  accessById = new Map(rows.map((r) => [r.moduleId, r]));
+}
+/** The database's answer for one module (undefined until loaded / on older databases). */
+export const moduleAccessOf = (moduleId: number): ModuleAccess | undefined => accessById.get(moduleId);
+export const isModuleReleased = (moduleId: number) => openModules.has(moduleId);
 
 /** level_id → display number ("Module 0" … "Module 11"). */
 export const moduleNumberOf = (moduleId: number) => moduleId - 1;

@@ -7,11 +7,14 @@ import {
 } from '../../services/portalService';
 import { SCHEDULE_EVENTS } from './scheduleEvents';
 import { moduleOnDay } from '../../config/programSchedule';
+import { useProgrammeSchedule } from './programmeScheduleStore';
 
 /**
  * Calendar building blocks (month grid, event row, event loader), styled after the approved
  * reference design. Events come from public.cohort_events (published rows, read-only for
- * students) plus the published programme calendar (src/config/programSchedule.ts). No placeholder events.
+ * students), including the programme calendar, which admins can edit (migration
+ * 20261124001100). On an older database the built-in programme calendar
+ * (src/config/programSchedule.ts) is added instead. No placeholder events.
  * All dates and times are shown in India Standard Time.
  */
 
@@ -39,7 +42,7 @@ const DOT: Record<EventCategory, string> = {
 
 export type EventsState = { status: 'loading' } | { status: 'ready'; events: CohortEvent[] } | { status: 'error'; error: PortalError };
 
-/** Loads events in [from, to] for the student's mode (database + temporary demo events). */
+/** Loads events in [from, to] for the student's mode (database; built-in programme calendar on older databases). */
 export function useEvents(from: Date, to: Date): EventsState & { reload: () => void } {
   const { learningMode, user } = useAuthAndCourse();
   const [state, setState] = useState<EventsState>({ status: 'loading' });
@@ -48,12 +51,12 @@ export function useEvents(from: Date, to: Date): EventsState & { reload: () => v
   useEffect(() => {
     let cancelled = false;
     setState({ status: 'loading' });
-    // The published programme calendar (always shown; not a placeholder).
-    const schedule = SCHEDULE_EVENTS.filter((e) => e.startAt.getTime() >= fromMs && e.startAt.getTime() <= toMs);
     fetchEvents(new Date(fromMs), new Date(toMs), learningMode).then((r) => {
       if (cancelled) return;
-      if (!r.ok && !schedule.length) { setState({ status: 'error', error: r.error }); return; }
-      const merged = [...(r.ok ? r.value : []), ...schedule].sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+      if (!r.ok) { setState({ status: 'error', error: r.error }); return; }
+      // Database before migration 20261124001100: it has no programme-calendar rows yet.
+      const builtIn = r.legacy ? SCHEDULE_EVENTS.filter((e) => e.startAt.getTime() >= fromMs && e.startAt.getTime() <= toMs) : [];
+      const merged = [...r.value, ...builtIn].sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
       setState({ status: 'ready', events: merged });
     });
     return () => { cancelled = true; };
@@ -65,7 +68,12 @@ export function useEvents(from: Date, to: Date): EventsState & { reload: () => v
 function eventLine(e: CohortEvent): string {
   if (!e.confirmed) return `${e.title} · date and details coming soon`;
   const parts = [fmtDate(e.startAt)];
-  if (e.allDay) { parts.push(e.category === 'assignment_due' ? 'Due date' : e.moduleNumber ? 'Class day · in person' : 'All day'); return parts.join(' · '); }
+  if (e.allDay) {
+    const classDay = e.kind ? e.kind === 'module_start' || e.kind === 'module_end' : !!e.moduleNumber;
+    parts.push(e.category === 'assignment_due' ? 'Due date' : classDay ? 'Class day · in person' : 'All day');
+    if (e.location) parts.push(e.location);
+    return parts.join(' · ');
+  }
   if (e.selfPacedMinutes) parts.push('Self-paced', `~${e.selfPacedMinutes} min`);
   else if (e.category === 'assignment_due') parts.push(`by ${fmtTime(e.startAt)}`);
   else parts.push(e.endAt ? `${fmtTime(e.startAt)} – ${fmtTime(e.endAt)}` : fmtTime(e.startAt));
@@ -133,6 +141,7 @@ export const MonthGrid: React.FC<{
   selected: string | null; onSelect: (key: string | null) => void;
 }> = ({ year, month, events, selected, onSelect }) => {
   const todayKey = istKey(new Date());
+  const schedule = useProgrammeSchedule();
   const first = new Date(Date.UTC(year, month, 1));
   const start = (first.getUTCDay() + 6) % 7;
   const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
@@ -152,7 +161,7 @@ export const MonthGrid: React.FC<{
           const day = i + 1;
           const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const evs = byDay.get(key) ?? [];
-          const mod = moduleOnDay(key);
+          const mod = moduleOnDay(key, schedule);
           return (
             <button
               key={key}

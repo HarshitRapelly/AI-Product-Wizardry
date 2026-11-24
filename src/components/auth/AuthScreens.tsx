@@ -113,3 +113,41 @@ export const ProfileErrorScreen: React.FC = () => {
     </div>
   );
 };
+
+/** Shown to a student whose account an admin has suspended (migration 20261124001000). */
+export const SuspendedScreen: React.FC = () => {
+  const { signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  return (
+    <div className="min-h-screen bg-canvas bg-[radial-gradient(1100px_520px_at_80%_-10%,rgba(61,142,133,0.22),transparent)] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <BrandMark />
+      </div>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="bg-surface py-8 px-6 sm:px-10 rounded-2xl border border-border shadow-card text-center space-y-5" role="alert" data-testid="suspended-screen">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-amber-600" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-extrabold text-primary">Your access is paused</h3>
+            <p className="text-sm text-text-muted leading-relaxed">
+              The program team has paused access to the student portal for this account. Please contact the program team if you think this is a mistake.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={signingOut}
+            onClick={async () => {
+              setSigningOut(true);
+              await signOut();
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-border rounded-xl shadow-subtle bg-surface hover:bg-slate-50 text-sm font-semibold text-secondary transition-all disabled:opacity-60"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

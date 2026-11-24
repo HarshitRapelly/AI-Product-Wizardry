@@ -6,6 +6,8 @@ import { effectiveLearningMode } from '../lib/learningMode';
 import { saveSimulatedPayment, clearSimulatedPayment } from '../services/paymentService';
 import { fetchMyCourseProgress, type CourseProgressState } from '../services/progressService';
 import { fetchMyModuleProgress } from '../services/curriculumService';
+import { fetchMyModuleAccess } from '../services/adminService';
+import { setModuleAccess } from '../lib/moduleStatus';
 import type { ModuleProgressRow } from '../lib/curriculumTypes';
 
 export type ModuleProgressState =
@@ -284,10 +286,13 @@ export const AuthAndCourseProvider: React.FC<{ children: React.ReactNode }> = ({
   const moduleRequest = useRef(0);
   const loadModuleProgress = useCallback(async (forUid: string | null) => {
     const req = ++moduleRequest.current;
-    if (!forUid) { setModuleProgress({ status: 'loading', rows: [] }); return; }
+    if (!forUid) { setModuleAccess(null); setModuleProgress({ status: 'loading', rows: [] }); return; }
     setModuleProgress((prev) => (prev.status === 'ready' ? prev : { status: 'loading', rows: [] }));
-    const r = await fetchMyModuleProgress();
+    const [r, access] = await Promise.all([fetchMyModuleProgress(), fetchMyModuleAccess()]);
     if (req !== moduleRequest.current) return;
+    // Module access (admin releases, per-student locks, schedule) — set BEFORE the progress
+    // state so every consumer re-renders with both. Unavailable/error → fail-closed default.
+    setModuleAccess(access.ok ? access.value.map((a) => ({ moduleId: a.module_id, isOpen: a.is_open, reason: a.reason, releaseAt: a.release_at })) : null);
     if (r.ok) setModuleProgress({ status: 'ready', rows: r.value });
     else if (r.error.kind === 'unavailable') setModuleProgress({ status: 'unavailable', rows: [] });
     else setModuleProgress({ status: 'error', rows: [], message: r.error.message });

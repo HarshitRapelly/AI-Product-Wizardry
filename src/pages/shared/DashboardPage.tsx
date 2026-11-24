@@ -1,3 +1,4 @@
+import { AnnouncementBanner } from '../../components/portal/AnnouncementBanner';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../layouts/PortalLayout';
@@ -30,7 +31,7 @@ function openModulesText(): { list: string; locked: string } {
   const locked = MODULE_TITLES.map((_, n) => n).filter((n) => !isModuleReleased(n + 1));
   const join = (a: number[]) => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`);
   return {
-    list: open.length === 1 ? `Module ${open[0]} is` : `Modules ${join(open)} are`,
+    list: open.length === 0 ? 'No modules are' : open.length === 1 ? `Module ${open[0]} is` : `Modules ${join(open)} are`,
     locked: locked.length ? `${locked.length === 1 ? 'Module' : 'Modules'} ${locked.length > 2 ? `${locked[0]}–${locked[locked.length - 1]}` : join(locked)} ${locked.length === 1 ? 'is' : 'are'} locked and open as the program team releases them.` : 'All modules are open.',
   };
 }
@@ -192,6 +193,7 @@ export const DashboardPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }
   return (
     <PortalLayout mode={mode} title="Home">
       <CohortProfilePrompt />
+      <AnnouncementBanner />
       <JourneyBar mode={mode} />
       <div className="toprow">
         <section className="welcome" aria-labelledby="welcome-title">

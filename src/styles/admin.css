@@ -1,0 +1,98 @@
+/* Admin portal (same palette and tokens as the student portal: src/styles/wizardry.css). */
+
+.aiw .adm-badge-role{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sun);background:rgba(242,179,61,.12);border:1px solid rgba(242,179,61,.35);padding:2px 8px;border-radius:999px}
+.aiw .side .logo + .adm-badge-role{margin:-8px 8px 14px}
+
+/* KPI tiles that link somewhere */
+.aiw a.kpi{text-decoration:none;transition:transform .2s,border-color .2s}
+.aiw a.kpi:hover{transform:translateY(-2px);border-color:rgba(242,179,61,.45)}
+.aiw .kpi.warn span{color:#FFB46B}
+.aiw .kpis.five{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1100px){.aiw .kpis.five{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.aiw .kpis.five{grid-template-columns:repeat(2,1fr)}}
+
+/* Toolbars above tables */
+.aiw .adm-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.aiw .adm-search{flex:1;min-width:200px;max-width:380px;display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--muted)}
+.aiw .adm-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:14px}
+.aiw .adm-search:focus-within{border-color:var(--t500);box-shadow:0 0 0 4px rgba(47,111,106,.12)}
+.aiw .adm-select{padding:9px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-size:13.5px;color:var(--ink2)}
+.aiw .adm-count{font-size:13px;color:var(--muted);margin-left:auto}
+
+/* Tables */
+.aiw .adm-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+.aiw .adm-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;color:var(--ink)}
+.aiw .adm-table th{position:sticky;top:0;background:var(--cream2);text-align:left;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;white-space:nowrap;border-bottom:1px solid var(--line)}
+.aiw .adm-table td{padding:11px 12px;border-bottom:1px solid #EFEAE0;vertical-align:top}
+.aiw .adm-table tr:last-child td{border-bottom:0}
+.aiw .adm-table tbody tr:hover td{background:#FBF9F5}
+.aiw .adm-table tr.click{cursor:pointer}
+.aiw .adm-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.aiw .adm-table .nowrap{white-space:nowrap}
+.aiw .adm-table .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.aiw .adm-table button.sort{font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:3px}
+.aiw .adm-table button.sort[aria-sort]{color:var(--t500)}
+.aiw .adm-name{font-weight:600;color:var(--ink)}
+.aiw .adm-link{color:var(--t500);font-weight:600;text-decoration:none}
+.aiw .adm-link:hover{text-decoration:underline}
+
+/* Progress bar inside tables / cards */
+.aiw .adm-prog{display:flex;align-items:center;gap:8px;min-width:120px}
+.aiw .adm-prog .bar{flex:1;height:6px;border-radius:999px;background:var(--cream2);overflow:hidden}
+.aiw .adm-prog .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--t500),var(--hat2))}
+.aiw .adm-prog b{font-size:12.5px;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+
+/* Small status pills (in addition to .tag) */
+.aiw .tag.warn{background:#FCEBD2;color:#8d4a0e}
+.aiw .tag.bad{background:#F8DCD3;color:#8a2f0c}
+.aiw .tag.info{background:var(--tTint);color:var(--t600)}
+
+/* Cards and forms */
+.aiw .adm-grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.aiw .adm-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media(max-width:980px){.aiw .adm-grid2,.aiw .adm-grid3{grid-template-columns:1fr}}
+.aiw .adm-dl{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:14px;margin:0}
+.aiw .adm-dl dt{color:var(--muted);font-weight:600;font-size:12.5px;padding-top:1px}
+.aiw .adm-dl dd{margin:0;color:var(--ink);overflow-wrap:anywhere}
+@media(max-width:520px){.aiw .adm-dl{grid-template-columns:1fr}.aiw .adm-dl dd{margin-bottom:6px}}
+.aiw .adm-form .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:620px){.aiw .adm-form .row{grid-template-columns:1fr}}
+.aiw .adm-form .field{margin-bottom:12px}
+.aiw .adm-form .field input,.aiw .adm-form .field select,.aiw .adm-form .field textarea{background:#fff;padding:10px 12px;font-size:14px}
+.aiw .adm-form .hint{font-size:12px;color:var(--muted)}
+.aiw .adm-form .check{margin:4px 0 12px}
+.aiw .adm-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px}
+.aiw .btn-danger{background:#B3401A;color:#fff}
+.aiw .btn-danger:hover{background:#962f0e}
+.aiw .adm-modal{max-height:calc(100vh - 40px);overflow:auto;text-align:left}
+.aiw .adm-modal h2{font-family:var(--serif);font-size:22px;margin-bottom:4px;color:var(--ink)}
+.aiw .adm-modal .lead{color:var(--muted);font-size:14px;margin-bottom:16px}
+
+/* Toast */
+.aiw .adm-toast{position:fixed;right:20px;bottom:20px;z-index:120;display:flex;gap:10px;align-items:center;max-width:min(440px,calc(100vw - 40px));padding:12px 16px;border-radius:14px;background:var(--t800);color:var(--cream);box-shadow:0 18px 40px rgba(0,0,0,.35);font-size:14px;animation:pageIn .3s ease}
+.aiw .adm-toast.err{background:#7c2a0c}
+
+/* Module access matrix */
+.aiw .adm-mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.aiw .adm-mod{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.aiw .adm-mod.open{border-color:rgba(47,111,106,.45);box-shadow:inset 4px 0 0 var(--t500)}
+.aiw .adm-mod.sched{box-shadow:inset 4px 0 0 var(--gold)}
+.aiw .adm-mod h3{font-family:var(--serif);font-size:17px;color:var(--ink);margin:0}
+.aiw .adm-mod .meta{font-size:12.5px;color:var(--muted)}
+.aiw .adm-seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.aiw .adm-seg button{padding:7px 12px;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.aiw .adm-seg button+button{border-left:1.5px solid var(--line)}
+.aiw .adm-seg button[aria-pressed="true"]{background:var(--t500);color:#fff}
+.aiw .adm-seg button[aria-pressed="true"].lock{background:#7d756a}
+.aiw .adm-seg button:disabled{opacity:.45;cursor:not-allowed}
+
+/* Student detail: per-module rows */
+.aiw .adm-mrow{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #EFEAE0}
+.aiw .adm-mrow:last-child{border-bottom:0}
+@media(max-width:620px){.aiw .adm-mrow{grid-template-columns:1fr}}
+
+/* Audit details */
+.aiw .adm-json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--cream2);border-radius:10px;padding:10px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:var(--ink2)}
+
+/* Expandable message text */
+.aiw .adm-msg{white-space:pre-line;overflow-wrap:anywhere;max-width:520px}

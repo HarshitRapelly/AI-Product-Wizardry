@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { userKey } from '../../lib/userStorage';
 import { CheckCircle2, Send, Save, Check, UploadCloud } from 'lucide-react';
 import { isModuleReleased } from '../../lib/moduleStatus';
-import { PROGRAMME_CALENDAR, istDate } from '../../config/programSchedule';
+import { istDate } from '../../config/programSchedule';
+import { useProgrammeSchedule } from '../../components/portal/programmeScheduleStore';
 import { Icon } from '../../components/aiw/Icon';
 
 /*
@@ -27,9 +28,6 @@ interface SubmittedAssignment {
   submittedAt: string;
 }
 
-/** Placeholder due date for demo builds only (never shown in production). */
-/** Module 1 assignment due date (published programme calendar; a date, no time). */
-const DUE = istDate(PROGRAMME_CALENDAR.modules[0].assignmentDue);
 
 const RUBRIC = [
   { name: 'Problem Clarity', pts: 30, text: 'Did you articulate an observable human friction point without prematurely proposing a solution?' },
@@ -44,6 +42,7 @@ const STEPS = [
 ];
 
 export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
+  const schedule = useProgrammeSchedule();
   // Per-student key (aiw:<userId>:...) until assignments move to the database in Stage 4.
   const { userId } = useAuth();
   const STORAGE_KEY = userKey(userId ?? 'signed-out', 'module1_assignment');
@@ -131,6 +130,8 @@ export const AssignmentsPage: React.FC<AssignmentsPageProps> = ({ mode }) => {
   const released = isModuleReleased(2);
   // Whole IST calendar days until the due date (the calendar gives a date, no time).
   const todayIst = istDate(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }));
+  // Module 1 assignment due date: the programme calendar (admins can edit it; a date, no time).
+  const DUE = istDate(schedule.modules[0].assignmentDue);
   const daysLeft = Math.round((DUE.getTime() - todayIst.getTime()) / 86_400_000);
   const dueLine = `Document due ${DUE.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}`;
 

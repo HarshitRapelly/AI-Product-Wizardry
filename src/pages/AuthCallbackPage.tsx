@@ -187,14 +187,14 @@ const LinkProblemPanel: React.FC<{ problem: Exclude<LinkProblem, null> }> = ({ p
 };
 
 export const AuthCallbackPage: React.FC = () => {
-  const { status, session, registered } = useAuth();
+  const { status, session, registered, isAdmin } = useAuth();
   const { learningMode, isPaid } = useAuthAndCourse();
   const navigate = useNavigate();
   const [problem] = useState<LinkProblem>(detectProblem);
   const continued = useRef(false);
   // Next onboarding step, or the (re-validated) page the student came from.
   // Either way, that page's own guard re-checks sign-in, learning mode and payment.
-  const destination = postAuthDestination({ learningMode, isPaid, registered }, returnLocation(oauthNote?.returnTo ?? null));
+  const destination = postAuthDestination({ learningMode, isPaid, registered, isAdmin }, returnLocation(oauthNote?.returnTo ?? null));
   const providers = (session?.user.app_metadata?.providers as string[] | undefined) ?? [];
   const viaGoogle = !!oauthNote || (!linkInfo?.type && !!linkInfo?.hasTokens && providers.includes('google'));
 

@@ -33,8 +33,23 @@ stop at the first error. Each file is a single transaction.
 
 The redesign release is **live**: migrations 0100 → 0300 → 0700 → 0400 → 0500 → 0200 → 0800 were applied to production
 on 22 Nov 2026 (each verified; integrity unchanged; student-ID mapping exported) and PR #3 was merged into `main`
-(Vercel production deploy). **0600 is still pending** (separate approval). The production smoke test after the merge
-has not been recorded yet.
+(Vercel production deploy). The production smoke test after the merge has not been recorded yet.
+
+**0600 applied to production on 24 Nov 2026** (each step separately approved): read-only pre-check (still on
+"level" names, no dependents, no other function using level names, 12 release rows, only Module 0 released) →
+apply (exit 0; the migration's self-checks passed) → `20261121000600_rename_level_to_module_readonly_verification.sql`
+14/14 true, old names absent → snapshot identical to the pre-check (9 profiles, 8 registrations, 6 subtopics,
+10 questions, 21 progress rows, 7 attempts, 0 submissions, 0 events, 2 cohort profiles, 1 enquiry; md5 of progress,
+attempts, subtopics, releases and registrations unchanged). Production and staging now use the same module names.
+
+**0900 applied to production on 24 Nov 2026** (each step separately approved): read-only verification before
+(6/6 false, 0 rows) → apply (exit 0) → same verification 6/6 true, 0 brochure rows; data snapshot unchanged
+(counts and md5 as above). The round-2 PR can now be merged.
+
+**1000 applied to production on 24 Nov 2026** (approved): apply (exit 0; self-checks passed) → read-only 1000 checks
+all true (tables, `release_at`, 12 release rows, only Module 0 released, 0 scheduled, content + suspension policies,
+cohort list, release/online guards, privileges, 4 admin functions all checked) → 0 admins, 0 overrides, 0 suspensions,
+0 audit entries → data snapshot unchanged (release rows differ only by the new empty `release_at` column).
 
 ## Follow-up release (round 2, branch `feature/portal-ui-round2`) — not yet in production
 
@@ -49,6 +64,59 @@ Production steps for round 2 (each needs explicit approval): read-only
 `20261123000900_brochure_download_user_details_readonly_verification.sql` (all false) → apply 0900 → the same file
 (6/6 true, 0 rows) → merge the round-2 PR → smoke test (brochure form saves and downloads; Explore scrolls; Live
 sessions shows "Sessions will appear here…"; no placeholder content).
+
+## Admin portal (branch `feature/admin-portal`, built on round 2) — not yet in production
+
+Two roles only: **Admin** and **Student**. Admins sign in on `/login` and always land on `/admin`; they never see
+the student dashboard or registration. Admin = a row in `private.admin_users` (added only in the SQL Editor; not in
+`profiles` or `user_metadata`, which students can edit). Every `admin_*` function checks `private.require_admin()`
+in the database and every admin change is written to `private.admin_audit_log`.
+
+| Migration | What it does | Depends on |
+|---|---|---|
+| `20261124001000_admin_access` | Admin list, audit log, `am_i_admin()`; per-student module access (`module_access_overrides`, wins over the global setting), scheduled release (`curriculum_module_releases.release_at`), suspensions (`student_suspensions`); `private.module_released` becomes caller-aware (callers not re-created); content read policy uses `module_open_for_me()`; suspended students read no events / cohort; `my_module_access()` for the portal. A module can only be **opened** when it has content in `course_subtopics` (today: Module 0). | **0600** (module names), 0400, 0500, 0900 |
+| `20261124001100_admin_calendar` | `cohort_events`: `all_day`, `module_number`, `kind`, `meeting_url`, `seed_key`; loads the published programme calendar (34 rows, editable by admins); `announcements` table; admin event / announcement functions | 1000, 0500 |
+| `20261124001200_admin_views` | Admin read functions (overview, students + progress, student detail, cohort, quiz results, enquiries, brochure leads, audit log) and `admin_update_student`, `admin_set_enquiry_status`, `admin_log_export` | 1100, 0100, 0900 |
+
+Frontend: `/admin` (overview), `/admin/students` (+ `/:userId`), `/admin/modules`, `/admin/calendar`,
+`/admin/announcements`, `/admin/cohort`, `/admin/quizzes`, `/admin/enquiries`, `/admin/leads`, `/admin/audit`
+(lazy-loaded). Student portal: module access comes from `my_module_access()` (the hard-coded release list is gone;
+fail closed = only Module 0 until the database answers); Module 0 pages are gated like Module 1; calendar, programme
+card and the Assignments due date read the database (built-in sheet only on a database without 1100); dashboard
+announcement banner; "Join" link on sessions with a meeting link; suspended students see "Your access is paused".
+
+**Staging (24 Nov 2026):** dry run of 1000–1200 + `admin_checks.sql` in one rolled-back transaction → applied
+1000, 1100, 1200 → `admin_checks.sql` passed → regression tests passed (`module_release_checks`, `curriculum_checks`,
+`rls_and_scoring_checks`, `quiz_reading_prerequisite_checks`, `cohort_events_checks`*, `cohort_profiles_checks`,
+`online_lock_checks`, `enquiries_checks`, `brochure_request_checks`, `registration_offline_checks`,
+`student_code_apw_checks`) → rollback rehearsal 1200 → 1100 → 1000 (staging back to its exact prior state; student
+checks passed) → re-applied → `admin_checks.sql` passed → `20261124001000_admin_readonly_verification.sql` all true.
+*`cohort_events_checks` now counts permissive policies only (1000 adds a restrictive "suspended" read policy).
+
+**Production order** (each step needs explicit approval; never `db push`):
+1. ~~0600~~ — done 24 Nov 2026 (verified 14/14, data unchanged).
+2. ~~0900~~ — done 24 Nov 2026 (verified 6/6, data unchanged).
+3. ~~1000~~ — done 24 Nov 2026. Then, in one window: **merge the admin PR first** (its frontend works on a database
+   without 1100: it falls back to the built-in programme calendar and hides announcements), then 1100 → 1200, then
+   `20261124001000_admin_readonly_verification.sql` (data snapshot unchanged; 34 programme rows; 0 admins).
+   Applying 1100 before the admin frontend is live would show the programme dates as timed events (PR #3 frontend)
+   or twice (round-2 frontend).
+4. Add the admins (SQL Editor; accounts must exist — sign up first):
+   ```sql
+   insert into private.admin_users (user_id, note)
+   select id, 'programme team' from auth.users where lower(email) in ('<admin email 1>', '<admin email 2>')
+   on conflict (user_id) do nothing;
+   select count(*) from private.admin_users;   -- expect 2
+   ```
+   Remove an admin: `delete from private.admin_users where user_id = (select id from auth.users where lower(email) = '<email>');`
+5. Merge the round-2 PR, then the admin PR (Vercel deploy) in the same window as 1100 (the old frontend shows the
+   34 programme rows as timed events; round 2 alone would show them twice).
+6. Smoke test: admin lands on `/admin`; students still open Module 0; programme calendar shows once; a student
+   locked for Module 0 sees "locked for your account".
+
+Rollback (reverse order): `rollback/20261124001200_admin_views.down.sql` → `…001100_admin_calendar.down.sql`
+(deletes the 34 programme rows) → `…001000_admin_access.down.sql` (drops admins, audit log, overrides, suspensions,
+schedules — export first). Then redeploy the previous frontend.
 
 ## Online is closed for everyone
 
@@ -287,10 +355,20 @@ environment. To change a date, edit `programSchedule.ts` and redeploy.
 `VITE_SHOW_DEMO_EVENTS` (in `src/data/demoEvents.ts`) now controls **only the sample AI news headlines**:
 on in the local dev server, off in builds unless set to exactly `true`. Production must never set it.
 
-## Routine operations (program team, SQL Editor)
+## Routine operations (program team)
 
+After the admin portal (1000–1200 + its frontend), everything below is done in the **admin portal** (`/admin`), with
+an audit trail; the SQL Editor is only needed to add or remove admins.
+
+- **Release / lock / schedule a module**: `/admin/modules`. A module can only be opened once its content is in
+  `public.course_subtopics`. No frontend change or deploy is needed any more (the portal reads `my_module_access()`).
+- **Lock or open a module for one student, suspend a student, correct details**: `/admin/students/<student>`.
+- **Events, live sessions, programme dates**: `/admin/calendar`. **Announcements**: `/admin/announcements`.
+- **Enquiries**: `/admin/enquiries` (status New / In progress / Closed). **Brochure leads**: `/admin/leads`.
+
+Before the admin portal is live (SQL Editor):
 - **Release a module** (e.g. Module 1 = `module_id` 2): `update public.curriculum_module_releases set released = true, updated_at = now() where module_id = 2;`
-  **and** add `2` to `RELEASED_MODULE_IDS` in `src/lib/moduleStatus.ts`, then deploy. Both are required.
+  **and** (frontend before the admin portal only) add `2` to the release list in `src/lib/moduleStatus.ts`, then deploy.
   (Before 0600 the table is `curriculum_level_releases` with column `level_id`.)
 - **Read enquiries:** `select * from public.enquiries order by created_at desc;`
   mark handled: `update public.enquiries set status = 'closed' where id = …;`

@@ -11,10 +11,13 @@ export interface OnboardingState {
   isPaid: boolean;
   /** false = registration form not completed yet. null/undefined = unknown → not enforced. */
   registered?: boolean | null;
+  /** Administrators (private.admin_users) never see the student portal or onboarding. */
+  isAdmin?: boolean;
 }
 
 /** Where a signed-in student belongs right now if they didn't ask for a specific page. */
-export function homeFor({ learningMode, isPaid, registered }: OnboardingState): string {
+export function homeFor({ learningMode, isPaid, registered, isAdmin }: OnboardingState): string {
+  if (isAdmin) return '/admin';
   if (registered === false) return '/register'; // finish the registration form
   if (!learningMode || !isPaid) return '/register'; // choose mode / complete enrollment
   return `/${learningMode}/dashboard`;
@@ -57,5 +60,9 @@ export function safeReturnPath(from: unknown): string | null {
 
 /** After signing in: the requested page if it is safe, otherwise the student's next onboarding step. */
 export function postAuthDestination(state: OnboardingState, from: unknown): string {
-  return safeReturnPath(from) ?? homeFor(state);
+  const back = safeReturnPath(from);
+  // An admin only returns to admin pages; a student never "returns" into /admin.
+  const isAdminPath = !!back && (back === '/admin' || back.startsWith('/admin/') || back.startsWith('/admin?'));
+  if (state.isAdmin) return isAdminPath ? back! : homeFor(state);
+  return back && !isAdminPath ? back : homeFor(state);
 }

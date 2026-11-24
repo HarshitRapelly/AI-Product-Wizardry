@@ -4,7 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthAndCourseProvider, useAuthAndCourse } from './context/AuthAndCourseContext';
 
 // Route Guards
-import { GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RegisterRoute, SHOW_HOME_STATE } from './components/guards/RouteGuards';
+import { AdminGuard, GuestOnlyGuard, HomeRoute, PaidGuard, PortalModeGuard, RegisterRoute, SHOW_HOME_STATE } from './components/guards/RouteGuards';
+import { AuthLoadingScreen } from './components/auth/AuthScreens';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
@@ -49,6 +50,27 @@ const OnlineLockedRedirect: React.FC = () => {
   const l = useLocation();
   return <Navigate to={`${offlinePathForOnline(l.pathname)}${l.search}${l.hash}`} replace />;
 };
+
+/* Admin portal (migrations 20261124001000–1200): lazy-loaded, so students never download it. */
+const AdminOverviewPage = React.lazy(() => import('./pages/admin/AdminOverviewPage'));
+const AdminStudentsPage = React.lazy(() => import('./pages/admin/AdminStudentsPage'));
+const AdminStudentDetailPage = React.lazy(() => import('./pages/admin/AdminStudentDetailPage'));
+const AdminModulesPage = React.lazy(() => import('./pages/admin/AdminModulesPage'));
+const AdminCalendarPage = React.lazy(() => import('./pages/admin/AdminCalendarPage'));
+const AdminAnnouncementsPage = React.lazy(() => import('./pages/admin/AdminAnnouncementsPage'));
+const AdminCohortPage = React.lazy(() => import('./pages/admin/AdminCohortPage'));
+const AdminQuizzesPage = React.lazy(() => import('./pages/admin/AdminQuizzesPage'));
+const AdminEnquiriesPage = React.lazy(() => import('./pages/admin/AdminEnquiriesPage'));
+const AdminLeadsPage = React.lazy(() => import('./pages/admin/AdminLeadsPage'));
+const AdminAuditPage = React.lazy(() => import('./pages/admin/AdminAuditPage'));
+
+const AdminRoute: React.FC<{ page: React.LazyExoticComponent<React.ComponentType> }> = ({ page: Page }) => (
+  <AdminGuard>
+    <React.Suspense fallback={<AuthLoadingScreen message="Loading the admin portal…" />}>
+      <Page />
+    </React.Suspense>
+  </AdminGuard>
+);
 
 const ModeRedirect: React.FC<{ subpath: string }> = ({ subpath }) => {
   const { learningMode } = useAuthAndCourse();
@@ -108,7 +130,7 @@ export function App() {
             path="/offline/module/0"
             element={
               <PortalModeGuard requiredMode="offline">
-                <OfflineModule0 />
+                <ModuleLockGate mode="offline" moduleId={1}><OfflineModule0 /></ModuleLockGate>
               </PortalModeGuard>
             }
           />
@@ -119,7 +141,7 @@ export function App() {
             path="/offline/module/0/quiz/:quizId"
             element={
               <PortalModeGuard requiredMode="offline">
-                <QuizSessionPage mode="offline" />
+                <ModuleLockGate mode="offline" moduleId={1}><QuizSessionPage mode="offline" /></ModuleLockGate>
               </PortalModeGuard>
             }
           />
@@ -224,6 +246,20 @@ export function App() {
           <Route path="/leaderboard" element={<PaidGuard><ModeRedirect subpath="dashboard" /></PaidGuard>} />
           <Route path="/levels" element={<PaidGuard><ModeRedirect subpath="modules" /></PaidGuard>} />
           <Route path="/profile" element={<PaidGuard><ModeRedirect subpath="profile" /></PaidGuard>} />
+
+          {/* Admin portal: administrators only (AdminGuard + every admin_* function checks the database) */}
+          <Route path="/admin" element={<AdminRoute page={AdminOverviewPage} />} />
+          <Route path="/admin/students" element={<AdminRoute page={AdminStudentsPage} />} />
+          <Route path="/admin/students/:userId" element={<AdminRoute page={AdminStudentDetailPage} />} />
+          <Route path="/admin/modules" element={<AdminRoute page={AdminModulesPage} />} />
+          <Route path="/admin/calendar" element={<AdminRoute page={AdminCalendarPage} />} />
+          <Route path="/admin/announcements" element={<AdminRoute page={AdminAnnouncementsPage} />} />
+          <Route path="/admin/cohort" element={<AdminRoute page={AdminCohortPage} />} />
+          <Route path="/admin/quizzes" element={<AdminRoute page={AdminQuizzesPage} />} />
+          <Route path="/admin/enquiries" element={<AdminRoute page={AdminEnquiriesPage} />} />
+          <Route path="/admin/leads" element={<AdminRoute page={AdminLeadsPage} />} />
+          <Route path="/admin/audit" element={<AdminRoute page={AdminAuditPage} />} />
+          <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
 
           {/* Catch-all redirect to homepage */}
           <Route path="*" element={<Navigate to="/" replace />} />
