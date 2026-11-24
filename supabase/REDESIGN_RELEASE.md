@@ -65,7 +65,7 @@ Production steps for round 2 (each needs explicit approval): read-only
 (6/6 true, 0 rows) → merge the round-2 PR → smoke test (brochure form saves and downloads; Explore scrolls; Live
 sessions shows "Sessions will appear here…"; no placeholder content).
 
-## Quiz pass marks and attempt limits (`20261125001300_quiz_attempt_limits`, branch `feature/portal-ui-round4`) — staging only
+## Quiz pass marks and attempt limits (`20261125001300_quiz_attempt_limits`, branch `feature/portal-ui-round4`) — 1300 and 1400 in production
 
 Rule: a quiz may have a pass mark (percent) and an attempt limit. Until a student PASSES (best attempt ≥ the
 current pass mark) they get `max_attempts` attempts (+ extra attempts an admin grants); after passing, unlimited.
@@ -95,6 +95,16 @@ attempt"). Admins set pass marks and limits per quiz on `/admin/quizzes` → "Ed
 - Production order: **merge the frontend first** (it falls back to the old rule on a database without 1300; the
   live frontend from PR #5 does not know the new rule and would show those 3 students a confusing refusal), then
   1300 → 1400 → read-only verification.
+- **Production 1300 applied + verified (25 Nov 2026, approved, read-only check):** columns, closed grants table,
+  guard / `subtopic_done` / submit checks, `admin_quiz_summary` columns and all privileges correct; 0 unsafe admin
+  functions. Module 0 quiz: pass mark 70, 3 attempts, counting starts at the migration; 1 quiz in total has a limit.
+  4 students took the quiz: 1 passed, 3 must pass; 0 attempts counted so far, 0 extra grants. Quiz attempts
+  unchanged (8, same hash). Progress rows 27 → 33: 1300 writes no progress rows, so this is student activity
+  between the pre-check and the verification.
+- **Production 1400 applied (25 Nov 2026, approved):** committed file (31155d3), exit 0, built-in self-checks
+  passed. **Verified (read-only, approved):** new note present once, old "8 or more" note gone, the quiz lesson
+  has 14 blocks with 1 quiz block, and its whole body hash equals staging's (`dd03e34c…`), so nothing else in the
+  lesson changed. Quiz rule still 70 % / 3 attempts; quiz attempts unchanged (8, same hash as the pre-check).
 
 ## Admin portal (branch `feature/admin-portal`, built on round 2) — not yet in production
 
