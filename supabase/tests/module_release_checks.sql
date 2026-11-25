@@ -26,10 +26,11 @@ select private.apply_registration('00000000-0000-4000-8000-0000000016a1',
   'email_signup');
 
 -- Content for Module 1 (module_id 2) so the read guards can be observed: a copy of a
--- Module 0 subtopic, with the legacy Module 1 quiz attached and one question.
+-- Module 0 subtopic, with the legacy Module 1 quiz attached and one question. Position 90 —
+-- after the four real Module 1 Topic 1 lessons (20261125001700).
 insert into public.course_subtopics
 select (jsonb_populate_record(null::public.course_subtopics,
-          to_jsonb(s) || '{"id":"m1-release-test","module_id":2,"topic_number":1,"position":1,"quiz_id":"foundations-practice-quiz"}')).*
+          to_jsonb(s) || '{"id":"m1-release-test","module_id":2,"topic_number":1,"position":90,"quiz_id":"foundations-practice-quiz"}')).*
   from public.course_subtopics s where s.id = 'l0-program-introduction';
 insert into public.quiz_questions (quiz_id, question_id, position, prompt, options)
 values ('foundations-practice-quiz', 1, 1, 'Release test question', '["a","b","c","d"]')
@@ -264,9 +265,15 @@ begin
   if not (select is_unlocked from public.my_module_progress() where module_id = 2) then raise exception 'FAIL: released Module 1 not unlocked'; end if;
   if not (select is_unlocked from public.my_level_progress() where level_id = 2) then raise exception 'FAIL: wrapper does not show Module 1 unlocked'; end if;
   if exists (select 1 from public.my_module_progress() where module_id >= 3 and is_unlocked) then raise exception 'FAIL: unreleased modules unlocked'; end if;
-  if (select count(*) from public.course_subtopics where module_id = 2) <> 1 then raise exception 'FAIL: released content not readable'; end if;
+  -- 4 real Module 1 Topic 1 lessons + the test copy above
+  if (select count(*) from public.course_subtopics where module_id = 2) <> 5 then raise exception 'FAIL: released content not readable'; end if;
   if (select count(*) from public.quiz_questions where quiz_id = 'foundations-practice-quiz') <> 1 then raise exception 'FAIL: released quiz questions not readable'; end if;
   insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'topic-1-reading', 'reading', true);
+  -- the test lesson (position 90) comes after the four real lessons: finish them in order first
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'm1-what-is-a-product', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'm1-product-vs-engineering', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'm1-who-is-a-pm', 'reading', true);
+  insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (2, 'm1-mindset-of-a-pm', 'reading', true);
   a := public.submit_quiz_attempt('foundations-practice-quiz', '{"1":2,"2":0,"3":3,"4":1,"5":3}', gen_random_uuid());
   if a.module_id <> 2 or a.percentage <> 80 or not a.passed then raise exception 'FAIL: released Module 1 quiz: %', row_to_json(a); end if;
   -- Module 2 (module_id 3) still refused

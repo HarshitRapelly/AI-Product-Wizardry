@@ -94,4 +94,20 @@ export function useReadingPosition({ subtopic, enabled, savedSectionId, containe
     window.addEventListener('pagehide', onPageHide);
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('pagehide', onPageHide); };
   }, [enabled, subtopic?.id, save, subtopic]);
+
+  // Positions reported by the lesson itself (e.g. "slide-7" from a slide deck): saved shortly after the
+  // student stops moving, so clicking through slides does not send a request per click.
+  const debounce = useRef<number | null>(null);
+  useEffect(() => () => { if (debounce.current !== null) window.clearTimeout(debounce.current); }, [subtopic?.id]);
+  const setPosition = useCallback((sectionId: string) => {
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(sectionId) || !subRef.current) return;
+    current.current = sectionId;
+    if (debounce.current !== null) window.clearTimeout(debounce.current);
+    debounce.current = window.setTimeout(() => { debounce.current = null; void save(); }, POSITION_DEBOUNCE_MS);
+  }, [save]);
+
+  return { setPosition };
 }
+
+/** Delay before a position reported by the lesson (setPosition) is saved. */
+export const POSITION_DEBOUNCE_MS = 1500;

@@ -7,6 +7,12 @@
 
 export interface TextRun { t: string; b?: boolean; i?: boolean }
 
+/** One slide of a slide-deck lesson (20261125001700): number, image size, the slide's visible text.
+ *  The image itself is in public.course_slide_images (subtopic id + slide number). */
+export interface SlideInfo { n: number; w: number; h: number; text: string }
+/** A further-reading link (https only). */
+export interface ReadingLink { title: string; url: string; note?: string }
+
 export type ContentBlock =
   | { type: 'heading'; module: 3; text: string }
   | { type: 'paragraph'; runs: TextRun[] }
@@ -15,6 +21,8 @@ export type ContentBlock =
   | { type: 'formula'; text: string }
   | { type: 'checklist'; persisted: false; items: string[] }
   | { type: 'quiz'; quiz_id: string; heading: string; intro: string; review_intro: string; post_submission_note: string }
+  | { type: 'slides'; title: string; slides: SlideInfo[] }
+  | { type: 'links'; heading: string; items: ReadingLink[] }
   /** A block that failed validation — rendered as a small notice, never as raw data. */
   | { type: 'invalid'; reason: string };
 
@@ -126,6 +134,17 @@ const toNum = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Only absolute https:// links with a host (no javascript:, data:, http:, relative or credentialed URLs). */
+export function isSafeHttpsUrl(v: unknown): v is string {
+  if (!isStr(v) || v.length > 2000 || /\s/.test(v)) return false;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'https:' && !!u.hostname && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}
+
 export function parseRuns(v: unknown): TextRun[] | null {
   if (!Array.isArray(v)) return null;
   const out: TextRun[] = [];
@@ -169,6 +188,26 @@ export function parseBlock(v: unknown): ContentBlock {
       return isNonEmptyStr(v.quiz_id) && isNonEmptyStr(v.heading) && isStr(v.intro) && isStr(v.review_intro) && isStr(v.post_submission_note)
         ? { type: 'quiz', quiz_id: v.quiz_id, heading: v.heading, intro: v.intro, review_intro: v.review_intro, post_submission_note: v.post_submission_note }
         : { type: 'invalid', reason: 'quiz block' };
+    case 'slides': {
+      // Slides are numbered 1..N in order; sizes are sane; text is plain text (rendered as text, never HTML).
+      if (!isNonEmptyStr(v.title) || !Array.isArray(v.slides) || v.slides.length < 1 || v.slides.length > 500) return { type: 'invalid', reason: 'slides' };
+      const slides: SlideInfo[] = [];
+      for (const [i, s] of v.slides.entries()) {
+        if (!isObj(s) || s.n !== i + 1 || !isInt(s.w) || !isInt(s.h) || s.w < 1 || s.h < 1 || s.w > 10000 || s.h > 10000
+            || !isStr(s.text) || s.text.length > 10000) return { type: 'invalid', reason: 'slide' };
+        slides.push({ n: s.n, w: s.w, h: s.h, text: s.text });
+      }
+      return { type: 'slides', title: v.title, slides };
+    }
+    case 'links': {
+      if (!isNonEmptyStr(v.heading) || !Array.isArray(v.items) || !v.items.length || v.items.length > 20) return { type: 'invalid', reason: 'links' };
+      const items: ReadingLink[] = [];
+      for (const it of v.items) {
+        if (!isObj(it) || !isNonEmptyStr(it.title) || it.title.length > 300 || !isSafeHttpsUrl(it.url)) return { type: 'invalid', reason: 'link' };
+        items.push({ title: it.title, url: it.url, ...(isNonEmptyStr(it.note) && it.note.length <= 500 ? { note: it.note } : {}) });
+      }
+      return { type: 'links', heading: v.heading, items };
+    }
     default:
       return { type: 'invalid', reason: `unknown block type "${String(v.type).slice(0, 30)}"` };
   }

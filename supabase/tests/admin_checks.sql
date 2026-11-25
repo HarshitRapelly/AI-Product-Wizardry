@@ -40,8 +40,9 @@ begin
   if (select string_agg(module_id::text, ',' order by module_id) from public.curriculum_module_releases where released) <> '1' then
     raise exception 'FAIL: only Module 0 released';
   end if;
-  if not private.module_has_content(1::smallint) or private.module_has_content(2::smallint) then
-    raise exception 'FAIL: content expectations (Module 0 has content, Module 1 has none)';
+  -- Module 1 (module_id 2) has its Topic 1 lessons since 20261125001700; Module 2 has none.
+  if not private.module_has_content(1::smallint) or not private.module_has_content(2::smallint) or private.module_has_content(3::smallint) then
+    raise exception 'FAIL: content expectations (Modules 0 and 1 have content, Module 2 has none)';
   end if;
 end $$;
 
@@ -140,13 +141,16 @@ begin
   v := public.admin_overview();
   if (v ->> 'registered')::int < 2 or v -> 'open_modules' <> '[1]'::jsonb then raise exception 'FAIL: overview %', v; end if;
 
-  -- modules without content cannot be opened (Modules 1–11 stay locked)
-  begin perform public.admin_set_module_release(2::smallint, 'open'); raise exception 'FAIL: opened a module without content';
+  -- modules without content cannot be opened (Modules 2–11 stay locked)
+  begin perform public.admin_set_module_release(3::smallint, 'open'); raise exception 'FAIL: opened a module without content';
   exception when invalid_parameter_value then null; end;
-  begin perform public.admin_set_module_release(2::smallint, 'scheduled', now() + interval '1 day'); raise exception 'FAIL: scheduled a module without content';
+  begin perform public.admin_set_module_release(3::smallint, 'scheduled', now() + interval '1 day'); raise exception 'FAIL: scheduled a module without content';
   exception when invalid_parameter_value then null; end;
-  begin perform public.admin_set_student_module_access('00000000-0000-4000-8000-00000000ad11', 2::smallint, 'open'); raise exception 'FAIL: opened Module 1 for a student';
+  begin perform public.admin_set_student_module_access('00000000-0000-4000-8000-00000000ad11', 3::smallint, 'open'); raise exception 'FAIL: opened Module 2 for a student';
   exception when invalid_parameter_value then null; end;
+  -- Module 1 has content since 20261125001700: an admin can open, schedule and lock it again
+  perform public.admin_set_module_release(2::smallint, 'open');
+  perform public.admin_set_module_release(2::smallint, 'scheduled', now() + interval '1 day');
   perform public.admin_set_module_release(2::smallint, 'locked');            -- locking is always allowed
   begin perform public.admin_set_module_release(1::smallint, 'scheduled', now() - interval '1 hour'); raise exception 'FAIL: past schedule accepted';
   exception when invalid_parameter_value then null; end;
@@ -200,8 +204,8 @@ begin
   perform public.admin_log_export('students', 3);
   select count(*) into n from public.admin_list_audit(500)
    where admin_email = 'admin-check-a@example.test';
-  -- module_release(locked) + student_module_access + suspend + 5 event writes + announcement + student_update + export = 11
-  if n <> 11 then raise exception 'FAIL: audit entries (%)', n; end if;
+  -- module_release(open, scheduled, locked) + student_module_access + suspend + 5 event writes + announcement + student_update + export = 13
+  if n <> 13 then raise exception 'FAIL: audit entries (%)', n; end if;
 end $$;
 reset role;
 

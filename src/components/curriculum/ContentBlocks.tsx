@@ -1,7 +1,35 @@
 import React, { useState } from 'react';
-import { AlertTriangle, ListChecks } from 'lucide-react';
-import type { ContentBlock, TextRun } from '../../lib/curriculumTypes';
+import { AlertTriangle, BookOpen, ExternalLink, ListChecks } from 'lucide-react';
+import type { ContentBlock, ReadingLink, TextRun } from '../../lib/curriculumTypes';
 import { sectionIdFor } from '../../lib/curriculumTypes';
+
+/** "www.example.com" for a link (display only). */
+const hostOf = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; } };
+
+/** Further reading: external links (https only, validated in curriculumTypes) open in a new tab. */
+const ReadingLinks: React.FC<{ heading: string; items: ReadingLink[]; index: number }> = ({ heading, items, index }) => (
+  <section data-block="links" aria-labelledby={sectionIdFor(index)} className="rounded-2xl border border-border bg-slate-50/70 p-4 sm:p-5 space-y-3">
+    <h3 id={sectionIdFor(index)} data-section={sectionIdFor(index)} className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-primary scroll-mt-24">
+      <BookOpen className="w-4 h-4 text-[#2F6F6A]" aria-hidden="true" />{heading}
+    </h3>
+    <ul className="space-y-2">
+      {items.map((l, i) => (
+        <li key={i}>
+          <a href={l.url} target="_blank" rel="noopener noreferrer" data-testid="reading-link"
+            className="group flex items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3 hover:border-[#2F6F6A]/50 hover:bg-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F6A]">
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-primary group-hover:underline underline-offset-2">{l.title}</span>
+              {l.note && <span className="block text-xs text-secondary mt-0.5">{l.note}</span>}
+              <span className="block text-[11px] text-text-muted mt-0.5 truncate">{hostOf(l.url)}</span>
+            </span>
+            <ExternalLink className="w-4 h-4 mt-0.5 text-text-muted group-hover:text-[#2F6F6A] flex-shrink-0" aria-hidden="true" />
+            <span className="sr-only">(opens in a new tab)</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+);
 
 /**
  * Renders curriculum blocks exactly as stored (wording, bold, italics, order).
@@ -58,9 +86,11 @@ interface BlockProps {
   index: number;
   /** Renders the interactive quiz for a quiz block (Phase 2). Without it, a static preview is shown. */
   renderQuiz?: (block: Extract<ContentBlock, { type: 'quiz' }>) => React.ReactNode;
+  /** Renders a slide deck (SlideDeck needs the lesson id and the saved position, which the hub has). */
+  renderSlides?: (block: Extract<ContentBlock, { type: 'slides' }>) => React.ReactNode;
 }
 
-export const ContentBlockView: React.FC<BlockProps> = ({ block, index, renderQuiz }) => {
+export const ContentBlockView: React.FC<BlockProps> = ({ block, index, renderQuiz, renderSlides }) => {
   switch (block.type) {
     case 'heading':
       return (
@@ -122,6 +152,12 @@ export const ContentBlockView: React.FC<BlockProps> = ({ block, index, renderQui
           )}
         </section>
       );
+    case 'slides':
+      return renderSlides ? <>{renderSlides(block)}</> : (
+        <p role="note" className="text-xs text-text-muted">The slides for this lesson will be shown here.</p>
+      );
+    case 'links':
+      return <ReadingLinks heading={block.heading} items={block.items} index={index} />;
     case 'invalid':
     default:
       return (
@@ -133,8 +169,8 @@ export const ContentBlockView: React.FC<BlockProps> = ({ block, index, renderQui
   }
 };
 
-export const SubtopicContent: React.FC<{ blocks: ContentBlock[]; renderQuiz?: BlockProps['renderQuiz'] }> = ({ blocks, renderQuiz }) => (
+export const SubtopicContent: React.FC<{ blocks: ContentBlock[]; renderQuiz?: BlockProps['renderQuiz']; renderSlides?: BlockProps['renderSlides'] }> = ({ blocks, renderQuiz, renderSlides }) => (
   <div className="space-y-4" data-testid="subtopic-content">
-    {blocks.map((b, i) => <ContentBlockView key={i} block={b} index={i} renderQuiz={renderQuiz} />)}
+    {blocks.map((b, i) => <ContentBlockView key={i} block={b} index={i} renderQuiz={renderQuiz} renderSlides={renderSlides} />)}
   </div>
 );
