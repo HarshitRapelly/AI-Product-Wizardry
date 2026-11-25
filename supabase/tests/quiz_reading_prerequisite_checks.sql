@@ -178,7 +178,8 @@ begin
     raise exception 'FAIL: reading confirmation not stored correctly';
   end if;
   -- It is not a subtopic: progress unchanged (4 of 6)
-  if (select completed_items from public.my_module_progress() where module_id = 1) <> 4 or public.my_course_progress() <> 66.7 then
+  -- 4 of 10 subtopics with content (Module 0: 6, Module 1 Topic 1: 4 since 20261125001700)
+  if (select completed_items from public.my_module_progress() where module_id = 1) <> 4 or public.my_course_progress() <> 40.0 then
     raise exception 'FAIL: reading confirmation changed progress (% / %)', (select completed_items from public.my_module_progress() where module_id = 1), public.my_course_progress();
   end if;
   -- One-way, re-confirming is harmless
@@ -221,7 +222,7 @@ begin
   insert into public.lesson_progress (module_id, lesson_id, item_type, is_completed) values (1, 'l0-system-requirements', 'reading', true);
   -- Level 0 complete (Level 1 unlocking is release-dependent from Migration 13 on and is
   -- checked in curriculum_checks.sql and module_release_checks.sql)
-  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_module_progress() where module_id = 1) then
+  if public.my_course_progress() <> 60.0 or not (select is_complete from public.my_module_progress() where module_id = 1) then  -- 6 of 10 (Module 1 Topic 1 adds 4)
     raise exception 'FAIL: Level 0 not complete after the full sequence';
   end if;
 
@@ -264,12 +265,12 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 do $$
 declare a public.quiz_attempts%rowtype;
 begin
-  if public.my_course_progress() <> 100.0 or not (select is_complete from public.my_module_progress() where module_id = 1) then
+  if public.my_course_progress() <> 60.0 or not (select is_complete from public.my_module_progress() where module_id = 1) then  -- 6 of 10 (Module 1 Topic 1 adds 4)
     raise exception 'FAIL: D lost completion after Migration 11';
   end if;
   a := public.submit_quiz_attempt('l0-plagiarism-quiz', '{"1":2,"2":1,"3":3,"4":0,"5":2,"6":1,"7":3,"8":0,"9":2,"10":1}', gen_random_uuid());
   if a.attempt_number <> 2 then raise exception 'FAIL: D retake: %', row_to_json(a); end if;
-  if public.my_course_progress() <> 100.0 then raise exception 'FAIL: D progress changed by a retake'; end if;
+  if public.my_course_progress() <> 60.0 then raise exception 'FAIL: D progress changed by a retake'; end if;
 end $$;
 reset role;
 

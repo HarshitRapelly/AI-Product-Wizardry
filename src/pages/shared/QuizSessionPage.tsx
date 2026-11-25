@@ -20,7 +20,8 @@ const REFUSED = new Set(['order', 'reading_required', 'module_locked', 'registra
 
 type Questions = { status: 'loading' } | { status: 'ready'; items: QuizQuestion[] } | { status: 'error'; error: CurriculumError };
 
-const hubPath = (mode: string, lessonKey?: string | null) => `/${mode}/module/0${lessonKey ? `?lesson=${encodeURIComponent(lessonKey)}` : ''}`;
+/** The module hub (moduleNo: 0 = "Module 0"), optionally opened on a lesson. */
+const hubPath = (mode: string, moduleNo: number, lessonKey?: string | null) => `/${mode}/module/${moduleNo}${lessonKey ? `?lesson=${encodeURIComponent(lessonKey)}` : ''}`;
 
 /** Browser Fullscreen API available (it may still be refused, e.g. inside some embedded frames). */
 const fullscreenSupported = () =>
@@ -38,7 +39,7 @@ function exitFullscreen() {
 }
 
 /**
- * Dedicated full-screen assessment page: /:mode/module/0/quiz/:quizId.
+ * Dedicated full-screen assessment page: /:mode/module/<n>/quiz/:quizId (moduleId prop; default Module 0).
  *
  *  - No portal sidebar or course navigation (it is not wrapped in PortalLayout).
  *  - Opening it requires the quiz lesson to be unlocked (all earlier lessons done,
@@ -60,11 +61,12 @@ function exitFullscreen() {
  *    half-finished quiz cannot be submitted automatically).
  *  - Coming back to an unfinished quiz shows the same popup to enter full screen again.
  */
-export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
+export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline'; moduleId?: number }> = ({ mode, moduleId = MODULE0_ID }) => {
+  const moduleNo = moduleId - 1;
   const { quizId = '' } = useParams();
   const { user } = useAuthAndCourse();
   const uid = user?.id ?? null;
-  const { state, reload, acknowledge, recordAttempt } = useCurriculumModule(MODULE0_ID);
+  const { state, reload, acknowledge, recordAttempt } = useCurriculumModule(moduleId);
   const session = useActiveQuizSession(uid);
   const mine = session && session.quizId === quizId ? session : null;
   const [result, setResult] = useState<QuizAttemptSummary | null>(null);
@@ -151,7 +153,7 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
     setResult(null);
     setClosedReason(null);
     writeQuizSession(uid, {
-      v: 1, quizId, subtopicId: quizLesson.status.subtopic.id, module: '0',
+      v: 1, quizId, subtopicId: quizLesson.status.subtopic.id, module: String(moduleNo),
       startedAt: new Date().toISOString(), answers: {}, index: 0, submissionId: null, exits: 0,
     });
     outCounted.current = false;
@@ -183,7 +185,7 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
 
   // ------------------------------------------------------------------ render
   const title = quizLesson?.quizBlock?.heading ?? 'Quiz';
-  const topicLabel = quizLesson ? `Module 0 · Topic ${quizLesson.status.subtopic.topicNumber} · ${quizLesson.status.subtopic.topicTitle}` : 'Module 0';
+  const topicLabel = quizLesson ? `Module ${moduleNo} · Topic ${quizLesson.status.subtopic.topicNumber} · ${quizLesson.status.subtopic.topicTitle}` : `Module ${moduleNo}`;
 
   let body: React.ReactNode;
   if (state.status === 'loading') {
@@ -217,7 +219,7 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
       </Card>
     );
   } else if (result) {
-    body = <ResultView mode={mode} lesson={quizLesson} lessons={lessons} attempt={result} attemptCount={attempts.length} questions={questions} onRetake={start}
+    body = <ResultView mode={mode} moduleNo={moduleNo} lesson={quizLesson} lessons={lessons} attempt={result} attemptCount={attempts.length} questions={questions} onRetake={start}
       qstate={qstate} ackPending={!quizLesson.status.acknowledged && quizLesson.readingConfirmed && result.passed !== false} />;
   } else if (mine && uid) {
     body = questions.status === 'loading'
@@ -252,14 +254,14 @@ export const QuizSessionPage: React.FC<{ mode: 'online' | 'offline' }> = ({ mode
       </header>
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-8 space-y-4">
         {(!mine || result) && (
-          <div className="flex items-center"><TopBack to={hubPath(mode, quizLesson ? (available ? quizLesson.key : lessons.find((m) => m.state === 'available')?.key ?? null) : null)} /></div>
+          <div className="flex items-center"><TopBack to={hubPath(mode, moduleNo, quizLesson ? (available ? quizLesson.key : lessons.find((m) => m.state === 'available')?.key ?? null) : null)} /></div>
         )}
         {body}
         {mine && !result && available && questions.status === 'ready' && fullscreenSupported() && !fullscreen && (
           <FullscreenPrompt
             exits={mine.exits ?? 0}
             onEnter={enterFullscreen}
-            onLeave={() => navigate(hubPath(mode, quizLesson?.key ?? null))}
+            onLeave={() => navigate(hubPath(mode, moduleNo, quizLesson?.key ?? null))}
           />
         )}
       </main>
@@ -477,9 +479,9 @@ const ActiveQuiz: React.FC<{
 };
 
 const ResultView: React.FC<{
-  mode: 'online' | 'offline'; lesson: Lesson; lessons: Lesson[]; attempt: QuizAttemptSummary; attemptCount: number;
+  mode: 'online' | 'offline'; moduleNo: number; lesson: Lesson; lessons: Lesson[]; attempt: QuizAttemptSummary; attemptCount: number;
   questions: Questions; onRetake: () => void; ackPending: boolean; qstate: QuizState | null;
-}> = ({ mode, lesson, lessons, attempt, attemptCount, questions, onRetake, ackPending, qstate }) => {
+}> = ({ mode, moduleNo, lesson, lessons, attempt, attemptCount, questions, onRetake, ackPending, qstate }) => {
   const block = lesson.quizBlock;
   const idx = lessons.findIndex((m) => m.key === lesson.key);
   const next = idx >= 0 ? lessons[idx + 1] ?? null : null;
@@ -502,7 +504,7 @@ const ResultView: React.FC<{
         {questions.status === 'ready' && block && <ReviewButton onClick={() => setReviewing(true)} />}
         <div className="flex flex-wrap items-center gap-3">
           {canContinue && next && (
-            <Link to={hubPath(mode, next.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
+            <Link to={hubPath(mode, moduleNo, next.key)} data-testid="quiz-continue" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ${accent}`}>
               <span>Continue to {next.number}. {next.title}</span><ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           )}

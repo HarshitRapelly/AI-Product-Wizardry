@@ -75,17 +75,25 @@ const JourneyBar: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
   );
 };
 
+/** The module to continue: the student's active module (Module 1 once it is open for them), else Module 0. */
 const ContinueLearning: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) => {
-  const { state } = useCurriculumModule(MODULE0_ID);
+  const { moduleProgress } = useAuthAndCourse();
+  const moduleId = moduleProgress.status === 'ready' ? activeModuleId(moduleProgress) : MODULE0_ID;
+  return <ContinueModule key={moduleId} mode={mode} moduleId={moduleId} />;
+};
+
+const ContinueModule: React.FC<{ mode: 'online' | 'offline'; moduleId: number }> = ({ mode, moduleId }) => {
+  const { state } = useCurriculumModule(moduleId);
+  const n = moduleNumberOf(moduleId);
   const r = 36, circ = 2 * Math.PI * r;
   if (state.status !== 'ready') {
     return (
       <section className="panel" aria-label="Continue learning">
-        <p className="eyebrow">Continue learning · Module 0</p>
+        <p className="eyebrow">Continue learning · Module {n}</p>
         <div className="empty" role="status">
-          {state.status === 'loading' ? <><span className="spinner" aria-hidden="true" /> Loading Module 0…</>
+          {state.status === 'loading' ? <><span className="spinner" aria-hidden="true" /> Loading Module {n}…</>
             : state.status === 'error' ? state.message
-            : 'Module 0 content is not available yet.'}
+            : `Module ${n} content is not available yet.`}
         </div>
       </section>
     );
@@ -94,11 +102,11 @@ const ContinueLearning: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) =>
   const doneCount = lessons.filter((l) => l.state === 'done').length;
   const pct = lessons.length ? Math.round((doneCount / lessons.length) * 100) : 0;
   const next = lessons.find((l) => l.state !== 'done') ?? null;
-  const to = next ? `/${mode}/module/0?lesson=${encodeURIComponent(next.key)}` : `/${mode}/module/0`;
+  const to = next ? `/${mode}/module/${n}?lesson=${encodeURIComponent(next.key)}` : `/${mode}/module/${n}`;
   return (
-    <section className="panel" aria-label="Continue learning">
+    <section className="panel" aria-label="Continue learning" data-module={n}>
       <div className="cont">
-        <div className="pring" role="img" aria-label={`Module 0: ${pct}% complete`}>
+        <div className="pring" role="img" aria-label={`Module ${n}: ${pct}% complete`}>
           <svg width="84" height="84" aria-hidden="true">
             <circle className="bg" cx="42" cy="42" r={r} />
             <circle className="fg" cx="42" cy="42" r={r} strokeDasharray={circ} strokeDashoffset={circ * (1 - pct / 100)} />
@@ -106,8 +114,8 @@ const ContinueLearning: React.FC<{ mode: 'online' | 'offline' }> = ({ mode }) =>
           <b>{pct}%</b>
         </div>
         <div>
-          <p className="eyebrow">Continue learning · Module 0 · {MODULE_TITLES[0]}</p>
-          <h2 style={{ margin: '4px 0' }}>{next ? next.title : 'Module 0 complete — well done'}</h2>
+          <p className="eyebrow">Continue learning · Module {n} · {MODULE_TITLES[n]}</p>
+          <h2 style={{ margin: '4px 0' }}>{next ? next.title : `Module ${n} complete — well done`}</h2>
           <p className="muted" style={{ fontSize: 13.5 }}>{doneCount} of {lessons.length} lessons done</p>
         </div>
         <Link className="btn btn-primary" to={to}><Icon name="play" size={16} /> {next ? (doneCount ? 'Resume' : 'Start') : 'Review'}</Link>

@@ -159,18 +159,19 @@ begin
      is distinct from 'l0-program-introduction/1/1/4/- l0-program-outline/1/2/3/- l0-completion-requirements/1/3/3/- l0-faqs/1/4/4/- l0-plagiarism/2/5/5/l0-plagiarism-quiz l0-system-requirements/2/6/4/-' then
     raise exception 'FAIL: Level 0 subtopic structure wrong';
   end if;
-  if exists (select 1 from public.course_subtopics where module_id <> 1) then
-    raise exception 'FAIL: content exists for levels other than Level 0';
+  -- Module 1 (module_id 2) has its Topic 1 slide lessons since 20261125001700 (checked in module1_content_checks.sql).
+  if exists (select 1 from public.course_subtopics where module_id > 2) then
+    raise exception 'FAIL: content exists for modules after Module 1';
   end if;
-  if (select string_agg(distinct topic_number || ':' || topic_title, '|') from public.course_subtopics)
+  if (select string_agg(distinct topic_number || ':' || topic_title, '|') from public.course_subtopics where module_id = 1)
      is distinct from '1:Welcome to the Program|2:Ground Rules & Setup' then
     raise exception 'FAIL: topic titles wrong';
   end if;
-  if (select string_agg(title, '|' order by position) from public.course_subtopics)
+  if (select string_agg(title, '|' order by position) from public.course_subtopics where module_id = 1)
      is distinct from 'Program introduction|Program outline|Completion requirements|FAQs|Plagiarism|System requirements and tools' then
     raise exception 'FAIL: subtopic titles wrong';
   end if;
-  if (select string_agg(acknowledgment_text, '|' order by position) from public.course_subtopics)
+  if (select string_agg(acknowledgment_text, '|' order by position) from public.course_subtopics where module_id = 1)
      is distinct from 'I have read and understood the Program introduction.|I have read and understood the Program outline.|I have read and understood the Completion requirements.|I have read and understood the FAQs.|I have read and understood the Plagiarism section and the AI ground rules, and I agree to follow them.|I have read and understood the System requirements and tools section.' then
     raise exception 'FAIL: acknowledgment texts wrong';
   end if;
@@ -189,7 +190,7 @@ begin
 
   -- Body blocks: only known types; acknowledgment lines are not in the body
   if exists (select 1 from public.course_subtopics s, jsonb_array_elements(s.body) b
-              where b->>'type' not in ('heading','paragraph','list','table','formula','checklist','quiz')) then
+              where b->>'type' not in ('heading','paragraph','list','table','formula','checklist','quiz','slides','links')) then
     raise exception 'FAIL: unknown body block type';
   end if;
   if exists (select 1 from public.course_subtopics where body::text like '%☐%' or position(acknowledgment_text in body::text) > 0) then
@@ -429,8 +430,10 @@ begin
   if p.total_items <> 6 or p.completed_items <> 0 or p.completion_fraction <> 0 or p.is_complete or not p.is_unlocked then
     raise exception 'FAIL: fresh Level 0 progress wrong: %', row_to_json(p);
   end if;
+  -- Module 1 (module_id 2) has 4 lessons but stays locked until Module 0 is complete
   if (select count(*) from public.my_module_progress()) <> 12
-     or exists (select 1 from public.my_module_progress() where module_id >= 2 and (is_unlocked or is_complete or total_items <> 0 or completion_fraction <> 0)) then
+     or exists (select 1 from public.my_module_progress() where module_id >= 3 and (is_unlocked or is_complete or total_items <> 0 or completion_fraction <> 0))
+     or exists (select 1 from public.my_module_progress() where module_id = 2 and (is_unlocked or is_complete or total_items <> 4 or completion_fraction <> 0)) then
     raise exception 'FAIL: levels without content must be locked, incomplete and 0';
   end if;
 
@@ -490,7 +493,8 @@ begin
   if p.completed_items <> 3 or p.completion_fraction <> 0.5 or p.is_complete then
     raise exception 'FAIL: 3/6 progress wrong: %', row_to_json(p);
   end if;
-  if public.my_course_progress() <> 50.0 then raise exception 'FAIL: course progress at 3/6 is %, expected 50.0 (levels without content must not reduce it)', public.my_course_progress(); end if;
+  -- 3 of 10 subtopics with content (Module 0: 6, Module 1 Topic 1: 4); modules without content do not count
+  if public.my_course_progress() <> 30.0 then raise exception 'FAIL: course progress at 3/10 is %, expected 30.0 (levels without content must not reduce it)', public.my_course_progress(); end if;
 
   -- One-way: cannot un-acknowledge; re-saving the same acknowledgment is fine
   begin
@@ -606,7 +610,7 @@ begin
   if p.completed_items <> 6 or p.completion_fraction <> 1 or not p.is_complete then
     raise exception 'FAIL: Level 0 not complete: %', row_to_json(p);
   end if;
-  if public.my_course_progress() <> 100.0 then raise exception 'FAIL: course progress at 6/6 is %, expected 100.0', public.my_course_progress(); end if;
+  if public.my_course_progress() <> 60.0 then raise exception 'FAIL: course progress at 6/10 is %, expected 60.0', public.my_course_progress(); end if;
   if not (select is_unlocked from public.my_module_progress() where module_id = 2)
      or (select is_unlocked from public.my_module_progress() where module_id = 3)
      or (select is_complete from public.my_module_progress() where module_id = 2) then
@@ -624,7 +628,7 @@ begin
     raise exception 'FAIL: Level 2 progress accepted (Level 1 has no content, so it can never be complete)';
   exception when insufficient_privilege then null; end;
   -- Level 1 rows/attempts are not curriculum subtopics: overall progress is unchanged
-  if public.my_course_progress() <> 100.0 then
+  if public.my_course_progress() <> 60.0 then
     raise exception 'FAIL: non-curriculum activity changed overall progress: %', public.my_course_progress();
   end if;
 

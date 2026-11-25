@@ -43,8 +43,8 @@ export const AdminModulesPage: React.FC = () => {
         <Icon name="lock" size={18} />
         <span>
           <b>How access works:</b> a student's own setting (open / locked) wins over the setting for everyone.
-          A module can only be opened once its content is in the database — today that is Module 0. Locking is always possible.
-          Students still need to finish the previous module before the next one unlocks.
+          A module can only be opened once its content is in the database (the cards show how many subtopics it has). Locking is always possible.
+          Students still need to finish the previous module before the next one unlocks — opening a module for one student does not skip that.
         </span>
       </div>
 
@@ -209,7 +209,8 @@ const StudentAccessTool: React.FC<{ onSaved: () => void; show: (m: string, tone?
           title="Change this student's access?"
           danger={access === 'locked'}
           confirmLabel="Apply"
-          body={<>{access === 'default' ? 'Reset' : access === 'open' ? 'Open' : 'Lock'} <b>{moduleLabel(moduleId)}</b> for <b>{chosen.full_name}</b>{access === 'default' ? ' to the setting for everyone' : ''}.</>}
+          body={<>{access === 'default' ? 'Reset' : access === 'open' ? 'Open' : 'Lock'} <b>{moduleLabel(moduleId)}</b> for <b>{chosen.full_name}</b>{access === 'default' ? ' to the setting for everyone' : ''}.
+            {access === 'open' && moduleId > 1 && <> They still need to finish {moduleLabel(moduleId - 1)} first.</>}</>}
           onConfirm={async () => {
             const r = await setStudentModuleAccess(chosen.user_id, moduleId, access, note || undefined);
             if (!r.ok) { show(r.message, 'err'); return false; }

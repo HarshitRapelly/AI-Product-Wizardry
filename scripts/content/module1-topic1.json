@@ -1,0 +1,57 @@
+{
+  "comment": "Module 1, Topic 1 (slide-deck lessons). Input for scripts/build-slide-lessons.py. Titles come from the curriculum sheet; slides and slide text come from the PDFs (verbatim). Each PDF must match its sha256.",
+  "module_id": 2,
+  "topic_number": 1,
+  "topic_title": "The Product & the PM",
+  "migration": "supabase/migrations/20261125001700_module1_topic1_content.sql",
+  "lessons": [
+    {
+      "id": "m1-what-is-a-product",
+      "position": 1,
+      "title": "What is a product?",
+      "summary": null,
+      "reading_minutes": 9,
+      "acknowledgment_text": "I have gone through all the slides in this lesson and understood them.",
+      "pdf": "M1_T1_ST1_ What Is a Product_.pptx (2).pdf",
+      "pdf_sha256": "e469a718041880be9ea77a8395e15bdd708c05c794e81cb22517094f8ca3133a",
+      "source_document_path": "module-1/topic-1/m1-t1-st1-what-is-a-product.pdf",
+      "links": []
+    },
+    {
+      "id": "m1-product-vs-engineering",
+      "position": 2,
+      "title": "Dimensions of product and difference between product and engineering",
+      "summary": "Same team. Same sprint. Two completely different questions.",
+      "reading_minutes": 9,
+      "acknowledgment_text": "I have gone through all the slides in this lesson and understood them.",
+      "pdf": "M1_T1_ST2_ Product vs Engineering — Inside the Three Circles.pptx.pdf",
+      "pdf_sha256": "1c5cc8920dab7d063c4d60bf80b9cc40de0f37bda101550a9eb0bc81ea923964",
+      "source_document_path": "module-1/topic-1/m1-t1-st2-product-vs-engineering.pdf",
+      "links": []
+    },
+    {
+      "id": "m1-who-is-a-pm",
+      "position": 3,
+      "title": "Who is a PM — and who isn't",
+      "summary": "Not the boss. Not the coder. Then who?",
+      "reading_minutes": 5,
+      "acknowledgment_text": "I have gone through all the slides in this lesson and understood them.",
+      "pdf": "M1_T1_ST3_ Who Is a Product Manager.pptx.pdf",
+      "pdf_sha256": "92372277fb52438124de41d42b7643d24c112960bd066f0dd4178b35b47f4ddd",
+      "source_document_path": "module-1/topic-1/m1-t1-st3-who-is-a-pm.pdf",
+      "links": []
+    },
+    {
+      "id": "m1-mindset-of-a-pm",
+      "position": 4,
+      "title": "Mindset of a PM",
+      "summary": "It was never just about building. Or designing. Then what is it about?",
+      "reading_minutes": 5,
+      "acknowledgment_text": "I have gone through all the slides in this lesson and understood them.",
+      "pdf": "M1_T1_ST4_ Mindset of a Product Manager.pdf",
+      "pdf_sha256": "c937c65ad8a29d444346069f7a023fd9c95261ce75bd2bbb650d7a0fffcc2241",
+      "source_document_path": "module-1/topic-1/m1-t1-st4-mindset-of-a-pm.pdf",
+      "links": []
+    }
+  ]
+}

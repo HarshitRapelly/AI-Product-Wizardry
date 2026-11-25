@@ -23,8 +23,6 @@ import { OfflineModule0 } from './pages/offline/OfflineModule0';
 import { OfflineModule1 } from './pages/offline/OfflineModule1';
 
 // Shared Parameterized Pages
-import { ReadingMaterialPage } from './pages/shared/ReadingMaterialPage';
-import { PracticeQuizPage } from './pages/shared/PracticeQuizPage';
 import { QuizSessionPage } from './pages/shared/QuizSessionPage';
 import { ModuleLockGate } from './components/curriculum/ModuleLockGate';
 import { ProfilePage } from './pages/shared/ProfilePage';
@@ -153,19 +151,14 @@ export function App() {
               </PortalModeGuard>
             }
           />
+          {/* Module 1 lessons live in the hub (slide decks from Supabase); the old demo reading / practice pages are retired. */}
+          <Route path="/offline/module/1/reading" element={<Navigate to="/offline/module/1" replace />} />
+          <Route path="/offline/module/1/quiz" element={<Navigate to="/offline/module/1" replace />} />
           <Route
-            path="/offline/module/1/reading"
+            path="/offline/module/1/quiz/:quizId"
             element={
               <PortalModeGuard requiredMode="offline">
-                <ModuleLockGate mode="offline" moduleId={2}><ReadingMaterialPage mode="offline" /></ModuleLockGate>
-              </PortalModeGuard>
-            }
-          />
-          <Route
-            path="/offline/module/1/quiz"
-            element={
-              <PortalModeGuard requiredMode="offline">
-                <ModuleLockGate mode="offline" moduleId={2}><PracticeQuizPage mode="offline" /></ModuleLockGate>
+                <ModuleLockGate mode="offline" moduleId={2}><QuizSessionPage mode="offline" moduleId={2} /></ModuleLockGate>
               </PortalModeGuard>
             }
           />

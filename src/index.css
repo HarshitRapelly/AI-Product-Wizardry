@@ -95,3 +95,23 @@ button.aiw-ack-btn:disabled { opacity: .55; cursor: not-allowed; }
 .aiw-hub:fullscreen { height: 100vh; width: 100vw; border-radius: 0; }
 .aiw-hub:-webkit-full-screen { height: 100vh; width: 100vw; border-radius: 0; }
 .aiw-hub.aiw-hub-full [data-testid="lesson-scroll"] { overflow-y: auto; }
+
+/* Slide-deck lessons (SlideDeck): edge arrows over the slide, gentle slide change, full-screen "Present". */
+.aiw-deck-edge {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.45); color: #fff; opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+.aiw-deck:hover .aiw-deck-edge, .aiw-deck:focus-within .aiw-deck-edge { opacity: 1; }
+.aiw-deck-edge:hover { background: rgba(0, 0, 0, 0.7); }
+.aiw-deck-edge:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.aiw-deck-edge:disabled { opacity: 0 !important; pointer-events: none; }
+@media (hover: none), (max-width: 639px) { .aiw-deck-edge { display: none; } }  /* phones / touch: swipe + the buttons below the slide */
+@keyframes aiw-slide-in { from { opacity: 0.2; } to { opacity: 1; } }
+.aiw-slide-in { animation: aiw-slide-in 260ms ease-out both; }
+.aiw-deck:fullscreen { width: 100vw; height: 100vh; }
+.aiw-deck:-webkit-full-screen { width: 100vw; height: 100vh; }
+.aiw-deck.is-full { height: 100vh; height: 100dvh; }
+@media (prefers-reduced-motion: reduce) { .aiw-slide-in { animation: none; } .aiw-deck-edge { transition: none; } }

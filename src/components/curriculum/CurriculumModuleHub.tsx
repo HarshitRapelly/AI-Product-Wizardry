@@ -7,16 +7,24 @@ import {
 import { useCurriculumModule } from '../../hooks/useCurriculumModule';
 import { useReadingPosition } from '../../hooks/useReadingPosition';
 import { defaultLessonKey, groupLessonsByTopic, readingBlocksOf, readingLessonId, type Lesson } from '../../lib/moduleLessons';
-import type { QuizAttemptSummary } from '../../lib/curriculumTypes';
+import type { ContentBlock, QuizAttemptSummary } from '../../lib/curriculumTypes';
 import type { AckState } from '../../hooks/useCurriculumModule';
 import { SubtopicContent } from './ContentBlocks';
 import { SubtopicAcknowledgment } from './SubtopicAcknowledgment';
+import { SlideDeck } from './SlideDeck';
 import { useAuthAndCourse } from '../../context/AuthAndCourseContext';
 import { MAX_QUIZ_EXITS, quizChancesLeft, useActiveQuizSession } from '../../lib/quizSession';
 import { passMarkCount, type QuizState } from '../../lib/curriculumTypes';
 
-/** Full-screen quiz route for a quiz lesson. */
-export const quizRouteFor = (mode: string, quizId: string) => `/${mode}/module/0/quiz/${encodeURIComponent(quizId)}`;
+/** Full-screen quiz route for a quiz lesson (moduleNumber: 0 = "Module 0"). */
+export const quizRouteFor = (mode: string, quizId: string, moduleNumber = 0) => `/${mode}/module/${moduleNumber}/quiz/${encodeURIComponent(quizId)}`;
+
+type SlidesBlock = Extract<ContentBlock, { type: 'slides' }>;
+/** The slide a deck lesson was left on ("slide-7" → 7). */
+const savedSlideOf = (sectionId: string | null | undefined) => {
+  const m = /^slide-(\d{1,3})$/.exec(sectionId ?? '');
+  return m ? Number(m[1]) : 1;
+};
 
 interface Props {
   mode: 'online' | 'offline';
@@ -57,7 +65,11 @@ type OutlinePhase = 'open' | 'opening' | 'closing' | 'closed';
  */
 export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgress }) => {
   const { state, reload, acknowledge, confirmReading, ackState, notePosition } = useCurriculumModule(moduleId);
+  /** Display number ("Module 0", "Module 1", …). */
+  const moduleNo = moduleId - 1;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** Slide-deck lessons whose last slide the student has reached in this visit (enables "Mark as completed"). */
+  const [deckSeen, setDeckSeen] = useState<Record<string, true>>({});
   /** Outline open/closed and which topics are expanded (view preferences only; never saved). */
   const [phase, setPhase] = useState<OutlinePhase>(() => (initialOutlineOpen() ? 'open' : 'closed'));
   const phaseTimer = useRef<number | null>(null);
@@ -170,7 +182,9 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
   const openModule = statuses.find((s) => s.key === selectedId) ?? null;
   const openStatus = openModule?.kind === 'reading' ? openModule.status : null;
   const progressRow = state.status === 'ready' && openStatus ? state.progress.find((p) => p.lessonId === openStatus.subtopic.id) : undefined;
-  useReadingPosition({
+  /** The open lesson's slide deck, if it is a slide-deck lesson (its position is the slide number, not a heading). */
+  const openDeck = openStatus ? (openStatus.subtopic.body.find((b) => b.type === 'slides') as SlidesBlock | undefined) ?? null : null;
+  const { setPosition } = useReadingPosition({
     subtopic: openStatus?.subtopic ?? null,
     enabled: !!openStatus && openModule?.state !== 'locked',
     savedSectionId: progressRow?.lastSectionId ?? null,
@@ -182,7 +196,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
     return (
       <div role="status" aria-live="polite" className="bg-surface rounded-2xl border border-border p-8 flex items-center gap-3 text-sm text-text-muted">
         <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-        <span>Loading Module 0 content…</span>
+        <span>Loading Module {moduleNo} content…</span>
       </div>
     );
   }
@@ -190,8 +204,8 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
     return (
       <div role="status" className="bg-surface rounded-2xl border border-border p-8 text-sm text-text-muted">
         {state.status === 'unavailable'
-          ? 'Module 0 content is not available yet. Please check back later.'
-          : 'Module 0 content has not been published yet. Please check back later.'}
+          ? `Module ${moduleNo} content is not available yet. Please check back later.`
+          : `Module ${moduleNo} content has not been published yet. Please check back later.`}
       </div>
     );
   }
@@ -264,7 +278,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
             </button>
           </div>
 
-          <nav id="module-subtopic-nav" aria-label="Module 0 lessons" className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2">
+          <nav id="module-subtopic-nav" aria-label={`Module ${moduleNo} lessons`} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2">
             {groups.map((g) => {
               const open = !collapsedTopics.includes(g.topicNumber);
               const gDone = g.items.filter((i) => i.state === 'done').length;
@@ -431,6 +445,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
                     <QuizModuleCard
                       lesson={selected}
                       mode={mode}
+                      moduleNo={moduleNo}
                       attempts={state.attempts.filter((a) => a.quizId === selected.status.subtopic.quizId)}
                       qstate={state.quizStates?.find((q) => q.quizId === selected.status.subtopic.quizId) ?? null}
                       ackState={ackState[selected.status.subtopic.id] ?? { status: 'idle' }}
@@ -438,29 +453,51 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
                     />
                   ) : (
                     <>
-                      <div ref={contentRef} className="text-[15px]">
-                        <SubtopicContent key={selected.status.subtopic.id} blocks={readingBlocksOf(selected.status.subtopic.body)} />
+                      {/* Slide-deck lessons save the slide number themselves; text lessons save the heading in view. */}
+                      <div ref={openDeck ? undefined : contentRef} className="text-[15px]">
+                        <SubtopicContent
+                          key={selected.status.subtopic.id}
+                          blocks={readingBlocksOf(selected.status.subtopic.body)}
+                          renderSlides={(deck) => (
+                            <SlideDeck
+                              key={selected.status.subtopic.id}
+                              subtopicId={selected.status.subtopic.id}
+                              deck={deck}
+                              initialSlide={savedSlideOf(progressRow?.lastSectionId)}
+                              onSlideChange={(k) => setPosition(`slide-${k}`)}
+                              onReachedEnd={() => { const id = selected.status.subtopic.id; setDeckSeen((d) => (d[id] ? d : { ...d, [id]: true })); }}
+                            />
+                          )}
+                        />
                       </div>
-                      {selected.quizBlock ? (
-                        <SubtopicAcknowledgment
-                          subtopicId={selected.status.subtopic.id}
-                          text={selected.status.subtopic.acknowledgmentText}
-                          acknowledged={selected.readingConfirmed}
-                          state={ackState[readingLessonId(selected.status.subtopic.id)] ?? { status: 'idle' }}
-                          onConfirm={() => void confirmReading(selected.status.subtopic).then((ok) => { if (ok) moveOnAfterComplete(selected.key); })}
-                          mode={mode}
-                          confirmedNote="Reading complete. The quiz is now unlocked."
-                        />
-                      ) : (
-                        <SubtopicAcknowledgment
-                          subtopicId={selected.status.subtopic.id}
-                          text={selected.status.subtopic.acknowledgmentText}
-                          acknowledged={selected.status.acknowledged}
-                          state={ackState[selected.status.subtopic.id] ?? { status: 'idle' }}
-                          onConfirm={() => void acknowledge(selected.status.subtopic).then((ok) => { if (ok) moveOnAfterComplete(selected.key); })}
-                          mode={mode}
-                        />
-                      )}
+                      {(() => {
+                        const id = selected.status.subtopic.id;
+                        const confirmed = selected.quizBlock ? selected.readingConfirmed : selected.status.acknowledged;
+                        const deckBlocked = openDeck && !confirmed && !deckSeen[id]
+                          ? `Go through all ${openDeck.slides.length} slides to mark this lesson as completed.` : null;
+                        return selected.quizBlock ? (
+                          <SubtopicAcknowledgment
+                            subtopicId={id}
+                            text={selected.status.subtopic.acknowledgmentText}
+                            acknowledged={selected.readingConfirmed}
+                            blockedReason={deckBlocked}
+                            state={ackState[readingLessonId(id)] ?? { status: 'idle' }}
+                            onConfirm={() => void confirmReading(selected.status.subtopic).then((ok) => { if (ok) moveOnAfterComplete(selected.key); })}
+                            mode={mode}
+                            confirmedNote="Reading complete. The quiz is now unlocked."
+                          />
+                        ) : (
+                          <SubtopicAcknowledgment
+                            subtopicId={id}
+                            text={selected.status.subtopic.acknowledgmentText}
+                            acknowledged={selected.status.acknowledged}
+                            blockedReason={deckBlocked}
+                            state={ackState[id] ?? { status: 'idle' }}
+                            onConfirm={() => void acknowledge(selected.status.subtopic).then((ok) => { if (ok) moveOnAfterComplete(selected.key); })}
+                            mode={mode}
+                          />
+                        );
+                      })()}
                     </>
                   )}
                   {selected.state === 'done' && (
@@ -479,7 +516,7 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
                       </button>
                     ) : (
                       <p className="rounded-2xl bg-emerald-50 border border-emerald-200 px-5 py-4 text-sm font-semibold text-emerald-800" data-testid="module-finished">
-                        All Module 0 lessons are complete.
+                        All Module {moduleNo} lessons are complete.
                       </p>
                     )
                   )}
@@ -502,12 +539,14 @@ export const CurriculumModuleHub: React.FC<Props> = ({ mode, moduleId, onProgres
 const QuizModuleCard: React.FC<{
   lesson: Lesson;
   mode: 'online' | 'offline';
+  /** Display number of the module (route /:mode/module/<n>/quiz/…). */
+  moduleNo: number;
   attempts: QuizAttemptSummary[];
   /** Pass mark / attempts left / locked (null on an older database: any attempt counts). */
   qstate: QuizState | null;
   ackState: AckState;
   onFinish: () => void;
-}> = ({ lesson, mode, attempts, qstate, ackState, onFinish }) => {
+}> = ({ lesson, mode, moduleNo, attempts, qstate, ackState, onFinish }) => {
   const { user } = useAuthAndCourse();
   const active = useActiveQuizSession(user?.id);
   const block = lesson.quizBlock;
@@ -519,7 +558,7 @@ const QuizModuleCard: React.FC<{
   const needsFinish = !!latest && passed && lesson.readingConfirmed && !lesson.status.acknowledged;
   const need = qstate?.passMark != null ? passMarkCount(qstate.passMark, qstate.questions) : null;
   const allowed = qstate?.maxAttempts != null ? qstate.maxAttempts + qstate.extraAttempts : null;
-  const href = quizRouteFor(mode, quizId);
+  const href = quizRouteFor(mode, quizId, moduleNo);
   // A started, unsubmitted quiz the student left: offer to resume it.
   const inProgress = active && active.quizId === quizId && !active.submissionId ? active : null;
 
