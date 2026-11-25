@@ -238,7 +238,8 @@ begin
   if not exists (select 1 from private.quiz_definitions where quiz_id = 'l0-plagiarism-quiz' and module_id = 1 and pass_mark = 70 and max_attempts = 3) then
     raise exception 'FAIL: plagiarism quiz definition wrong';
   end if;
-  if (select string_agg(question_id::text, ',' order by position) from public.quiz_questions where quiz_id = 'l0-plagiarism-quiz') is distinct from '1,2,3,4,5,6,7,8,9,10'
+  -- Question order shuffled once by 20261125001500 (position: question id 1:7 2:4 3:9 4:2 5:3 6:1 7:10 8:6 9:8 10:5)
+  if (select string_agg(question_id::text, ',' order by position) from public.quiz_questions where quiz_id = 'l0-plagiarism-quiz') is distinct from '7,4,9,2,3,1,10,6,8,5'
      or exists (select 1 from public.quiz_questions where quiz_id = 'l0-plagiarism-quiz' and jsonb_array_length(options) <> 4) then
     raise exception 'FAIL: quiz questions wrong';
   end if;
@@ -563,7 +564,8 @@ begin
   -- Review of OWN attempt: answers + explanations
   if (select count(*) from public.get_my_quiz_review(a.id)) <> 10
      or (select count(*) from public.get_my_quiz_review(a.id) where is_correct) <> 2
-     or (select string_agg(correct_option::text, '' order by question_position) from public.get_my_quiz_review(a.id)) <> '2130213021'
+     or (select string_agg(correct_option::text, '' order by question_position) from public.get_my_quiz_review(a.id)) <> '3021321102'
+     or (select string_agg(question_id::text, ',' order by question_position) from public.get_my_quiz_review(a.id)) <> '7,4,9,2,3,1,10,6,8,5'
      or (select string_agg(selected_option::text, '' order by question_position) from public.get_my_quiz_review(a.id)) <> '0000000000'
      or exists (select 1 from public.get_my_quiz_review(a.id) where explanation is null) then
     raise exception 'FAIL: quiz review wrong';
