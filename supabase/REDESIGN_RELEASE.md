@@ -106,6 +106,33 @@ attempt"). Admins set pass marks and limits per quiz on `/admin/quizzes` → "Ed
   has 14 blocks with 1 quiz block, and its whole body hash equals staging's (`dd03e34c…`), so nothing else in the
   lesson changed. Quiz rule still 70 % / 3 attempts; quiz attempts unchanged (8, same hash as the pre-check).
 
+## Module 0 quiz: one new fixed question order (`20261125001500_m0_quiz_question_order`) — in production
+
+The 10 questions of `l0-plagiarism-quiz` are shuffled once into one new order, the same for everyone. Only
+`quiz_questions.position` changes; question ids, text, options, answer keys, explanations, attempts, scores and pass
+status are untouched (answers are stored by question id). New order (position: question id): 1:7 2:4 3:9 4:2 5:3
+6:1 7:10 8:6 9:8 10:5. No question keeps its place; right answers in display order become D A C B D C B B A C (was
+C B D A C B D A C B). The quiz page, past reviews and admin question stats sort by position, so no frontend change
+is needed; a student mid-quiz keeps their answers (stored by question id).
+
+- Re-runnable (no-op when already shuffled); refuses any starting order other than 1..10 or an unexpected answer key.
+  Self-checks: new order in place, question text/options identical, answers in display order as above.
+- Staging (25 Nov 2026): dry run (rolled back, nothing kept) → applied → re-run was a no-op → `curriculum_checks`
+  (expectations updated), `quiz_limit_checks`, `quiz_reading_prerequisite_checks`, `rls_and_scoring_checks`,
+  `module_release_checks`, `admin_checks` all passed → rollback rehearsal (original order back; `curriculum_checks`
+  then fails as expected) → re-applied → passed. Browser: new order on the quiz page (Q1 = Divya, Q6 = Meera), right
+  answers in the new order score 10/10, review and admin question stats use the new numbering, no page errors.
+- Production order: read-only pre-check → apply → read-only verification (each approved). No frontend deploy needed.
+- **Production pre-check (25 Nov 2026, read-only, approved):** original order 1..10, 10 questions, question text and
+  options identical to staging, answer key as expected (answer-key hash identical to staging), no triggers on
+  `quiz_questions`, unique position constraint present, quiz rule 70 % / 3 attempts. Snapshot: 8 attempts
+  (hash `355cd596…`, unchanged since the 1300 pre-check), answer keys hash `6ee82024…`.
+- **Production 1500 applied (25 Nov 2026, approved):** file as tested on staging, exit 0, built-in self-checks passed
+  (new order in place, question text/options unchanged, answers in display order D A C B D C B B A C).
+  **Verified (read-only, approved):** new order in place (10 questions in positions 1–10), question text and
+  options unchanged, answer keys unchanged (same hash), answers in display order `3021321102`, quiz rule 70 % /
+  3 attempts, quiz attempts unchanged (8, same hash as the pre-check).
+
 ## Admin portal (branch `feature/admin-portal`, built on round 2) — not yet in production
 
 Two roles only: **Admin** and **Student**. Admins sign in on `/login` and always land on `/admin`; they never see
